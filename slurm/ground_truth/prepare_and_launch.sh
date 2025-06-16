@@ -4,7 +4,7 @@ cd "$(dirname "$0")" || exit
 
 source ../helper/paths.sh
 source ../helper/multi_batch_job_header.sh
-source ../conda/init_conda.sh
+source ../../conda/init_conda.sh
 
 echo "Preparing job..."
 cp "${BASE_DB_DIR}/master.sqlite" "${ACTUAL_DB_DIR}/initial.sqlite"

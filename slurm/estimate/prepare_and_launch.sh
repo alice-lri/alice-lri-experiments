@@ -15,7 +15,7 @@ echo "Building project..."
 cmake -DCMAKE_BUILD_TYPE=Release -DLOG_LEVEL=INFO -DENABLE_PROFILING=ON -S "${SRC_PATH}" -B "${SRC_PATH}/build"
 make -C "${SRC_PATH}/build"
 
-source ../conda/init_conda.sh
+source ../../conda/init_conda.sh
 
 echo "Preparing job..."
 cp "${BASE_DB_DIR}/initial.sqlite" "${ACTUAL_DB_DIR}/initial.sqlite"
