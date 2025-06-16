@@ -7,6 +7,10 @@ source ../helper/multi_batch_job_header.sh
 SRC_PATH="../../accurate-ri"
 EXECUTABLE_NAME="examples_sql"
 
+echo "Fetching dependencies..."
+conan install ${SRC_PATH}/lib -s compiler.cppstd=gnu20 -s build_type=Release --output-folder="${SRC_PATH}/build/lib" --build=missing
+conan install ${SRC_PATH}examples -s compiler.cppstd=gnu20 -s build_type=Release --output-folder="${SRC_PATH}/build/examples" --build=missing
+
 echo "Building project..."
 cmake -DCMAKE_BUILD_TYPE=Release -DLOG_LEVEL=INFO -DENABLE_PROFILING=ON -S "${SRC_PATH}" -B "${SRC_PATH}/build"
 make -C "${SRC_PATH}/build"
