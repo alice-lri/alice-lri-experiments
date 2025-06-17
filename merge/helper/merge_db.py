@@ -63,7 +63,8 @@ def fetch_scanlines(cursor, intrinsics_result_id):
                vertical_theoretical_angle_bottom_lower, vertical_theoretical_angle_bottom_upper,
                vertical_theoretical_angle_top_lower, vertical_theoretical_angle_top_upper,
                vertical_uncertainty, vertical_last_scanline, vertical_hough_votes,
-               vertical_hough_hash, horizontal_offset, horizontal_resolution, horizontal_heuristic
+               vertical_hough_hash, horizontal_offset, horizontal_resolution, horizontal_heuristic, 
+               horizontal_angle_offset
         FROM intrinsics_result_scanline_info
         WHERE intrinsics_result_id = ?
     """, (intrinsics_result_id,))
@@ -90,8 +91,8 @@ def insert_scanlines(cursor, frame_id, scanlines):
             vertical_theoretical_angle_bottom_upper, vertical_theoretical_angle_top_lower,
             vertical_theoretical_angle_top_upper, vertical_uncertainty, vertical_last_scanline,
             vertical_hough_votes, vertical_hough_hash, horizontal_offset, horizontal_resolution,
-            horizontal_heuristic
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            horizontal_heuristic, horizontal_angle_offset
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, data)
 
 
@@ -136,7 +137,8 @@ def fetch_gt_scanlines(cursor):
                vertical_offset,
                vertical_angle,
                horizontal_offset,
-               horizontal_resolution
+               horizontal_resolution,
+               horizontal_angle_offset
         FROM dataset_frame_scanline_info_empirical
     """)
 
@@ -154,8 +156,8 @@ def insert_gt_scanlines(cursor, data):
     cursor.executemany("""
         INSERT INTO dataset_frame_scanline_info_empirical(dataset_frame_id, scanline_idx, laser_idx, points_count,
                                                           vertical_offset, vertical_angle, horizontal_offset,
-                                                          horizontal_resolution)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                                                          horizontal_resolution, horizontal_angle_offset)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, data)
 
 
