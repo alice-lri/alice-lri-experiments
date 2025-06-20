@@ -1,3 +1,9 @@
 [submodule "accurate-ri"]
 	path = accurate-ri
 	url = git@github.com:samuelss1996/accurate_ri.git
+[submodule "rtst"]
+	path = rtst
+	url = git@github.com:horizon-research/Real-Time-Spatio-Temporal-LiDAR-Point-Cloud-Compression.git
+[submodule "rtst-modified"]
+	path = rtst-modified
+	url = git@github.com:samuelss1996/Real-Time-Spatio-Temporal-LiDAR-Point-Cloud-Compression.git
