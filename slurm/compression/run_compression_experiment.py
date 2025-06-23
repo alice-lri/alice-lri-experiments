@@ -1,13 +1,10 @@
 import os
-import glob
-import random
 import re
 import sqlite3
 import subprocess
 import numpy as np
 import pandas as pd
 import open3d as o3d
-import shutil
 import argparse
 import accurate_ri
 
@@ -48,14 +45,17 @@ def load_binary(file_path):
     return data[:, :3], data[:, 3]
 
 
-def chamfer_distance(pc1, pc2):
+def compute_p_cloud_mse(pc1, pc2):
     pcd1 = o3d.geometry.PointCloud()
     pcd2 = o3d.geometry.PointCloud()
+
     pcd1.points = o3d.utility.Vector3dVector(pc1)
     pcd2.points = o3d.utility.Vector3dVector(pc2)
+
     dists1 = pcd1.compute_point_cloud_distance(pcd2)
     dists2 = pcd2.compute_point_cloud_distance(pcd1)
-    return (np.mean(dists1) + np.mean(dists2)) / 2, dists1, dists2
+
+    return np.mean(np.array(dists1)**2), np.mean(np.array(dists2)**2)
 
 
 def run_process(cmd):
@@ -164,24 +164,31 @@ def evaluate_compression(dataset, target_path, intrinsics_file, out_filename):
         cr_naive = original_size / naive_size
         cr_accurate = original_size / accurate_size
 
-        cd_naive, _, _ = chamfer_distance(target_points, naive_points)
-        cd_accurate, _, _ = chamfer_distance(target_points, accurate_points)
+        naive_to_original_mse, original_to_naive_mse = compute_p_cloud_mse(naive_points, target_points)
+        accurate_to_original_mse, original_to_accurate_mse = compute_p_cloud_mse(accurate_points, target_points)
 
-        print(f"Compression Ratio (Naive): {cr_naive:.2f}")
-        print(f"Chamfer distance (Naive): {cd_naive:.6f}")
-        print(f"Compression Ratio (Accurate): {cr_accurate:.2f}")
-        print(f"Chamfer distance (Accurate): {cd_accurate:.6f}")
+        print(f"Compression Ratio (Naive): {cr_naive}")
+        print(f"MSE (Naive to Original): {naive_to_original_mse}")
+        print(f"MSE (Original to Naive): {original_to_naive_mse}")
+        print(f"Compression Ratio (Accurate): {cr_accurate}")
+        print(f"MSE (Accurate to Original): {accurate_to_original_mse}")
+        print(f"MSE (Original to Accurate): {original_to_accurate_mse}")
 
         df_rows.append({
             "horizontal_step": Config.get_horizontal_step(),
             "vertical_step": Config.get_vertical_step(),
             "tile_size": Config.tile_size,
             "error_threshold": error_threshold,
-            "size_original": original_size,
-            "size_naive": naive_size,
-            "size_accurate": accurate_size,
-            "cd_naive": cd_naive,  # TODO MSE?
-            "cd_accurate": cd_accurate,
+            "original_points_count": target_points.shape[0],
+            "naive_points_count": naive_points.shape[0],
+            "accurate_points_count": accurate_points.shape[0],
+            "original_size_bytes": original_size,
+            "naive_size_bytes": naive_size,
+            "accurate_size_bytes": accurate_size,
+            "naive_to_original_mse": naive_to_original_mse,
+            "original_to_naive_mse": original_to_naive_mse,
+            "accurate_to_original_mse": accurate_to_original_mse,
+            "original_to_accurate_mse": original_to_accurate_mse,
         })
 
     return pd.DataFrame(df_rows)
@@ -257,14 +264,17 @@ def run_batch(args):
                 corresponding_train_relative_path = re.sub(r"\d{10}\.bin$", "0000000000.bin", relative_path)
                 intrinsics_path = os.path.join(Config.working_dir, f"{corresponding_train_relative_path}.json") #TODO
                 compression_out_path = os.path.join(Config.working_dir, f"{relative_path}.tar.gz") #TODO prolly scratch
-                df = evaluate_compression(dataset, frame_path, intrinsics_path, compression_out_path)
 
-                #TODO insert on db
+                df = evaluate_compression(dataset, frame_path, intrinsics_path, compression_out_path)
+                df["experiment_id"] = experiment_id
+                df["dataset_frame_id"] = frame_id
+
+                df.to_sql("compression_frame_result", conn, if_exists="append", index=False)
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Compare naive and accurate point cloud compression.")
-    parser.add_argument("--mode", required=True, choices=["batch", "single"], help="Mode: batch or single.")
+    parser.add_argument("--mode", required=True, choices=["batch", "single", "test"], help="Mode: batch or single.")
     parser.add_argument("--phase", default=None, choices=["train", "compress"], help="Execution phase (batch mode).")
     parser.add_argument("--task_id", type=int, default=None, help="Task ID (batch mode).")
     parser.add_argument("--task_count", type=int, default=None, help="Task count (batch mode).")
@@ -307,9 +317,12 @@ def main():
 
     if args.mode == "single":
         run_single(args)
+    elif args.mode == "batch":
+        run_batch(args)
+    elif args.mode == "test":
+        print("If you see no errors, all is good.")
     else:
-        kitti_sequences = glob.glob(os.path.join(args.kitti_root, "*/*/velodyne_points/data"))
-        durlar_sequences = glob.glob(os.path.join(args.durlar_root, "*/ouster_points/data"))
+        raise ValueError("Unknown mode '{}'".format(args.mode))
 
 
 if __name__ == "__main__":
