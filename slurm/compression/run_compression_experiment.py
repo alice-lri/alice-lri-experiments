@@ -18,7 +18,8 @@ class Config:
     fmt = "binary"
     tile_size = "4"
     error_thresholds = [0.001, 0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1]
-    working_dir = "/tmp"
+    private_dir = "/tmp"
+    shared_dir = "/tmp"
     results_file = "results.csv"
     dataset = None
 
@@ -59,7 +60,7 @@ def compute_p_cloud_mse(pc1, pc2):
 
 
 def run_process(cmd):
-    subprocess.run(cmd, check=True, cwd=Config.working_dir, env=Globals.env)
+    subprocess.run(cmd, check=True, cwd=Config.private_dir, env=Globals.env)
 
 
 def get_file_size(path):
@@ -125,19 +126,22 @@ def build_accurate_decoder_cmd(input_file, intrinsics_file):
     ]
 
 
-def train(train_path, intrinsics_file):
+def train(train_path, intrinsics_filename):
     print("Loading train points from:", train_path)
     train_points, _ = load_binary(train_path)
 
     print("Training...")
     intrinsics = accurate_ri.train(train_points[:, 0], train_points[:, 1], train_points[:, 2])
+
+    intrinsics_file = os.path.join(Config.shared_dir, intrinsics_filename)
     accurate_ri.write_to_json(intrinsics, intrinsics_file)
 
 
-def evaluate_compression(dataset, target_path, intrinsics_file, out_filename):
+def evaluate_compression(dataset, target_path, intrinsics_filename, out_filename):
     Config.dataset = dataset
     target_dir = os.path.dirname(target_path)
     target_filename = os.path.basename(target_path)
+    intrinsics_file = os.path.join(Config.shared_dir, intrinsics_filename)
     df_rows = []
 
     print("Loading target points from:", target_path)
@@ -148,18 +152,18 @@ def evaluate_compression(dataset, target_path, intrinsics_file, out_filename):
 
         encoder_cmd = build_naive_encoder_cmd(target_dir, target_filename, out_filename, error_threshold)
         run_process(encoder_cmd)
-        naive_size = get_file_size(os.path.join(Config.working_dir, out_filename))
+        naive_size = get_file_size(os.path.join(Config.private_dir, out_filename))
         decoder_cmd = build_naive_decoder_cmd(out_filename)
         run_process(decoder_cmd)
-        naive_points, _ = load_binary(os.path.join(Config.working_dir, target_filename))
+        naive_points, _ = load_binary(os.path.join(Config.private_dir, target_filename))
 
         encoder_cmd = build_accurate_encoder_cmd(target_dir, target_filename, intrinsics_file, out_filename,
                                                  error_threshold)
         run_process(encoder_cmd)
-        accurate_size = get_file_size(os.path.join(Config.working_dir, out_filename))
+        accurate_size = get_file_size(os.path.join(Config.private_dir, out_filename))
         decoder_cmd = build_accurate_decoder_cmd(out_filename, intrinsics_file)
         run_process(decoder_cmd)
-        accurate_points, _ = load_binary(os.path.join(Config.working_dir, target_filename))
+        accurate_points, _ = load_binary(os.path.join(Config.private_dir, target_filename))
 
         cr_naive = original_size / naive_size
         cr_accurate = original_size / accurate_size
@@ -200,12 +204,11 @@ def run_single(args):
     train_path = get_frame_path(args, train_parts[0], train_parts[1])
     target_path = get_frame_path(args, target_parts[0], target_parts[1])
 
-    intrinsics_file = os.path.join(Config.working_dir, "intrinsics.json")
-    train(train_path, intrinsics_file)
+    intrinsics_filename = "intrinsics.json"
+    compression_out_filename = "out.tar.gz"
 
-    out_filename = "out.tar.gz"
-
-    df = evaluate_compression(target_parts[0], target_path, intrinsics_file, out_filename)
+    train(train_path, intrinsics_filename)
+    df = evaluate_compression(target_parts[0], target_path, intrinsics_filename, compression_out_filename)
 
     df["train_dataset"] = train_parts[0]
     df["train_path"] = train_parts[1]
@@ -258,14 +261,14 @@ def run_batch(args):
             frame_path = get_frame_path(args, dataset, relative_path)
 
             if args.phase == "train":
-                intrinsics_path = os.path.join(Config.working_dir, f"{relative_path}.json") #TODO shared
-                train(frame_path, intrinsics_path)
+                intrinsics_filename = f"{relative_path}.json"
+                train(frame_path, intrinsics_filename)
             elif args.phase == "compress":
                 corresponding_train_relative_path = re.sub(r"\d{10}\.bin$", "0000000000.bin", relative_path)
-                intrinsics_path = os.path.join(Config.working_dir, f"{corresponding_train_relative_path}.json") #TODO
-                compression_out_path = os.path.join(Config.working_dir, f"{relative_path}.tar.gz") #TODO prolly scratch
+                intrinsics_filename = f"{corresponding_train_relative_path}.json"
+                compression_out_filename = f"{relative_path}.tar.gz"
 
-                df = evaluate_compression(dataset, frame_path, intrinsics_path, compression_out_path)
+                df = evaluate_compression(dataset, frame_path, intrinsics_filename, compression_out_filename)
                 df["experiment_id"] = experiment_id
                 df["dataset_frame_id"] = frame_id
 
@@ -285,6 +288,9 @@ def parse_args():
     parser.add_argument("--kitti_root", type=str, default=None, help="Path to KITTI dataset root directory (optional).")
     parser.add_argument("--durlar_root", type=str, default=None,
                         help="Path to DURLAR dataset root directory (optional).")
+    parser.add_argument("--private_dir", type=str, default=None, help="Optional private directory for intermediate files.")
+    parser.add_argument("--shared_dir", type=str, default=None, help="Optional shared directory for intermediate files.")
+
     args = parser.parse_args()
 
     if args.mode == "batch":
@@ -305,6 +311,12 @@ def parse_args():
 
     if not args.kitti_root and not args.durlar_root:
         parser.error("At least one of --kitti_root or --durlar_root must be defined.")
+
+    if args.private_dir:
+        Config.private_dir = args.private_dir
+
+    if args.shared_dir:
+        Config.shared_dir = args.shared_dir
 
     return args
 
