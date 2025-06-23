@@ -19,7 +19,7 @@ JOB_COUNT=$5
 
 echo "Beginning job ${JOB_INDEX}..."
 
-module load cesga/system miniconda3/22.11.1-1 cesga/2020 gcc/system openmpi/4.1.1_ft3 boost/1.79.0
+module load cesga/system miniconda3/22.11.1-1
 conda activate "${CONDA_ENV_NAME}"
 
 python run_compression_experiment.py --mode batch \
