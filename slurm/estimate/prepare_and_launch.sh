@@ -19,7 +19,7 @@ source ../../conda/init_conda.sh
 
 echo "Preparing job..."
 cp "${BASE_DB_DIR}/initial.sqlite" "${ACTUAL_DB_DIR}/initial.sqlite"
-python pre_job.py "${ACTUAL_DB_DIR}/initial.sqlite"
+python ../helper/insert_experiment_row.py "${ACTUAL_DB_DIR}/initial.sqlite" intrinsics
 
 jq -n \
   --arg db_dir "$ACTUAL_DB_DIR" \

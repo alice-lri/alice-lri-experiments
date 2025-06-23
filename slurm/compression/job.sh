@@ -12,8 +12,8 @@
 set -eo pipefail
 
 CONDA_ENV_NAME=$1
-EXECUTABLE_PATH=$2
-DB_DIR=$3
+DB_DIR=$2
+SHARED_DIR=$3
 JOB_INDEX=$4
 JOB_COUNT=$5
 
@@ -22,7 +22,15 @@ echo "Beginning job ${JOB_INDEX}..."
 module load cesga/system miniconda3/22.11.1-1
 conda activate "${CONDA_ENV_NAME}"
 
-srun task.sh "$CONDA_ENV_NAME" "$EXECUTABLE_PATH" "$DB_DIR" "$JOB_INDEX" "$JOB_COUNT"
+python run_compression_experiment.py --mode batch \
+  --phase train \
+  --db_path="${DB_FILE_PATH}" \
+  --kitti_root="${KITTI_PATH}" \
+  --private_dir "${TMPDIR}" \
+  --shared_dir "${SHARED_DIR}" 2>&1 | tee "${TRACE_FILE_PATH}"
+  # optional add durlar_root to evaluate durlar as well
+
+srun task.sh "$CONDA_ENV_NAME" "$DB_DIR" "$SHARED_DIR" "$JOB_INDEX" "$JOB_COUNT"
 
 echo "Job ${JOB_INDEX} finished."
 touch "${DB_DIR}/job_${JOB_INDEX}.success"

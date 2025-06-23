@@ -2,8 +2,8 @@
 set -eo pipefail
 
 CONDA_ENV_NAME=$1
-EXECUTABLE_PATH=$2
-DB_DIR=$3
+DB_DIR=$2
+SHARED_DIR=$3
 
 if [ -z "$4" ] || [ -z "$5" ]; then
   TASK_INDEX=$SLURM_PROCID
@@ -15,4 +15,4 @@ else
   TASK_COUNT=$(( JOB_COUNT * SLURM_NTASKS ))
 fi
 
-./task_item.sh "$CONDA_ENV_NAME" "$EXECUTABLE_PATH" "$DB_DIR" "$TASK_INDEX" "$TASK_COUNT"
+./task_item.sh "$CONDA_ENV_NAME" "$DB_DIR" "$SHARED_DIR" "$TASK_INDEX" "$TASK_COUNT"

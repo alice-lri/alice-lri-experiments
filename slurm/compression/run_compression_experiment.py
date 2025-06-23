@@ -294,8 +294,13 @@ def parse_args():
     args = parser.parse_args()
 
     if args.mode == "batch":
-        if args.task_id is None or args.task_count is None or args.db_path is None:
-            parser.error("--task_id, --task_count, and --db_path are required in batch mode.")
+        if args.db_path is None:
+            parser.error("--db_path is required in batch mode.")
+        if args.phase == "compress" and (args.task_id is None or args.task_count is None):
+            parser.error("--task_id and --task_count are required in batch mode when phase is 'compress'.")
+        elif args.phase == "train":
+            args.task_id = 0
+            args.task_count = 1
     else:
         if args.train is None or args.target is None or args.output_csv is None:
             parser.error("--train, --target, and --output_csv are required in single mode.")
