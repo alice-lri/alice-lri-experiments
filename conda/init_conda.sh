@@ -5,7 +5,7 @@ pushd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null
 CONDA_ENV_NAME="accurate_ri_env"
 
 mkdir -p .cache
-module load cesga/system miniconda3/22.11.1-1 cesga/2020 gcc/system openmpi/4.1.1_ft3 boost/1.79.0
+module load cesga/system miniconda3/22.11.1-1
 
 if ! command -v conda &> /dev/null
 then
