@@ -1,0 +1,30 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%files
+    conda/conda_env.yml conda_env.yml
+
+%post
+    # System setup
+    apt update && apt install -y \
+        python3 python3-pip python3-dev \
+        build-essential cmake git \
+        libeigen3-dev libjsoncpp-dev \
+        libopenblas-dev liblapack-dev \
+        curl
+
+    # Optional: install Conda
+    apt install -y wget bzip2
+    curl -L https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o miniconda.sh
+    bash miniconda.sh -b -p /opt/conda
+    export PATH=/opt/conda/bin:$PATH
+    conda init
+
+    # Create environment and install deps
+    conda env create -f conda_env.yml
+
+%environment
+   export PATH=/opt/conda/bin:$PATH
+
+%runscript
+    exec python3 "$@"

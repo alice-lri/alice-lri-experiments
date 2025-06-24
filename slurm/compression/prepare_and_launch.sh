@@ -5,11 +5,24 @@ cd "$(dirname "$0")" || exit
 source ../helper/paths.sh
 source ../helper/multi_batch_job_header.sh
 
+CONTAINER_PATH="../../container.sif"
 ACCURATE_RI_SRC="../../accurate-ri"
 ACCURATE_RI_PYTHON_SRC="${ACCURATE_RI_SRC}/python"
 RTST_SRC="../../rtst/src"
 RTST_MODIFIED_SRC="../../rtst-modified/src"
 SHARED_DIR="${ACTUAL_DB_DIR}/shared"
+
+if [ -z "$APPTAINER_NAME" ]; then
+    echo "Not inside container — re-executing in Apptainer..."
+
+    module load cesga/system apptainer/1.2.3
+    exec apptainer exec \
+        --bind "$(realpath "$(dirname "$0")/../.."):/workspace" \
+        --pwd /workspace/slurm/compression \
+        --no-home \
+        "$CONTAINER_PATH" \
+        ./slurm/compression/prepare_and_launch.sh "$@"
+fi
 
 echo "Fetching dependencies..."
 conan install ${ACCURATE_RI_SRC}/lib -s compiler.cppstd=gnu20 -s build_type=Release --output-folder="${ACCURATE_RI_SRC}/build/lib" --build=missing
