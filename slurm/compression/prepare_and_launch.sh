@@ -21,7 +21,7 @@ if [ -z "$APPTAINER_NAME" ]; then
         --pwd /workspace/slurm/compression \
         --no-home \
         "$CONTAINER_PATH" \
-        ./slurm/compression/prepare_and_launch.sh "$@"
+        ./prepare_and_launch.sh "$@"
 fi
 
 echo "Fetching dependencies..."
