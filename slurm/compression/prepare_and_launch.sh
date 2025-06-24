@@ -2,27 +2,27 @@
 set -eo pipefail
 cd "$(dirname "$0")" || exit
 
+CONTAINER_PATH="../../container.sif"
+
+if [ -z "$APPTAINER_NAME" ]; then
+    echo "Not inside container — re-executing in Apptainer..."
+
+    module load cesga/system apptainer/1.2.3
+    exec apptainer exec "$CONTAINER_PATH" ./prepare_and_launch.sh "$@"
+fi
+
 source ../helper/paths.sh
 source ../helper/multi_batch_job_header.sh
 
-CONTAINER_PATH="../../container.sif"
 ACCURATE_RI_SRC="../../accurate-ri"
 ACCURATE_RI_PYTHON_SRC="${ACCURATE_RI_SRC}/python"
 RTST_SRC="../../rtst/src"
 RTST_MODIFIED_SRC="../../rtst-modified/src"
 SHARED_DIR="${ACTUAL_DB_DIR}/shared"
 
-if [ -z "$APPTAINER_NAME" ]; then
-    echo "Not inside container — re-executing in Apptainer..."
-
-    module load cesga/system apptainer/1.2.3
-    exec apptainer exec \
-        --bind "$(realpath "$(dirname "$0")/../.."):/workspace" \
-        --pwd /workspace/slurm/compression \
-        --no-home \
-        "$CONTAINER_PATH" \
-        ./prepare_and_launch.sh "$@"
-fi
+source ../../conda/init_conda.sh
+source /opt/conda/etc/profile.d/conda.sh
+conda activate "$CONDA_ENV_NAME"
 
 echo "Fetching dependencies..."
 conan install ${ACCURATE_RI_SRC}/lib -s compiler.cppstd=gnu20 -s build_type=Release --output-folder="${ACCURATE_RI_SRC}/build/lib" --build=missing
@@ -38,7 +38,6 @@ make -C "$RTST_SRC"
 echo "Building modified RTST"
 make -C "$RTST_MODIFIED_SRC"
 
-source ../../conda/init_conda.sh
 
 # Compile and install the Python library
 echo "Building Python library..."

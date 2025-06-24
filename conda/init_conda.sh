@@ -26,6 +26,4 @@ else
   echo "Conda environment is up to date."
 fi
 
-conda activate "${CONDA_ENV_NAME}"
-
 popd > /dev/null

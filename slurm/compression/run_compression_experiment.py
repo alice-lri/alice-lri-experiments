@@ -293,6 +293,9 @@ def parse_args():
 
     args = parser.parse_args()
 
+    if args.mode == "test":
+        return args
+
     if args.mode == "batch":
         if args.db_path is None:
             parser.error("--db_path is required in batch mode.")
@@ -301,7 +304,7 @@ def parse_args():
         elif args.phase == "train":
             args.task_id = 0
             args.task_count = 1
-    else:
+    elif args.mode == "single":
         if args.train is None or args.target is None or args.output_csv is None:
             parser.error("--train, --target, and --output_csv are required in single mode.")
 
