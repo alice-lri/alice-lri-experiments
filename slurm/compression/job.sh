@@ -26,7 +26,7 @@ module load cesga/system apptainer/1.2.3
   --db_path="${DB_FILE_PATH}" \
   --kitti_root="${KITTI_PATH}" \
   --private_dir "${TMPDIR}" \
-  --shared_dir "${SHARED_DIR}" 2>&1 | tee "${TRACE_FILE_PATH}"
+  --shared_dir "${SHARED_DIR}"
   # optional add durlar_root to evaluate durlar as well
 
 srun container_run.sh task.sh "$CONDA_ENV_NAME" "$DB_DIR" "$SHARED_DIR" "$JOB_INDEX" "$JOB_COUNT"
