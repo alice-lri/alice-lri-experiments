@@ -28,7 +28,7 @@ rm -Rf "${ACCURATE_RI_PYTHON_SRC}/build"
 conan install "${ACCURATE_RI_SRC}/lib" -s compiler.cppstd=gnu20 -s build_type=Release -of "${ACCURATE_RI_PYTHON_SRC}/build/lib" --build=missing
 cmake -DCMAKE_BUILD_TYPE=Release -DLOG_LEVEL=NONE -DENABLE_TRACE_FILE=OFF -DENABLE_PROFILING=OFF -DLIB_MODE=ON -S "${ACCURATE_RI_PYTHON_SRC}" -B "${ACCURATE_RI_PYTHON_SRC}/build" -G Ninja
 ninja -C "${ACCURATE_RI_PYTHON_SRC}/build"
-pip install -e "${ACCURATE_RI_PYTHON_SRC}"
+pip install -e "${ACCURATE_RI_PYTHON_SRC}" --target "${ACCURATE_RI_PIP_DIR}"
 
 echo "Quick test..."
 python run_compression_experiment.py --mode test
