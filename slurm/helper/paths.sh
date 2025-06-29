@@ -6,4 +6,4 @@ BASE_LOGS_DIR="${STORE2}/accurate_ri_logs"
 KITTI_PATH="${STORE2}/datasets_lidar/kitti"
 DURLAR_PATH="${STORE2}/datasets_lidar/durlar/dataset/DurLAR"
 
-export ACCURATE_RI_PIP_DIR="${STORE2}/.accurate_ri_pip"
+ACCURATE_RI_PIP_DIR="${STORE2}/.accurate_ri_pip"

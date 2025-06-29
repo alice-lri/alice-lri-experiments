@@ -9,6 +9,8 @@ ACCURATE_RI_PYTHON_SRC="${ACCURATE_RI_SRC}/python"
 RTST_SRC="../../rtst/src"
 RTST_MODIFIED_SRC="../../rtst-modified/src"
 
+source ../helper/paths.sh
+
 echo "Fetching dependencies..."
 conan install ${ACCURATE_RI_SRC}/lib -s compiler.cppstd=gnu20 -s build_type=Release --output-folder="${ACCURATE_RI_SRC}/build/lib" --build=missing
 conan install ${ACCURATE_RI_SRC}/examples -s compiler.cppstd=gnu20 -s build_type=Release --output-folder="${ACCURATE_RI_SRC}/build/examples" --build=missing
@@ -31,6 +33,7 @@ ninja -C "${ACCURATE_RI_PYTHON_SRC}/build"
 pip install -e "${ACCURATE_RI_PYTHON_SRC}" --target "${ACCURATE_RI_PIP_DIR}"
 
 echo "Quick test..."
+export PYTHONPATH="$ACCURATE_RI_PIP_DIR:$PYTHONPATH"
 python run_compression_experiment.py --mode test
 
 echo "Preparing job..."

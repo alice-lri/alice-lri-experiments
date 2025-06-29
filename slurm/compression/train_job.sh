@@ -16,11 +16,11 @@ DB_DIR=$2
 SHARED_DIR=$3
 
 source ../helper/paths.sh
+module load cesga/system apptainer/1.2.3
 
 echo "Beginning train job..."
 
-module load cesga/system apptainer/1.2.3
-
+export PYTHONPATH="$ACCURATE_RI_PIP_DIR:$PYTHONPATH"
 srun apptainer exec "$CONTAINER_PATH" \
 python run_compression_experiment.py --mode batch \
  --phase train \

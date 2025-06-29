@@ -7,6 +7,7 @@ TASK_INDEX=$3
 TASK_COUNT=$4
 
 source ../helper/prepare_task_item.sh
+source ../helper/paths.sh
 
 echo "Running task $TASK_INDEX of $TASK_COUNT..."
 python run_compression_experiment.py --mode batch \
