@@ -1,11 +1,10 @@
 #!/bin/bash
 set -eo pipefail
 
-CONDA_ENV_NAME=$1
-DB_DIR=$2
-SHARED_DIR=$3
-TASK_INDEX=$4
-TASK_COUNT=$5
+DB_DIR=$1
+SHARED_DIR=$2
+TASK_INDEX=$3
+TASK_COUNT=$4
 
 source ../helper/prepare_task_item.sh
 

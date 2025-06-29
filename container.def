@@ -33,7 +33,10 @@ From: ubuntu:22.04
     conda env create -f conda_env.yml
 
 %environment
-   export PATH=/opt/conda/bin:$PATH
+    export PATH=/opt/conda/bin:$PATH
+    export CONDA_ENV_NAME="accurate_ri_env"
+    source /opt/conda/etc/profile.d/conda.sh
+    conda activate "$CONDA_ENV_NAME"
 
 %runscript
     exec python3 "$@"

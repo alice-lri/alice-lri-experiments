@@ -1,18 +1,13 @@
 #!/bin/bash
 set -eo pipefail
 
-CONDA_ENV_NAME="$1"
-BASE_DB_DIR="$2"
-ACTUAL_DB_DIR="$3"
+BASE_DB_DIR="$1"
+ACTUAL_DB_DIR="$2"
 
 ACCURATE_RI_SRC="../../accurate-ri"
 ACCURATE_RI_PYTHON_SRC="${ACCURATE_RI_SRC}/python"
 RTST_SRC="../../rtst/src"
 RTST_MODIFIED_SRC="../../rtst-modified/src"
-
-source ../../conda/init_conda.sh
-source /opt/conda/etc/profile.d/conda.sh
-conda activate "$CONDA_ENV_NAME"
 
 echo "Fetching dependencies..."
 conan install ${ACCURATE_RI_SRC}/lib -s compiler.cppstd=gnu20 -s build_type=Release --output-folder="${ACCURATE_RI_SRC}/build/lib" --build=missing

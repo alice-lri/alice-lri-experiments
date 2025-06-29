@@ -11,7 +11,7 @@
 #SBATCH --mail-user=s.soutullo@usc.es
 set -eo pipefail
 
-CONDA_ENV_NAME=$1
+CONTAINER_PATH=$1
 DB_DIR=$2
 SHARED_DIR=$3
 JOB_INDEX=$4
@@ -21,15 +21,16 @@ echo "Beginning job ${JOB_INDEX}..."
 
 module load cesga/system apptainer/1.2.3
 
-./container_run.sh python run_compression_experiment.py --mode batch \
-  --phase train \
-  --db_path="${DB_FILE_PATH}" \
-  --kitti_root="${KITTI_PATH}" \
-  --private_dir "${TMPDIR}" \
-  --shared_dir "${SHARED_DIR}"
-  # optional add durlar_root to evaluate durlar as well
+apptainer exec "$CONTAINER_PATH" \
+python run_compression_experiment.py --mode batch \
+ --phase train \
+ --db_path="${DB_FILE_PATH}" \
+ --kitti_root="${KITTI_PATH}" \
+ --private_dir "${TMPDIR}" \
+ --shared_dir "${SHARED_DIR}"
+ # optional add durlar_root to evaluate durlar as well
 
-srun container_run.sh task.sh "$CONDA_ENV_NAME" "$DB_DIR" "$SHARED_DIR" "$JOB_INDEX" "$JOB_COUNT"
+srun apptainer exec "$CONTAINER_PATH" ./task.sh "$DB_DIR" "$SHARED_DIR" "$JOB_INDEX" "$JOB_COUNT"
 
 echo "Job ${JOB_INDEX} finished."
 touch "${DB_DIR}/job_${JOB_INDEX}.success"
