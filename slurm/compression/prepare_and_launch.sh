@@ -10,7 +10,7 @@ source ../helper/multi_batch_job_header.sh
 module load cesga/system apptainer/1.2.3
 apptainer exec "$CONTAINER_PATH" ./prepare.sh "$BASE_DB_DIR" "$ACTUAL_DB_DIR"
 
-
+# TODO probably skip this if recontinuing previous job
 echo "Launching train job..."
 TRAIN_JOB_ID=$(sbatch --parsable --job-name="accurate_compression_train" \
   -o "${ACTUAL_LOGS_DIR}/train.log" -e "${ACTUAL_LOGS_DIR}/train.log" \

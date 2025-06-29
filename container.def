@@ -35,6 +35,7 @@ From: ubuntu:22.04
 %environment
     export PATH=/opt/conda/bin:$PATH
     export CONDA_ENV_NAME="accurate_ri_env"
+    export PYTHONPATH="$ACCURATE_RI_PIP_DIR:$PYTHONPATH"
     source /opt/conda/etc/profile.d/conda.sh
     conda activate "$CONDA_ENV_NAME"
 
