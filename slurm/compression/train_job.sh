@@ -5,7 +5,7 @@
 #SBATCH -n 1
 #SBATCH -c 1
 #SBATCH -t 06:00:00
-#SBATCH --mem-per-cpu=16G
+#SBATCH --mem=16G
 #SBATCH --mail-type=begin
 #SBATCH --mail-type=end
 #SBATCH --mail-user=s.soutullo@usc.es
@@ -22,7 +22,7 @@ echo "Beginning train job..."
 
 export PYTHONPATH="$ACCURATE_RI_PIP_DIR:$PYTHONPATH"
 srun apptainer exec "$CONTAINER_PATH" \
-python run_compression_experiment.py --mode batch \
+python -u run_compression_experiment.py --mode batch \
  --phase train \
  --db_path="${DB_DIR}/initial.sqlite" \
  --kitti_root="${KITTI_PATH}" \
