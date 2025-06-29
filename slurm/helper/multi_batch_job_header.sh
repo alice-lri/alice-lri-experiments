@@ -25,6 +25,7 @@ fi
 
 ACTUAL_LOGS_DIR="${BASE_LOGS_DIR}/${BATCH_ID}"
 ACTUAL_DB_DIR="${BASE_DB_DIR}/${BATCH_ID}"
+SHARED_DIR="${BASE_DB_DIR}/${BATCH_ID}/shared"
 
 if [ "$RESUME_BATCH" = true ]; then
   if [ ! -d "${ACTUAL_LOGS_DIR}" ]; then
@@ -67,3 +68,4 @@ fi
 
 mkdir -p "${ACTUAL_DB_DIR}"
 mkdir -p "${ACTUAL_LOGS_DIR}"
+mkdir -p "${SHARED_DIR}"
