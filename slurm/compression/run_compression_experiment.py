@@ -259,14 +259,15 @@ def run_batch(args):
         for frame_id, dataset_id, relative_path in frames:
             dataset = dataset_map[dataset_id]
             frame_path = get_frame_path(args, dataset, relative_path)
+            derived_filename = relative_path.replace("/", "_")
 
             if args.phase == "train":
-                intrinsics_filename = f"{relative_path}.json"
+                intrinsics_filename = f"{derived_filename}.json"
                 train(frame_path, intrinsics_filename)
             elif args.phase == "compress":
-                corresponding_train_relative_path = re.sub(r"\d{10}\.bin$", "0000000000.bin", relative_path)
-                intrinsics_filename = f"{corresponding_train_relative_path}.json"
-                compression_out_filename = f"{relative_path}.tar.gz"
+                corresponding_train_derived_filename = re.sub(r"\d{10}\.bin$", "0000000000.bin", derived_filename)
+                intrinsics_filename = f"{corresponding_train_derived_filename}.json"
+                compression_out_filename = f"{derived_filename}.tar.gz"
 
                 df = evaluate_compression(dataset, frame_path, intrinsics_filename, compression_out_filename)
                 df["experiment_id"] = experiment_id

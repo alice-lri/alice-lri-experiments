@@ -26,8 +26,8 @@ python -u run_compression_experiment.py --mode batch \
  --phase train \
  --db_path="${DB_DIR}/initial.sqlite" \
  --kitti_root="${KITTI_PATH}" \
- --private_dir "${TMPDIR}" \
- --shared_dir "${SHARED_DIR}"
+ --private_dir="${TMPDIR}" \
+ --shared_dir="${SHARED_DIR}"
  # optional add durlar_root to evaluate durlar as well
 
 echo "Train job finished."

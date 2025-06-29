@@ -12,12 +12,12 @@ source ../helper/paths.sh
 echo "Running task $TASK_INDEX of $TASK_COUNT..."
 python -u run_compression_experiment.py --mode batch \
   --phase compress \
-  --task_id "$TASK_INDEX" \
-  --task_count "$TASK_COUNT" \
+  --task_id="$TASK_INDEX" \
+  --task_count="$TASK_COUNT" \
   --db_path="${DB_FILE_PATH}" \
   --kitti_root="${KITTI_PATH}" \
-  --private_dir "${TMPDIR}" \
-  --shared_dir "${SHARED_DIR}" 2>&1 | tee "${TRACE_FILE_PATH}"
+  --private_dir="${TMPDIR}" \
+  --shared_dir="${SHARED_DIR}" 2>&1 | tee "${TRACE_FILE_PATH}"
   # optional add durlar_root to evaluate durlar as well
 
 touch "${SUCCESS_FILE_PATH}"
