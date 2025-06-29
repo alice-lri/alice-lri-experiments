@@ -13,5 +13,5 @@ apptainer exec "$CONTAINER_PATH" ./prepare.sh "$BASE_DB_DIR" "$ACTUAL_DB_DIR"
 for i in "${JOBS_TO_RUN[@]}"; do
   echo "Launching job ${i}..."
   sbatch --job-name="accurate_compression_${i}" -o "${ACTUAL_LOGS_DIR}/${i}.log" -e "${ACTUAL_LOGS_DIR}/${i}.log" \
-   job.sh "${ACTUAL_DB_DIR}" "${SHARED_DIR}" "${i}" "${JOB_COUNT}"
+   job.sh "$CONTAINER_PATH" "${ACTUAL_DB_DIR}" "${SHARED_DIR}" "${i}" "${JOB_COUNT}"
 done
