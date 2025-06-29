@@ -5,7 +5,7 @@
 #SBATCH -n 1
 #SBATCH -c 1
 #SBATCH -t 06:00:00
-#SBATCH --mem=16G
+#SBATCH --mem-per-cpu=3G
 #SBATCH --mail-type=begin
 #SBATCH --mail-type=end
 #SBATCH --mail-user=s.soutullo@usc.es
