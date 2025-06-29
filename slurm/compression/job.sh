@@ -17,6 +17,8 @@ SHARED_DIR=$3
 JOB_INDEX=$4
 JOB_COUNT=$5
 
+source ../helper/paths.sh
+
 echo "Beginning job ${JOB_INDEX}..."
 
 module load cesga/system apptainer/1.2.3
@@ -24,7 +26,7 @@ module load cesga/system apptainer/1.2.3
 apptainer exec "$CONTAINER_PATH" \
 python run_compression_experiment.py --mode batch \
  --phase train \
- --db_path="${DB_FILE_PATH}" \
+ --db_path="${DB_DIR}/initial.sqlite" \
  --kitti_root="${KITTI_PATH}" \
  --private_dir "${TMPDIR}" \
  --shared_dir "${SHARED_DIR}"
