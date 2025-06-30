@@ -9,6 +9,9 @@ TASK_COUNT=$4
 source ../helper/prepare_task_item.sh
 source ../helper/paths.sh
 
+PRIVATE_DIR="${TMPDIR}/${TASK_INDEX}"
+mkdir -p "$PRIVATE_DIR"
+
 echo "Running task $TASK_INDEX of $TASK_COUNT..."
 python -u run_compression_experiment.py --mode batch \
   --phase compress \
@@ -16,7 +19,7 @@ python -u run_compression_experiment.py --mode batch \
   --task_count="$TASK_COUNT" \
   --db_path="${DB_FILE_PATH}" \
   --kitti_root="${KITTI_PATH}" \
-  --private_dir="${TMPDIR}" \
+  --private_dir="${PRIVATE_DIR}" \
   --shared_dir="${SHARED_DIR}" 2>&1 | tee "${TRACE_FILE_PATH}"
   # optional add durlar_root to evaluate durlar as well
 

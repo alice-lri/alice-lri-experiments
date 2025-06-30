@@ -13,6 +13,3 @@ rm -f "${TRACE_FILE_PATH}"
 cp "${DB_DIR}/initial.sqlite" "${DB_FILE_PATH}"
 
 mkdir -p "${TRACE_FOLDER_PATH}"
-
-eval "$(conda shell.bash hook)"
-conda activate "${CONDA_ENV_NAME}"
