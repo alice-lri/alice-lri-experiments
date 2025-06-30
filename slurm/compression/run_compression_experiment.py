@@ -10,9 +10,9 @@ import accurate_ri
 
 
 class Config:
-    naive_encoder_exec = "../../rtst/src/pcc_encoder"
+    naive_encoder_exec = "../../rtst-modified/build/pcc_encoder"
     accurate_encoder_exec = "../../rtst-modified/build/pcc_encoder_accurate"
-    naive_decoder_exec = "../../rtst/src/pcc_decoder"
+    naive_decoder_exec = "../../rtst-modified/build/pcc_decoder"
     accurate_decoder_exec = "../../rtst-modified/build/pcc_decoder_accurate"
     accurate_ri_lib_path = "../../accurate-ri/build/lib"
     fmt = "binary"
