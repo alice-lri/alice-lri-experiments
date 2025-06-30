@@ -2,7 +2,7 @@
 #SBATCH -J accurate_compression
 #SBATCH -o logs/%j.log
 #SBATCH -e logs/%j.log
-#SBATCH -n 1
+#SBATCH -n 64
 #SBATCH -c 1
 #SBATCH -t 06:00:00
 #SBATCH --mem-per-cpu=3G
