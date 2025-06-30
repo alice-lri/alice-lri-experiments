@@ -9,9 +9,6 @@ TASK_COUNT=$4
 source ../helper/prepare_task_item.sh
 source ../helper/paths.sh
 
-PRIVATE_DIR="${TMPDIR}/${TASK_INDEX}"
-mkdir -p "$PRIVATE_DIR"
-
 echo "Running task $TASK_INDEX of $TASK_COUNT..."
 python -u run_compression_experiment.py --mode batch \
   --phase compress \
