@@ -150,17 +150,23 @@ def evaluate_compression(dataset, target_path, intrinsics_filename, out_filename
     for error_threshold in Config.error_thresholds:
         print(f"Error threshold: {error_threshold}")
 
+        print("Naive encoding...")
         encoder_cmd = build_naive_encoder_cmd(target_dir, target_filename, out_filename, error_threshold)
         run_process(encoder_cmd)
         naive_size = get_file_size(os.path.join(Config.private_dir, out_filename))
+
+        print("Naive decoding...")
         decoder_cmd = build_naive_decoder_cmd(out_filename)
         run_process(decoder_cmd)
         naive_points, _ = load_binary(os.path.join(Config.private_dir, target_filename))
 
+        print("Accurate encoding...")
         encoder_cmd = build_accurate_encoder_cmd(target_dir, target_filename, intrinsics_file, out_filename,
                                                  error_threshold)
         run_process(encoder_cmd)
         accurate_size = get_file_size(os.path.join(Config.private_dir, out_filename))
+
+        print("Accurate decoding...")
         decoder_cmd = build_accurate_decoder_cmd(out_filename, intrinsics_file)
         run_process(decoder_cmd)
         accurate_points, _ = load_binary(os.path.join(Config.private_dir, target_filename))
@@ -168,7 +174,10 @@ def evaluate_compression(dataset, target_path, intrinsics_filename, out_filename
         cr_naive = original_size / naive_size
         cr_accurate = original_size / accurate_size
 
+        print("Computing naive metrics...")
         naive_to_original_mse, original_to_naive_mse = compute_p_cloud_mse(naive_points, target_points)
+
+        print("Computing accurate metrics...")
         accurate_to_original_mse, original_to_accurate_mse = compute_p_cloud_mse(accurate_points, target_points)
 
         print(f"Compression Ratio (Naive): {cr_naive}")
