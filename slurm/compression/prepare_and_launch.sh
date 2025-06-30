@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eo pipefail
-cd "$(dirname "$0")" || exit
+cd "$(dirname "${BASH_SOURCE[0]}")" || exit
 
 CONTAINER_PATH="../../container.sif"
 

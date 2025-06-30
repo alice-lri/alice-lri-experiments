@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eo pipefail
-cd "$(dirname "$0")" || exit
+cd "$(dirname "${BASH_SOURCE[0]}")" || exit
 
 source ../helper/paths.sh
 source ../helper/multi_batch_job_header.sh

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eo pipefail
 
-pushd "$(dirname "$0")" > /dev/null
+pushd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null
 
 ACCURATE_RI_SRC="$(realpath ../accurate-ri)"
 ACCURATE_RI_PYTHON_SRC="${ACCURATE_RI_SRC}/python"
