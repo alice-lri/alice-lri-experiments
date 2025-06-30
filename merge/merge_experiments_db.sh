@@ -4,13 +4,31 @@ cd "$(dirname "${BASH_SOURCE[0]}")" || exit
 
 source helper/merge_header.sh
 
+echo "Select experiment type:"
+echo "[1] Intrinsics"
+echo "[2] Compression"
+read -r -p "Enter choice: " EXPERIMENT_TYPE
+
+if [[ "$EXPERIMENT_TYPE" == "1" ]]; then
+  ARG_TYPE="experiments"
+elif [[ "$EXPERIMENT_TYPE" == "2" ]]; then
+  ARG_TYPE="compression_experiments"
+else
+  echo "Invalid choice."
+  exit 1
+fi
+
+echo "Will use arg type: ${ARG_TYPE}"
+
 read -rp "Experiment label: " LABEL
 read -rp "Experiment description: " DESCRIPTION
 
 echo "Merging experiments databases from ${TARGET_DIR}..."
 
-source ../conda/init_conda.sh
-python helper/merge_db.py "$TARGET_DIR" "$BASE_DB_DIR/master.sqlite" --type="experiments" \
-  --label="$LABEL" --description="$DESCRIPTION"
+apptainer exec "$CONTAINER_PATH" \
+  python helper/merge_db.py "$TARGET_DIR" "$BASE_DB_DIR/master.sqlite" \
+  --type="${ARG_TYPE}" \
+  --label="$LABEL" \
+  --description="$DESCRIPTION"
 
 echo "Experiments database merged successfully."

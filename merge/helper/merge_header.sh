@@ -2,6 +2,7 @@
 set -eo pipefail
 
 source ../slurm/helper/paths.sh
+CONTAINER_PATH="../container.sif"
 
 if [ -z "$1" ]; then
   TARGET_DIR=$(ls -td1 "${BASE_DB_DIR}"/*/ | head -1)

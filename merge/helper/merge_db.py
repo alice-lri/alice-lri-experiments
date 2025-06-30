@@ -5,6 +5,18 @@ import re
 import shutil
 import subprocess
 
+class Constant:
+    EXPERIMENT_TABLE = "experiment"
+    COMPRESSION_EXPERIMENT_TABLE = "compression_experiment"
+    INTRINSICS_FRAME_TABLE = "intrinsics_frame_result"
+    COMPRESSION_FRAME_TABLE = "compression_frame_result"
+
+    ARG_EXPERIMENTS = "experiments"
+    ARG_COMPRESSION_EXPERIMENTS = "compression_experiments"
+    ARG_GROUND_TRUTH = "ground_truth"
+
+    MERGE_TYPES = [ARG_EXPERIMENTS, ARG_COMPRESSION_EXPERIMENTS, ARG_GROUND_TRUTH]
+
 
 def backup_db(merged_db_path):
     base_backup_db_path = merged_db_path + '.bak'
@@ -24,22 +36,22 @@ def get_db_files(folder_path):
     return [folder_path + "/" + f for f in os.listdir(folder_path) if re.fullmatch(r'\d+\.sqlite', f)]
 
 
-def insert_merged_experiment(cursor, label, description):
+def insert_merged_experiment(cursor, table, label, description):
     try:
         commit_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('utf-8').strip()
     except subprocess.CalledProcessError:
         commit_hash = None
 
-    cursor.execute("""
-        INSERT INTO experiment(timestamp, label, description, commit_hash) 
+    cursor.execute(f"""
+        INSERT INTO {table}(timestamp, label, description, commit_hash) 
         VALUES (DATETIME('now', 'localtime', 'subsec'), ?, ?, ?)
     """, (label, description, commit_hash))
 
     return cursor.lastrowid
 
 
-def assert_single_experiment(cursor):
-    cursor.execute("SELECT experiment_id FROM intrinsics_frame_result")
+def assert_single_experiment(cursor, table):
+    cursor.execute(f"SELECT experiment_id FROM {table}")
     ids = set(row[0] for row in cursor.fetchall())
 
     if len(ids) != 1:
@@ -52,6 +64,17 @@ def fetch_frames(cursor):
                unassigned_points, end_reason
         FROM intrinsics_frame_result
     """)
+    return cursor.fetchall()
+
+
+def fetch_compression_frames(cursor):
+    cursor.execute("""
+                   SELECT dataset_frame_id, horizontal_step, vertical_step, tile_size, error_threshold, 
+                          original_points_count, naive_points_count, original_size_bytes, naive_size_bytes, 
+                          accurate_size_bytes, accurate_points_count, naive_to_original_mse, original_to_naive_mse, 
+                          accurate_to_original_mse, original_to_accurate_mse
+                   FROM compression_frame_result
+                   """)
     return cursor.fetchall()
 
 
@@ -96,10 +119,21 @@ def insert_scanlines(cursor, frame_id, scanlines):
     """, data)
 
 
+def insert_compression_frames(cursor, merged_experiment_id, frames_data_list):
+    insert_data = [(merged_experiment_id, *frame_data) for frame_data in frames_data_list]
+    cursor.executemany("""
+       INSERT INTO compression_frame_result(experiment_id, dataset_frame_id, horizontal_step, vertical_step, tile_size, 
+                                            error_threshold, original_points_count, naive_points_count, original_size_bytes,
+                                            naive_size_bytes, accurate_size_bytes, accurate_points_count, naive_to_original_mse,
+                                            original_to_naive_mse, accurate_to_original_mse, original_to_accurate_mse)
+       VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       """, insert_data)
+
+
 def merge_experiment_databases(db_files, master_db_path, label, description):
     master_conn = sqlite3.connect(master_db_path)
     master_c = master_conn.cursor()
-    merged_experiment_id = insert_merged_experiment(master_c, label, description)
+    merged_experiment_id = insert_merged_experiment(master_c, Constant.EXPERIMENT_TABLE, label, description)
 
     files_count = len(db_files)
 
@@ -108,13 +142,34 @@ def merge_experiment_databases(db_files, master_db_path, label, description):
 
         with sqlite3.connect(db_file) as conn:
             c = conn.cursor()
-            assert_single_experiment(c)
+            assert_single_experiment(c, Constant.INTRINSICS_FRAME_TABLE)
             frames = fetch_frames(c)
 
             for frame_id_original, *frame_data in frames:
                 frame_id_new = insert_frame(master_c, merged_experiment_id, frame_data)
                 scanlines = fetch_scanlines(c, frame_id_original)
                 insert_scanlines(master_c, frame_id_new, scanlines)
+
+    master_conn.commit()
+    master_conn.close()
+
+
+def merge_compression_experiment_databases(db_files, master_db_path, label, description):
+    master_conn = sqlite3.connect(master_db_path)
+    master_c = master_conn.cursor()
+    merged_experiment_id = insert_merged_experiment(master_c, Constant.COMPRESSION_EXPERIMENT_TABLE, label, description)
+
+    files_count = len(db_files)
+
+    for file_index, db_file in enumerate(db_files):
+        print(f"Merging compression experiments database {file_index + 1}/{files_count}")
+
+        with sqlite3.connect(db_file) as conn:
+            c = conn.cursor()
+            assert_single_experiment(c, Constant.COMPRESSION_FRAME_TABLE)
+            frames = fetch_compression_frames(c)
+
+            insert_compression_frames(master_c, merged_experiment_id, frames)
 
     master_conn.commit()
     master_conn.close()
@@ -186,21 +241,23 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Merge SQLite databases.")
     parser.add_argument("part_dbs_folder_path")
     parser.add_argument("master_db_path")
-    parser.add_argument("--type", choices=["experiments", "ground_truth"], required=True,
-                        help="Type of databases to merge: experiments or ground_truth")
+    parser.add_argument("--type", choices=Constant.MERGE_TYPES, required=True,
+                        help=f"Type of databases to merge: {Constant.MERGE_TYPES}")
     parser.add_argument("--label")
     parser.add_argument("--description")
     args = parser.parse_args()
 
-    if args.type == "experiments":
+    if args.type == Constant.ARG_EXPERIMENTS:
         if not args.label or not args.description:
-            parser.error("--label and --description required when --type is 'experiments'")
+            parser.error(f"--label and --description required when --type is '{Constant.ARG_EXPERIMENTS}'")
 
     print("Backing up database...")
     backup_db(args.master_db_path)
     db_files = get_db_files(args.part_dbs_folder_path)
 
-    if args.type == "experiments":
+    if args.type == Constant.ARG_EXPERIMENTS:
         merge_experiment_databases(db_files, args.master_db_path, args.label, args.description)
-    elif args.type == "ground_truth":
+    elif args.type == Constant.ARG_COMPRESSION_EXPERIMENTS:
+        merge_compression_experiment_databases(db_files, args.master_db_path, args.label, args.description)
+    elif args.type == Constant.ARG_GROUND_TRUTH:
         merge_ground_truth_databases(db_files, args.master_db_path)
