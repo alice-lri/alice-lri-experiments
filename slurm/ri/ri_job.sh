@@ -16,6 +16,7 @@ DB_DIR=$2
 SHARED_DIR=$3
 JOB_INDEX=$4
 JOB_COUNT=$5
+ARG_TYPE=$6
 
 source ../helper/paths.sh
 module load cesga/system apptainer/1.2.3
@@ -23,7 +24,7 @@ module load cesga/system apptainer/1.2.3
 echo "Beginning job ${JOB_INDEX}..."
 
 export PYTHONPATH="$ACCURATE_RI_PIP_DIR:$PYTHONPATH"
-srun apptainer exec "$CONTAINER_PATH" ./task.sh "$DB_DIR" "$SHARED_DIR" "$JOB_INDEX" "$JOB_COUNT"
+srun apptainer exec "$CONTAINER_PATH" ./task.sh "$DB_DIR" "$SHARED_DIR" "$JOB_INDEX" "$JOB_COUNT" "$ARG_TYPE"
 
 echo "Job ${JOB_INDEX} finished."
 touch "${DB_DIR}/job_${JOB_INDEX}.success"

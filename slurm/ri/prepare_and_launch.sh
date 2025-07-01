@@ -12,6 +12,23 @@ fi
 source ../helper/paths.sh
 source ../helper/multi_batch_job_header.sh
 
+echo "Select experiment type:"
+echo "[1] Range Image"
+echo "[2] Compression"
+
+read -r -p "Enter choice: " EXPERIMENT_TYPE
+
+if [[ "$EXPERIMENT_TYPE" == "1" ]]; then
+  ARG_TYPE="ri"
+elif [[ "$EXPERIMENT_TYPE" == "2" ]]; then
+  ARG_TYPE="compression"
+else
+  echo "Invalid choice."
+  exit 1
+fi
+
+echo "Will use arg type=${ARG_TYPE}"
+
 module load cesga/system apptainer/1.2.3
 apptainer exec "$CONTAINER_PATH" ./prepare.sh "$BASE_DB_DIR" "$ACTUAL_DB_DIR"
 
@@ -34,6 +51,6 @@ for i in "${JOBS_TO_RUN[@]}"; do
   echo "Launching job ${i}..."
   sbatch "${SBATCH_ARGS[@]}" --job-name="accurate_compression_${i}" \
     -o "${ACTUAL_LOGS_DIR}/${i}.log" -e "${ACTUAL_LOGS_DIR}/${i}.log" \
-    compress_job.sh "${CONTAINER_PATH}" "${ACTUAL_DB_DIR}" "${SHARED_DIR}" "${i}" "${JOB_COUNT}"
+    ri_job.sh "${CONTAINER_PATH}" "${ACTUAL_DB_DIR}" "${SHARED_DIR}" "${i}" "${JOB_COUNT}" "${ARG_TYPE}"
 done
 
