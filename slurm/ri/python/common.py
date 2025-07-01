@@ -8,7 +8,9 @@ def load_binary(file_path):
     points = data[:, :3]
     intensity = data[:, 3]
 
-    return points, intensity
+    mask = calculate_range(points) > 0
+
+    return points[mask], intensity[mask]
 
 def calculate_phi(points):
     distances_xy = np.sqrt(points[:, 0] ** 2 + points[:, 1] ** 2)
