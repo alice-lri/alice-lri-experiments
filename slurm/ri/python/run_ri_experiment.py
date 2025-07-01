@@ -39,6 +39,15 @@ class Config:
     def get_vertical_step():
         return Config.__kitti_vertical_step if Config.dataset == "kitti" else Config.__durlar_vertical_step
 
+    @staticmethod
+    def get_result_sql_table():
+        if Config.experiment_type == "ri":
+            return "ri_frame_result"
+        elif Config.experiment_type == "compression":
+            return "compression_frame_result"
+        else:
+            raise ValueError("Unknown experiment type")
+
 
 class Globals:
     env = None
@@ -258,6 +267,15 @@ def evaluate_compression(dataset, target_path, intrinsics_filename, out_filename
     return pd.DataFrame(df_rows)
 
 
+def evaluate(dataset, frame_path, intrinsics_filename, compression_out_filename):
+    if Config.experiment_type == "ri":
+        return evaluate_ri(dataset, frame_path, intrinsics_filename)
+    elif Config.experiment_type == "compression":
+        return evaluate_compression(dataset, frame_path, intrinsics_filename, compression_out_filename)
+    else:
+        raise ValueError(f"Unknown experiment type: {Config.experiment_type}")
+
+
 def run_single(args):
     train_parts = args.train.split(":")
     target_parts = args.target.split(":")
@@ -269,12 +287,7 @@ def run_single(args):
 
     train(train_path, intrinsics_filename)
 
-    if Config.experiment_type == "ri":
-        df = evaluate_ri(target_parts[0], target_path, intrinsics_filename)
-    elif Config.experiment_type == "compress":
-        df = evaluate_compression(target_parts[0], target_path, intrinsics_filename, compression_out_filename)
-    else:
-        raise ValueError(f"Unknown experiment type: {Config.experiment_type}")
+    df = evaluate(target_parts[0], target_path, intrinsics_filename, compression_out_filename)
 
     df["train_dataset"] = train_parts[0]
     df["train_path"] = train_parts[1]
@@ -335,18 +348,18 @@ def run_batch(args):
                 intrinsics_filename = f"{corresponding_train_derived_filename}.json"
                 compression_out_filename = f"{derived_filename}.tar.gz"
 
-                df = evaluate_compression(dataset, frame_path, intrinsics_filename, compression_out_filename)
+                df = evaluate(dataset, frame_path, intrinsics_filename, compression_out_filename)
                 df["experiment_id"] = experiment_id
                 df["dataset_frame_id"] = frame_id
 
-                df.to_sql("compression_frame_result", conn, if_exists="append", index=False)
+                df.to_sql(Config.get_result_sql_table(), conn, if_exists="append", index=False)
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Compare naive and accurate point cloud compression.")
     parser.add_argument("--mode", required=True, choices=["batch", "single", "test"], help="Mode: batch or single.")
     parser.add_argument("--phase", default=None, choices=["train", "evaluate"], help="Execution phase (batch mode).")
-    parser.add_argument("--type", default=None, choices=["ri", "compress"], help="What do with the range image, just project and unproject (ri) or compress (compress).")
+    parser.add_argument("--type", default=None, choices=["ri", "compression"], help="What do with the range image, just project and unproject (ri) or compress (compress).")
     parser.add_argument("--task_id", type=int, default=None, help="Task ID (batch mode).")
     parser.add_argument("--task_count", type=int, default=None, help="Task count (batch mode).")
     parser.add_argument("--db_path", type=str, default=None, help="Path to the database file (batch mode).")

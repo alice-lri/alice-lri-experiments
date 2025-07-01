@@ -12,7 +12,7 @@ source ../helper/paths.sh
 echo "Running task $TASK_INDEX of $TASK_COUNT..."
 python -u python/run_ri_experiment.py --mode batch \
   --phase=evaluate \
-  --type=compress \
+  --type=compression \
   --task_id="$TASK_INDEX" \
   --task_count="$TASK_COUNT" \
   --db_path="${DB_FILE_PATH}" \
