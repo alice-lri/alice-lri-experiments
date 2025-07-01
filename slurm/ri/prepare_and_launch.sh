@@ -47,10 +47,17 @@ if [[ -n "$TRAIN_JOB_ID" ]]; then
   SBATCH_ARGS+=("--dependency=afterok:${TRAIN_JOB_ID}")
 fi
 
+if [ "$ARG_TYPE" == "ri" ]; then
+    MEM_PER_CPU="12G"
+elif [ "$ARG_TYPE" == "compression" ]; then
+    MEM_PER_CPU="3G"
+fi
+
+
 for i in "${JOBS_TO_RUN[@]}"; do
   echo "Launching job ${i}..."
   sbatch "${SBATCH_ARGS[@]}" --job-name="accurate_compression_${i}" \
-    -o "${ACTUAL_LOGS_DIR}/${i}.log" -e "${ACTUAL_LOGS_DIR}/${i}.log" \
+    --mem-per-cpu="${MEM_PER_CPU}" -o "${ACTUAL_LOGS_DIR}/${i}.log" -e "${ACTUAL_LOGS_DIR}/${i}.log" \
     ri_job.sh "${CONTAINER_PATH}" "${ACTUAL_DB_DIR}" "${SHARED_DIR}" "${i}" "${JOB_COUNT}" "${ARG_TYPE}"
 done
 

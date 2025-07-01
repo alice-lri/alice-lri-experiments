@@ -26,6 +26,7 @@ srun apptainer exec "$CONTAINER_PATH" \
  --phase=train \
  --db_path="${DB_DIR}/initial.sqlite" \
  --kitti_root="${KITTI_PATH}" \
+ --durlar_root="${DURLAR_PATH}" \
  --private_dir="${TMPDIR}" \
  --shared_dir="${SHARED_DIR}"
  # optional add durlar_root to evaluate durlar as well
