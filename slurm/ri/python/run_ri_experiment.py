@@ -377,9 +377,6 @@ def parse_args():
     if args.mode == "test":
         return args
 
-    if args.type is None:
-        parser.error("--type is required. Choose 'ri' or 'compress'.")
-
     Config.experiment_type = args.type
 
     if args.mode == "batch":
