@@ -58,8 +58,7 @@ else
 fi
 
 echo "Will run jobs: ${JOBS_TO_RUN[*]}"
-echo "Continue? (y/n)"
-read -r CONTINUE
+read -r -p "Continue? (y/n) " CONTINUE
 
 if [ "$CONTINUE" != "y" ]; then
   echo "Aborting."
