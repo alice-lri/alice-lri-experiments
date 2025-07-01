@@ -2,11 +2,13 @@ import os
 import re
 import sqlite3
 import subprocess
-import numpy as np
+
 import pandas as pd
 import open3d as o3d
 import argparse
 import accurate_ri
+from common import *
+from ri_default_mapper import RangeImageDefaultMapper
 
 
 class Config:
@@ -18,10 +20,11 @@ class Config:
     fmt = "binary"
     tile_size = "4"
     error_thresholds = [0.001, 0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1]
+    ri_size_multipliers = [1, 2, 4, 8, 16, 32]
     private_dir = "/tmp"
     shared_dir = "/tmp"
-    results_file = "results.csv"
     dataset = None
+    experiment_type = None
 
     __kitti_horizontal_step = "0.09009"
     __kitti_vertical_step = "0.47"
@@ -39,12 +42,6 @@ class Config:
 
 class Globals:
     env = None
-
-
-def load_binary(file_path):
-    data = np.fromfile(file_path, dtype=np.float32).reshape((-1, 4))
-    return data[:, :3], data[:, 3]
-
 
 def compute_p_cloud_mse(pc1, pc2):
     pcd1 = o3d.geometry.PointCloud()
@@ -137,6 +134,60 @@ def train(train_path, intrinsics_filename):
     accurate_ri.write_to_json(intrinsics, intrinsics_file)
 
 
+def evaluate_ri(dataset, target_path, intrinsics_filename):
+    Config.dataset = dataset
+    intrinsics_file = os.path.join(Config.shared_dir, intrinsics_filename)
+    df_rows = []
+
+    print("Loading original points from:", target_path)
+    points_original, _ = load_binary(target_path)
+    x_original, y_original, z_original = points_original[:, 0], points_original[:, 1], points_original[:, 2]
+
+    intrinsics = accurate_ri.read_from_json(intrinsics_file)
+
+    print("Evaluating accurate method...")
+    ri_accurate = accurate_ri.project_to_range_image(intrinsics, x_original, y_original, z_original)
+    x_accurate, y_accurate, z_accurate = accurate_ri.unproject_to_point_cloud(intrinsics, ri_accurate)
+
+    points_accurate = np.column_stack((x_accurate, y_accurate, z_accurate))
+    accurate_to_original_mse, original_to_accurate_mse = compute_p_cloud_mse(points_accurate, points_original)
+
+    df_rows.append({
+        "method": "accurate",
+        "ri_width": ri_accurate.width,
+        "ri_height": ri_accurate.height,
+        "original_points_count": points_original.shape[0],
+        "reconstructed_points_count": points_accurate.shape[0],
+        "reconstructed_to_original_mse": accurate_to_original_mse,
+        "original_to_reconstructed_mse": original_to_accurate_mse,
+    })
+
+    for ri_size_multiplier in Config.ri_size_multipliers:
+        ri_width = ri_accurate.width * ri_size_multiplier
+        ri_height = ri_accurate.height * ri_size_multiplier
+
+        print(f"Evaluating PBEA method ({ri_width}x{ri_height})...")
+
+        ri_mapper = RangeImageDefaultMapper(ri_width, ri_height)
+
+        pbea_ri = point_cloud_to_range_image(ri_mapper, points_original)
+        points_pbea = range_image_to_point_cloud(ri_mapper, pbea_ri)
+
+        pbea_to_original_mse, original_to_pbea_mse = compute_p_cloud_mse(points_pbea, points_original)
+
+        df_rows.append({
+            "method": "pbea",
+            "ri_width": ri_width,
+            "ri_height": ri_height,
+            "original_points_count": points_original.shape[0],
+            "reconstructed_points_count": points_pbea.shape[0],
+            "reconstructed_to_original_mse": pbea_to_original_mse,
+            "original_to_reconstructed_mse": original_to_pbea_mse,
+        })
+
+    return pd.DataFrame(df_rows)
+
+
 def evaluate_compression(dataset, target_path, intrinsics_filename, out_filename):
     Config.dataset = dataset
     target_dir = os.path.dirname(target_path)
@@ -217,7 +268,13 @@ def run_single(args):
     compression_out_filename = "out.tar.gz"
 
     train(train_path, intrinsics_filename)
-    df = evaluate_compression(target_parts[0], target_path, intrinsics_filename, compression_out_filename)
+
+    if Config.experiment_type == "ri":
+        df = evaluate_ri(target_parts[0], target_path, intrinsics_filename)
+    elif Config.experiment_type == "compress":
+        df = evaluate_compression(target_parts[0], target_path, intrinsics_filename, compression_out_filename)
+    else:
+        raise ValueError(f"Unknown experiment type: {Config.experiment_type}")
 
     df["train_dataset"] = train_parts[0]
     df["train_path"] = train_parts[1]
@@ -273,7 +330,7 @@ def run_batch(args):
             if args.phase == "train":
                 intrinsics_filename = f"{derived_filename}.json"
                 train(frame_path, intrinsics_filename)
-            elif args.phase == "compress":
+            elif args.phase == "evaluate":
                 corresponding_train_derived_filename = re.sub(r"\d{10}\.bin$", "0000000000.bin", derived_filename)
                 intrinsics_filename = f"{corresponding_train_derived_filename}.json"
                 compression_out_filename = f"{derived_filename}.tar.gz"
@@ -288,7 +345,8 @@ def run_batch(args):
 def parse_args():
     parser = argparse.ArgumentParser(description="Compare naive and accurate point cloud compression.")
     parser.add_argument("--mode", required=True, choices=["batch", "single", "test"], help="Mode: batch or single.")
-    parser.add_argument("--phase", default=None, choices=["train", "compress"], help="Execution phase (batch mode).")
+    parser.add_argument("--phase", default=None, choices=["train", "evaluate"], help="Execution phase (batch mode).")
+    parser.add_argument("--type", default=None, choices=["ri", "compress"], help="What do with the range image, just project and unproject (ri) or compress (compress).")
     parser.add_argument("--task_id", type=int, default=None, help="Task ID (batch mode).")
     parser.add_argument("--task_count", type=int, default=None, help="Task count (batch mode).")
     parser.add_argument("--db_path", type=str, default=None, help="Path to the database file (batch mode).")
@@ -306,17 +364,22 @@ def parse_args():
     if args.mode == "test":
         return args
 
+    if args.type is None:
+        parser.error("--type is required. Choose 'ri' or 'compress'.")
+
+    Config.experiment_type = args.type
+
     if args.mode == "batch":
-        if args.db_path is None:
-            parser.error("--db_path is required in batch mode.")
-        if args.phase == "compress" and (args.task_id is None or args.task_count is None):
-            parser.error("--task_id and --task_count are required in batch mode when phase is 'compress'.")
+        if args.db_path is None or args.phase is None:
+            parser.error("--db_path and --phase are required in batch mode.")
+        if args.phase == "evaluate" and (args.task_id is None or args.task_count is None or args.type is None):
+            parser.error("--type, --task_id and --task_count are required in batch mode when phase is 'evaluate'.")
         elif args.phase == "train":
             args.task_id = 0
             args.task_count = 1
     elif args.mode == "single":
-        if args.train is None or args.target is None or args.output_csv is None:
-            parser.error("--train, --target, and --output_csv are required in single mode.")
+        if args.train is None or args.target is None or args.output_csv is None or args.type is None:
+            parser.error("--type, --train, --target, and --output_csv are required in single mode.")
 
         train_parts = args.train.split(":")
         target_parts = args.target.split(":")

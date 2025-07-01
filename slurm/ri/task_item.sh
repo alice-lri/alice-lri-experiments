@@ -10,8 +10,9 @@ source ../helper/prepare_task_item.sh
 source ../helper/paths.sh
 
 echo "Running task $TASK_INDEX of $TASK_COUNT..."
-python -u run_compression_experiment.py --mode batch \
-  --phase compress \
+python -u python/run_ri_experiment.py --mode batch \
+  --phase=evaluate \
+  --type=compress \
   --task_id="$TASK_INDEX" \
   --task_count="$TASK_COUNT" \
   --db_path="${DB_FILE_PATH}" \

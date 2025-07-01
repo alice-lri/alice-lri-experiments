@@ -22,8 +22,8 @@ echo "Beginning train job..."
 
 export PYTHONPATH="$ACCURATE_RI_PIP_DIR:$PYTHONPATH"
 srun apptainer exec "$CONTAINER_PATH" \
-python -u run_compression_experiment.py --mode batch \
- --phase train \
+ python -u python/run_ri_experiment.py --mode batch \
+ --phase=train \
  --db_path="${DB_DIR}/initial.sqlite" \
  --kitti_root="${KITTI_PATH}" \
  --private_dir="${TMPDIR}" \

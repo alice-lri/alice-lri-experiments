@@ -11,7 +11,7 @@ pip install "${ACCURATE_RI_PYTHON_SRC}" --target "${ACCURATE_RI_PIP_DIR}" --upgr
 
 echo "Quick test..."
 export PYTHONPATH="$ACCURATE_RI_PIP_DIR:$PYTHONPATH"
-python run_compression_experiment.py --mode test
+python python -u python/run_ri_experiment.py --mode test
 
 echo "Preparing job..."
 cp "${BASE_DB_DIR}/initial.sqlite" "${ACTUAL_DB_DIR}/initial.sqlite"
