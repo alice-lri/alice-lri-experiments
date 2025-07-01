@@ -29,12 +29,15 @@ fi
 
 echo "Will use arg type=${ARG_TYPE}"
 
-read -r -p "Rebuild and test (Y/n)? " REBUILD
-REBUILD=${REBUILD:-y}
-if [[ "$REBUILD" == [Yy] ]]; then
-    module load cesga/system apptainer/1.2.3
-    apptainer exec "$CONTAINER_PATH" ./prepare.sh "$BASE_DB_DIR" "$ACTUAL_DB_DIR"
+read -r -p "Rebuild and test (Y/n)? " REBUILD_INPUT
+REBUILD_INPUT=${REBUILD_INPUT:-y}
+REBUILD=false
+if [[ "$REBUILD_INPUT" == [Yy] ]]; then
+    REBUILD=true
 fi
+
+module load cesga/system apptainer/1.2.3
+apptainer exec "$CONTAINER_PATH" ./prepare.sh "$BASE_DB_DIR" "$ACTUAL_DB_DIR" "$REBUILD"
 
 if [[ "$SKIP_TRAINING" -eq 0 ]]; then
   echo "Launching train job..."

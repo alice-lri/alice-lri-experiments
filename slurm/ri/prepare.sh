@@ -3,11 +3,14 @@ set -eo pipefail
 
 BASE_DB_DIR="$1"
 ACTUAL_DB_DIR="$2"
+REBUILD=$3
 
-source ../../local/build.sh
 source ../helper/paths.sh
 
-pip install "${ACCURATE_RI_PYTHON_SRC}" --target "${ACCURATE_RI_PIP_DIR}" --upgrade
+if [[ "$REBUILD" == true ]]; then
+  source ../../local/build.sh
+  pip install "${ACCURATE_RI_PYTHON_SRC}" --target "${ACCURATE_RI_PIP_DIR}" --upgrade
+fi
 
 echo "Quick test..."
 export PYTHONPATH="$ACCURATE_RI_PIP_DIR:$PYTHONPATH"
