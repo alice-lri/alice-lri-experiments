@@ -6,12 +6,15 @@ source helper/merge_header.sh
 
 echo "Select experiment type:"
 echo "[1] Intrinsics"
-echo "[2] Compression"
+echo "[2] Range Image"
+echo "[3] Compression"
 read -r -p "Enter choice: " EXPERIMENT_TYPE
 
 if [[ "$EXPERIMENT_TYPE" == "1" ]]; then
   ARG_TYPE="experiments"
 elif [[ "$EXPERIMENT_TYPE" == "2" ]]; then
+  ARG_TYPE="ri_experiments"
+elif [[ "$EXPERIMENT_TYPE" == "3" ]]; then
   ARG_TYPE="compression_experiments"
 else
   echo "Invalid choice."

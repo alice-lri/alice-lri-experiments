@@ -5,14 +5,18 @@ import re
 import shutil
 import subprocess
 
+
 class Constant:
     EXPERIMENT_TABLE = "experiment"
     COMPRESSION_EXPERIMENT_TABLE = "compression_experiment"
+    RI_EXPERIMENT_TABLE = "ri_experiment"
     INTRINSICS_FRAME_TABLE = "intrinsics_frame_result"
     COMPRESSION_FRAME_TABLE = "compression_frame_result"
+    RI_FRAME_TABLE = "ri_frame_result"
 
     ARG_EXPERIMENTS = "experiments"
     ARG_COMPRESSION_EXPERIMENTS = "compression_experiments"
+    ARG_RI_EXPERIMENTS = "ri_experiments"
     ARG_GROUND_TRUTH = "ground_truth"
 
     MERGE_TYPES = [ARG_EXPERIMENTS, ARG_COMPRESSION_EXPERIMENTS, ARG_GROUND_TRUTH]
@@ -78,6 +82,15 @@ def fetch_compression_frames(cursor):
     return cursor.fetchall()
 
 
+def fetch_ri_frames(cursor):
+    cursor.execute("""
+                   SELECT dataset_frame_id, method, ri_width, ri_height, original_points_count, 
+                          reconstructed_points_count, reconstructed_to_original_mse, original_to_reconstructed_mse
+                   FROM ri_frame_result
+                   """)
+    return cursor.fetchall()
+
+
 def fetch_scanlines(cursor, intrinsics_result_id):
     cursor.execute("""
         SELECT scanline_idx, points_count, vertical_offset, vertical_angle,
@@ -130,6 +143,18 @@ def insert_compression_frames(cursor, merged_experiment_id, frames_data_list):
        """, insert_data)
 
 
+def insert_ri_frames(cursor, merged_experiment_id, frames_data_list):
+    insert_data = [(merged_experiment_id, *frame_data) for frame_data in frames_data_list]
+
+    cursor.executemany("""
+                       INSERT INTO ri_frame_result(experiment_id, dataset_frame_id, method, ri_width, ri_height,
+                                                   original_points_count,
+                                                   reconstructed_points_count, reconstructed_to_original_mse,
+                                                   original_to_reconstructed_mse)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                       """, insert_data)
+
+
 def merge_experiment_databases(db_files, master_db_path, label, description):
     master_conn = sqlite3.connect(master_db_path)
     master_c = master_conn.cursor()
@@ -154,66 +179,74 @@ def merge_experiment_databases(db_files, master_db_path, label, description):
     master_conn.close()
 
 
-def merge_compression_experiment_databases(db_files, master_db_path, label, description):
+def merge_generic_experiment_databases(
+        db_files, master_db_path, label, description, experiment_table, frame_table, fetch_frames_fn, insert_frames_fn
+):
     master_conn = sqlite3.connect(master_db_path)
     master_c = master_conn.cursor()
-    merged_experiment_id = insert_merged_experiment(master_c, Constant.COMPRESSION_EXPERIMENT_TABLE, label, description)
+    merged_experiment_id = insert_merged_experiment(master_c, experiment_table, label, description)
 
     files_count = len(db_files)
 
     for file_index, db_file in enumerate(db_files):
-        print(f"Merging compression experiments database {file_index + 1}/{files_count}")
+        print(f"Merging {experiment_table} database {file_index + 1}/{files_count}")
 
         with sqlite3.connect(db_file) as conn:
             c = conn.cursor()
-            assert_single_experiment(c, Constant.COMPRESSION_FRAME_TABLE)
-            frames = fetch_compression_frames(c)
+            assert_single_experiment(c, frame_table)
+            frames = fetch_frames_fn(c)
 
-            insert_compression_frames(master_c, merged_experiment_id, frames)
+            insert_frames_fn(master_c, merged_experiment_id, frames)
 
     master_conn.commit()
     master_conn.close()
 
 
+def merge_compression_experiment_databases(db_files, master_db_path, label, description):
+    merge_generic_experiment_databases(db_files, master_db_path, label, description,
+                                       Constant.COMPRESSION_EXPERIMENT_TABLE, Constant.COMPRESSION_FRAME_TABLE,
+                                       fetch_compression_frames, insert_compression_frames)
+
+
+def merge_ri_experiment_databases(db_files, master_db_path, label, description):
+    merge_generic_experiment_databases(db_files, master_db_path, label, description,
+                                       Constant.RI_EXPERIMENT_TABLE, Constant.RI_FRAME_TABLE,
+                                       fetch_ri_frames, insert_ri_frames)
+
+
 def fetch_gt_frames(cursor):
     cursor.execute("""
-        SELECT dataset_frame_id, points_count, scanlines_count FROM dataset_frame_empirical
-    """)
+                   SELECT dataset_frame_id, points_count, scanlines_count
+                   FROM dataset_frame_empirical
+                   """)
 
     return cursor.fetchall()
 
 
 def fetch_gt_scanlines(cursor):
     cursor.execute("""
-        SELECT dataset_frame_id,
-               scanline_idx,
-               laser_idx,
-               points_count,
-               vertical_offset,
-               vertical_angle,
-               horizontal_offset,
-               horizontal_resolution,
-               horizontal_angle_offset
-        FROM dataset_frame_scanline_info_empirical
-    """)
+       SELECT dataset_frame_id, scanline_idx, laser_idx, points_count, vertical_offset, vertical_angle,
+              horizontal_offset, horizontal_resolution, horizontal_angle_offset
+       FROM dataset_frame_scanline_info_empirical
+       """)
 
     return cursor.fetchall()
 
 
 def insert_gt_frames(cursor, data):
     cursor.executemany("""
-        INSERT INTO dataset_frame_empirical(dataset_frame_id, points_count, scanlines_count)
-        VALUES (?, ?, ?)
-    """, data)
+                       INSERT INTO dataset_frame_empirical(dataset_frame_id, points_count, scanlines_count)
+                       VALUES (?, ?, ?)
+                       """, data)
 
 
 def insert_gt_scanlines(cursor, data):
     cursor.executemany("""
-        INSERT INTO dataset_frame_scanline_info_empirical(dataset_frame_id, scanline_idx, laser_idx, points_count,
-                                                          vertical_offset, vertical_angle, horizontal_offset,
-                                                          horizontal_resolution, horizontal_angle_offset)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, data)
+       INSERT INTO dataset_frame_scanline_info_empirical(dataset_frame_id, scanline_idx, laser_idx, points_count,
+                                                         vertical_offset, vertical_angle, horizontal_offset,
+                                                         horizontal_resolution, horizontal_angle_offset)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+       """, data)
 
 
 def merge_ground_truth_databases(db_files, master_db_path):
@@ -259,5 +292,7 @@ if __name__ == "__main__":
         merge_experiment_databases(db_files, args.master_db_path, args.label, args.description)
     elif args.type == Constant.ARG_COMPRESSION_EXPERIMENTS:
         merge_compression_experiment_databases(db_files, args.master_db_path, args.label, args.description)
+    elif args.type == Constant.ARG_RI_EXPERIMENTS:
+        merge_ri_experiment_databases(db_files, args.master_db_path, args.label, args.description)
     elif args.type == Constant.ARG_GROUND_TRUTH:
         merge_ground_truth_databases(db_files, args.master_db_path)
