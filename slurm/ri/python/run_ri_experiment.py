@@ -21,6 +21,7 @@ class Config:
     tile_size = "4"
     error_thresholds = [0.001, 0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1]
     ri_size_multipliers = [1, 2, 4, 8, 16, 32]
+    methods = ["naive", "accurate"]
     private_dir = "/tmp"
     shared_dir = "/tmp"
     dataset = None
@@ -210,59 +211,67 @@ def evaluate_compression(dataset, target_path, intrinsics_filename, out_filename
     for error_threshold in Config.error_thresholds:
         print(f"Error threshold: {error_threshold}")
 
-        print("Naive encoding...")
-        encoder_cmd = build_naive_encoder_cmd(target_dir, target_filename, out_filename, error_threshold)
-        run_process(encoder_cmd)
-        naive_size = get_file_size(os.path.join(Config.private_dir, out_filename))
+        current_df_row = {}
 
-        print("Naive decoding...")
-        decoder_cmd = build_naive_decoder_cmd(out_filename)
-        run_process(decoder_cmd)
-        naive_points, _ = load_binary(os.path.join(Config.private_dir, target_filename))
+        if "naive" in Config.methods:
+            print("Naive encoding...")
+            encoder_cmd = build_naive_encoder_cmd(target_dir, target_filename, out_filename, error_threshold)
+            run_process(encoder_cmd)
+            naive_size = get_file_size(os.path.join(Config.private_dir, out_filename))
 
-        print("Accurate encoding...")
-        encoder_cmd = build_accurate_encoder_cmd(target_dir, target_filename, intrinsics_file, out_filename,
-                                                 error_threshold)
-        run_process(encoder_cmd)
-        accurate_size = get_file_size(os.path.join(Config.private_dir, out_filename))
+            print("Naive decoding...")
+            decoder_cmd = build_naive_decoder_cmd(out_filename)
+            run_process(decoder_cmd)
+            naive_points, _ = load_binary(os.path.join(Config.private_dir, target_filename))
 
-        print("Accurate decoding...")
-        decoder_cmd = build_accurate_decoder_cmd(out_filename, intrinsics_file)
-        run_process(decoder_cmd)
-        accurate_points, _ = load_binary(os.path.join(Config.private_dir, target_filename))
+            cr_naive = original_size / naive_size
 
-        cr_naive = original_size / naive_size
-        cr_accurate = original_size / accurate_size
+            print("Computing naive metrics...")
+            naive_to_original_mse, original_to_naive_mse = compute_p_cloud_mse(naive_points, target_points)
 
-        print("Computing naive metrics...")
-        naive_to_original_mse, original_to_naive_mse = compute_p_cloud_mse(naive_points, target_points)
+            print(f"Compression Ratio (Naive): {cr_naive}")
+            print(f"MSE (Naive to Original): {naive_to_original_mse}")
+            print(f"MSE (Original to Naive): {original_to_naive_mse}")
 
-        print("Computing accurate metrics...")
-        accurate_to_original_mse, original_to_accurate_mse = compute_p_cloud_mse(accurate_points, target_points)
+            current_df_row["naive_points_count"] = naive_points.shape[0]
+            current_df_row["naive_size_bytes"] = naive_size
+            current_df_row["naive_to_original_mse"] = naive_to_original_mse
+            current_df_row["original_to_naive_mse"] = original_to_naive_mse
 
-        print(f"Compression Ratio (Naive): {cr_naive}")
-        print(f"MSE (Naive to Original): {naive_to_original_mse}")
-        print(f"MSE (Original to Naive): {original_to_naive_mse}")
-        print(f"Compression Ratio (Accurate): {cr_accurate}")
-        print(f"MSE (Accurate to Original): {accurate_to_original_mse}")
-        print(f"MSE (Original to Accurate): {original_to_accurate_mse}")
+        if "accurate" in Config.methods:
+            print("Accurate encoding...")
+            encoder_cmd = build_accurate_encoder_cmd(target_dir, target_filename, intrinsics_file, out_filename,
+                                                     error_threshold)
+            run_process(encoder_cmd)
+            accurate_size = get_file_size(os.path.join(Config.private_dir, out_filename))
 
-        df_rows.append({
-            "horizontal_step": Config.get_horizontal_step(),
-            "vertical_step": Config.get_vertical_step(),
-            "tile_size": Config.tile_size,
-            "error_threshold": error_threshold,
-            "original_points_count": target_points.shape[0],
-            "naive_points_count": naive_points.shape[0],
-            "accurate_points_count": accurate_points.shape[0],
-            "original_size_bytes": original_size,
-            "naive_size_bytes": naive_size,
-            "accurate_size_bytes": accurate_size,
-            "naive_to_original_mse": naive_to_original_mse,
-            "original_to_naive_mse": original_to_naive_mse,
-            "accurate_to_original_mse": accurate_to_original_mse,
-            "original_to_accurate_mse": original_to_accurate_mse,
-        })
+            print("Accurate decoding...")
+            decoder_cmd = build_accurate_decoder_cmd(out_filename, intrinsics_file)
+            run_process(decoder_cmd)
+            accurate_points, _ = load_binary(os.path.join(Config.private_dir, target_filename))
+
+            cr_accurate = original_size / accurate_size
+
+            print("Computing accurate metrics...")
+            accurate_to_original_mse, original_to_accurate_mse = compute_p_cloud_mse(accurate_points, target_points)
+
+            print(f"Compression Ratio (Accurate): {cr_accurate}")
+            print(f"MSE (Accurate to Original): {accurate_to_original_mse}")
+            print(f"MSE (Original to Accurate): {original_to_accurate_mse}")
+
+            current_df_row["accurate_points_count"] = accurate_points.shape[0]
+            current_df_row["accurate_size_bytes"] = accurate_size
+            current_df_row["accurate_to_original_mse"] = accurate_to_original_mse
+            current_df_row["original_to_accurate_mse"] = original_to_accurate_mse
+
+        current_df_row["horizontal_step"] = Config.get_horizontal_step()
+        current_df_row["vertical_step"] = Config.get_vertical_step()
+        current_df_row["tile_size"] = Config.tile_size
+        current_df_row["error_threshold"] = error_threshold
+        current_df_row["original_points_count"] = target_points.shape[0]
+        current_df_row["original_size_bytes"] = original_size
+
+        df_rows.append(current_df_row)
 
     return pd.DataFrame(df_rows)
 
@@ -371,6 +380,8 @@ def parse_args():
                         help="Path to DURLAR dataset root directory (optional).")
     parser.add_argument("--private_dir", type=str, default=None, help="Optional private directory for intermediate files.")
     parser.add_argument("--shared_dir", type=str, default=None, help="Optional shared directory for intermediate files.")
+    parser.add_argument("--error_thresholds", type=float, nargs='+', default=None, help="List of error thresholds (overrides default).")
+    parser.add_argument("--methods", type=str, nargs='+', default=None, help="List of methods to use (overrides default).")
 
     args = parser.parse_args()
 
@@ -378,6 +389,12 @@ def parse_args():
         return args
 
     Config.experiment_type = args.type
+
+    if args.error_thresholds is not None:
+        Config.error_thresholds = args.error_thresholds
+
+    if args.methods is not None:
+        Config.methods = args.methods
 
     if args.mode == "batch":
         if args.db_path is None or args.phase is None:
