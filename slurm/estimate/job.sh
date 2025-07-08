@@ -23,7 +23,7 @@ module load cesga/system apptainer/1.2.3
 echo "Beginning job ${JOB_INDEX}..."
 
 export PYTHONPATH="$ACCURATE_RI_PIP_DIR:$PYTHONPATH"
-srun apptainer exec "$CONTAINER_PATH" task.sh "$EXECUTABLE_PATH" "$DB_DIR" "$JOB_INDEX" "$JOB_COUNT"
+srun apptainer exec "$CONTAINER_PATH" ./task.sh "$EXECUTABLE_PATH" "$DB_DIR" "$JOB_INDEX" "$JOB_COUNT"
 
 echo "Job ${JOB_INDEX} finished."
 touch "${DB_DIR}/job_${JOB_INDEX}.success"
