@@ -13,9 +13,11 @@ if [[ "$REBUILD" == true ]]; then
   pip install "${ACCURATE_RI_PYTHON_SRC}" --target "${ACCURATE_RI_PIP_DIR}" --upgrade
 fi
 
-echo "Quick test..."
-export PYTHONPATH="$ACCURATE_RI_PIP_DIR:$PYTHONPATH"
-python -u python/run_ri_experiment.py --mode test
+if [[ "$ARG_TYPE" != "intrinsics" ]]; then
+  echo "Quick test..."
+  export PYTHONPATH="$ACCURATE_RI_PIP_DIR:$PYTHONPATH"
+  python -u python/run_ri_experiment.py --mode test
+fi
 
 echo "Preparing job..."
 cp "${BASE_DB_DIR}/initial.sqlite" "${ACTUAL_DB_DIR}/initial.sqlite"
