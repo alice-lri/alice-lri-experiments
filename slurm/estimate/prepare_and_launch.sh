@@ -11,7 +11,7 @@ EXECUTABLE_NAME="examples_sql"
 
 module load cesga/system apptainer/1.2.3
 # TODO refactor this monster at some point
-apptainer exec "$CONTAINER_PATH" ../ri/prepare.sh "$BASE_DB_DIR" "$ACTUAL_DB_DIR" "intrinsics" false
+apptainer exec "$CONTAINER_PATH" ../ri/prepare.sh "$BASE_DB_DIR" "$ACTUAL_DB_DIR" "intrinsics" true
 
 jq -n \
   --arg db_dir "$ACTUAL_DB_DIR" \
