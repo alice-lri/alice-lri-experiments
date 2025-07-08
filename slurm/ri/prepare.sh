@@ -3,7 +3,8 @@ set -eo pipefail
 
 BASE_DB_DIR="$1"
 ACTUAL_DB_DIR="$2"
-REBUILD=$3
+ARG_TYPE="$3"
+REBUILD=$4
 
 source ../helper/paths.sh
 
@@ -18,4 +19,4 @@ python -u python/run_ri_experiment.py --mode test
 
 echo "Preparing job..."
 cp "${BASE_DB_DIR}/initial.sqlite" "${ACTUAL_DB_DIR}/initial.sqlite"
-python ../helper/insert_experiment_row.py "${ACTUAL_DB_DIR}/initial.sqlite" compression
+python ../helper/insert_experiment_row.py "${ACTUAL_DB_DIR}/initial.sqlite" "$ARG_TYPE"

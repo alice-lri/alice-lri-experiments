@@ -11,18 +11,19 @@
 #SBATCH --mail-user=s.soutullo@usc.es
 set -eo pipefail
 
-CONDA_ENV_NAME=$1
+CONTAINER_PATH=$1
 EXECUTABLE_PATH=$2
 DB_DIR=$3
 JOB_INDEX=$4
 JOB_COUNT=$5
 
+source ../helper/paths.sh
+module load cesga/system apptainer/1.2.3
+
 echo "Beginning job ${JOB_INDEX}..."
 
-module load cesga/system miniconda3/22.11.1-1
-conda activate "${CONDA_ENV_NAME}"
-
-srun task.sh "$CONDA_ENV_NAME" "$EXECUTABLE_PATH" "$DB_DIR" "$JOB_INDEX" "$JOB_COUNT"
+export PYTHONPATH="$ACCURATE_RI_PIP_DIR:$PYTHONPATH"
+srun apptainer exec "$CONTAINER_PATH" task.sh "$EXECUTABLE_PATH" "$DB_DIR" "$JOB_INDEX" "$JOB_COUNT"
 
 echo "Job ${JOB_INDEX} finished."
 touch "${DB_DIR}/job_${JOB_INDEX}.success"

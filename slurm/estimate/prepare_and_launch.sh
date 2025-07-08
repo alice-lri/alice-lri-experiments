@@ -4,22 +4,14 @@ cd "$(dirname "${BASH_SOURCE[0]}")" || exit
 
 source ../helper/paths.sh
 source ../helper/multi_batch_job_header.sh
+
+CONTAINER_PATH="../../container.sif"
 SRC_PATH="../../accurate-ri"
 EXECUTABLE_NAME="examples_sql"
 
-echo "Fetching dependencies..."
-conan install ${SRC_PATH}/lib -s compiler.cppstd=gnu20 -s build_type=Release --output-folder="${SRC_PATH}/build/lib" --build=missing
-conan install ${SRC_PATH}/examples -s compiler.cppstd=gnu20 -s build_type=Release --output-folder="${SRC_PATH}/build/examples" --build=missing
-
-echo "Building project..."
-cmake -DCMAKE_BUILD_TYPE=Release -DLOG_LEVEL=INFO -DENABLE_PROFILING=ON -S "${SRC_PATH}" -B "${SRC_PATH}/build"
-make -C "${SRC_PATH}/build"
-
-source ../../conda/init_conda.sh
-
-echo "Preparing job..."
-cp "${BASE_DB_DIR}/initial.sqlite" "${ACTUAL_DB_DIR}/initial.sqlite"
-python ../helper/insert_experiment_row.py "${ACTUAL_DB_DIR}/initial.sqlite" intrinsics
+module load cesga/system apptainer/1.2.3
+# TODO refactor this monster at some point
+apptainer exec "$CONTAINER_PATH" ../ri/prepare.sh "$BASE_DB_DIR" "$ACTUAL_DB_DIR" "intrinsics" false
 
 jq -n \
   --arg db_dir "$ACTUAL_DB_DIR" \
@@ -37,6 +29,6 @@ jq -n \
 for i in "${JOBS_TO_RUN[@]}"; do
   echo "Launching job ${i}..."
   sbatch --job-name="accurate_ri_${i}" -o "${ACTUAL_LOGS_DIR}/${i}.log" -e "${ACTUAL_LOGS_DIR}/${i}.log" \
-   job.sh "${CONDA_ENV_NAME}" "${SRC_PATH}/build/examples/${EXECUTABLE_NAME}" "${ACTUAL_DB_DIR}" \
+   job.sh "${CONTAINER_PATH}" "${SRC_PATH}/build/examples/${EXECUTABLE_NAME}" "${ACTUAL_DB_DIR}" \
     "${i}" "${JOB_COUNT}"
 done

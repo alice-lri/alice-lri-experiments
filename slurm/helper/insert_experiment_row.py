@@ -14,6 +14,9 @@ if args.type == 'intrinsics':
 elif args.type == 'compression':
     cur.execute("INSERT INTO compression_experiment(label, description, timestamp) VALUES "
                 "('', '',datetime('now', 'localtime', 'subsec'))")
+elif args.type == 'ri':
+    cur.execute("INSERT INTO ri_experiment(label, description, timestamp) VALUES "
+                "('', '',datetime('now', 'localtime', 'subsec'))")
 else:
     raise ValueError('Unknown type')
 

@@ -37,7 +37,7 @@ if [[ "$REBUILD_INPUT" == [Yy] ]]; then
 fi
 
 module load cesga/system apptainer/1.2.3
-apptainer exec "$CONTAINER_PATH" ./prepare.sh "$BASE_DB_DIR" "$ACTUAL_DB_DIR" "$REBUILD"
+apptainer exec "$CONTAINER_PATH" ./prepare.sh "$BASE_DB_DIR" "$ACTUAL_DB_DIR" "$ARG_TYPE" "$REBUILD"
 
 if [[ "$SKIP_TRAINING" -eq 0 ]]; then
   echo "Launching train job..."
