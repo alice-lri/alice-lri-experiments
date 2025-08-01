@@ -65,6 +65,8 @@ if [ "$CONTINUE" != "y" ]; then
   exit 1
 fi
 
+echo "Batch ID: ${BATCH_ID}"
+
 mkdir -p "${ACTUAL_DB_DIR}"
 mkdir -p "${ACTUAL_LOGS_DIR}"
 mkdir -p "${SHARED_DIR}"
