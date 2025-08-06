@@ -4,7 +4,7 @@
 #SBATCH -e logs/%j.log
 #SBATCH -n 64
 #SBATCH -c 1
-#SBATCH -t 1-00:00:00
+#SBATCH -t 06:00:00
 #SBATCH --mem-per-cpu=3G
 #SBATCH --mail-type=begin
 #SBATCH --mail-type=end
