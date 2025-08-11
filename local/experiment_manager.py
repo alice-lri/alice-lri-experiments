@@ -6,8 +6,9 @@ import os
 import re
 import time
 
-class Constant:
+class Config:
     BASE_DIR = """${STORE2}/accurate-ri-hpc"""
+    SHOW_REMOTE_OUTPUT = False
 
 class JobStatus(Enum):
     PENDING = 0
@@ -109,7 +110,7 @@ class HPCCluster:
             build_options_str += " ".join(f"{key}={'ON' if value else 'OFF'}" for key, value in experiment.build_options.items())
 
         stdin, stdout, stderr = self.__ssh.exec_command(
-            f"cd {os.path.join(Constant.BASE_DIR, script_dir)} && "
+            f"cd {os.path.join(Config.BASE_DIR, script_dir)} && "
             f"yes | ./prepare_and_launch.sh {build_options_str}"
         )
 
@@ -118,9 +119,10 @@ class HPCCluster:
         while not stdout.channel.exit_status_ready():
             if stdout.channel.recv_ready():
                 line = stdout.readline()
-                print(line, end="")
+                if Config.SHOW_REMOTE_OUTPUT:
+                    print(line, end="")
 
-                batch_id_match = re.search(r"Batch ID: (\w)", line)
+                batch_id_match = re.search(r"Batch ID: (\w+)", line)
                 if batch_id_match:
                     experiment.id = batch_id_match.group(1)
 
@@ -140,7 +142,7 @@ class HPCCluster:
 
         job_indices_str = " ".join(map(str, job_indices))
         stdin, stdout, stderr = self.__ssh.exec_command(
-            f"cd {os.path.join(Constant.BASE_DIR, script_dir)} && "
+            f"cd {os.path.join(Config.BASE_DIR, script_dir)} && "
             f"yes | ./prepare_and_launch.sh --relaunch {experiment_id} {job_indices_str}"
         )
 
@@ -148,7 +150,9 @@ class HPCCluster:
         while not stdout.channel.exit_status_ready():
             if stdout.channel.recv_ready():
                 line = stdout.readline()
-                print(line, end="")
+
+                if Config.SHOW_REMOTE_OUTPUT:
+                    print(line, end="")
 
                 job_id_match = re.search(r"Submitted batch job (\d+)", line)
                 if job_id_match:
@@ -160,13 +164,14 @@ class HPCCluster:
         script_inputs = [str(experiment.type), experiment.label, experiment.description]
         script_input_str = "\n".join(script_inputs)
         stdin, stdout, stderr = self.__ssh.exec_command(
-            f"cd {os.path.join(Constant.BASE_DIR, "merge")} && echo {script_input_str} | ./merge_experiments_db.sh {experiment.id}"
+            f"cd {os.path.join(Config.BASE_DIR, "merge")} && echo {script_input_str} | ./merge_experiments_db.sh {experiment.id}"
         )
 
         while not stdout.channel.exit_status_ready():
             if stdout.channel.recv_ready():
                 line = stdout.readline()
-                print(line, end="")
+                if Config.SHOW_REMOTE_OUTPUT:
+                    print(line, end="")
 
         return stdout.channel.recv_exit_status() == 0
 
@@ -215,6 +220,12 @@ class Manager:
         if not success:
             raise RuntimeError(f"Failed to launch experiment: {experiment.label}")
 
+        print(f"Launched Batch ID: {experiment.id}")
+        print("Jobs:")
+
+        for job in experiment.jobs:
+            print(f"  - Job {job.index}: SLURM ID {job.slurm_id}")
+
     def __monitor_experiment(self, experiment: Experiment) -> bool:
         jobs_to_relaunch = []
         for job in experiment.jobs:
@@ -234,9 +245,10 @@ class Manager:
                 jobs_to_relaunch.append(job)
 
         if len(jobs_to_relaunch) > 0:
-            print(f"Will relaunch the following jobs: {jobs_to_relaunch}")
+            indices_to_relaunch = [job.index for job in jobs_to_relaunch]
+            print(f"Will relaunch the following jobs: {indices_to_relaunch}")
             new_slurm_ids = self.__cluster\
-                .relaunch_jobs(experiment.type, experiment.id, [job.index for job in jobs_to_relaunch])
+                .relaunch_jobs(experiment.type, experiment.id, indices_to_relaunch)
 
             for job, new_slurm_id in zip(jobs_to_relaunch, new_slurm_ids):
                 print(f"Relaunched job {job.index} with new SLURM ID: {new_slurm_id}")
@@ -265,10 +277,13 @@ def parse_args() -> State:
     parser.add_argument("--build-options", type=str, nargs="*")
     parser.add_argument("--name", type=str)
     parser.add_argument("--description", type=str)
+    parser.add_argument("--show-remote-output", action="store_true")
 
     args = parser.parse_args()
     experiment = Experiment()
     state = State()
+
+    Config.SHOW_REMOTE_OUTPUT = args.show_remote_output
 
     if args.mode == "launch":
         experiment.label = args.name
