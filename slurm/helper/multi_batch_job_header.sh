@@ -4,30 +4,55 @@ set -eo pipefail
 JOB_COUNT=32
 
 BATCH_ID="$(date +'%Y%m%d_%H%M%S_%3N')"
-RESUME_BATCH=false
+RELAUNCH_BATCH=false
 USER_REQUESTED_JOBS=()
 JOBS_TO_RUN=()
+BUILD_OPTIONS=()
 
-if [ -n "$1" ]; then
-  BATCH_ID=$1
-  RESUME_BATCH=true
-
-  shift
-  for arg in "$@"; do
-    if [[ "$arg" =~ ^[0-9]+$ ]]; then
-      USER_REQUESTED_JOBS+=("$arg")
-    else
-      echo "Invalid job index: $arg"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --build-options)
+      shift
+      if [[ $# -eq 0 ]]; then
+        echo "Error: --build-options requires at least one argument." >&2
+        exit 1
+      fi
+      while [[ $# -gt 0 && "$1" != --* ]]; do
+        BUILD_OPTIONS+=("$1")
+        shift
+      done
+      ;;
+    --relaunch)
+      shift
+      if [[ $# -eq 0 ]]; then
+        echo "Error: --relaunch requires a batch ID." >&2
+        exit 1
+      fi
+      BATCH_ID="$1"
+      RELAUNCH_BATCH=true
+      shift
+      while [[ $# -gt 0 && "$1" != --* ]]; do
+        if [[ "$1" =~ ^[0-9]+$ ]]; then
+          USER_REQUESTED_JOBS+=("$1")
+          shift
+        else
+          echo "Invalid job index: $1" >&2
+          exit 1
+        fi
+      done
+      ;;
+    *)
+      echo "Invalid arg: $1" >&2
       exit 1
-    fi
-  done
-fi
+      ;;
+  esac
+done
 
 ACTUAL_LOGS_DIR="${BASE_LOGS_DIR}/${BATCH_ID}"
 ACTUAL_DB_DIR="${BASE_DB_DIR}/${BATCH_ID}"
 SHARED_DIR="${BASE_DB_DIR}/${BATCH_ID}/shared"
 
-if [ "$RESUME_BATCH" = true ]; then
+if [ "$RELAUNCH_BATCH" = true ]; then
   if [ ! -d "${ACTUAL_LOGS_DIR}" ]; then
     echo "Log directory ${ACTUAL_LOGS_DIR} does not exist."
     exit 1
@@ -57,8 +82,9 @@ else
   fi
 fi
 
+echo "Build options: ${BUILD_OPTIONS[*]}"
 echo "Will run jobs: ${JOBS_TO_RUN[*]}"
-read -r -p "Continue? (y/n) " CONTINUE
+read -r -p "Continue? (y/n): " CONTINUE
 
 if [ "$CONTINUE" != "y" ]; then
   echo "Aborting."

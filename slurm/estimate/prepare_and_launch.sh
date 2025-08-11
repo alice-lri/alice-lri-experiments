@@ -8,10 +8,14 @@ source ../helper/multi_batch_job_header.sh
 CONTAINER_PATH="../../container.sif"
 SRC_PATH="../../accurate-ri"
 EXECUTABLE_NAME="examples_sql"
+REBUILD=false
+if [[ ${#BUILD_OPTIONS[@]} -ne 0 ]]; then
+  REBUILD=true
+fi
 
 module load cesga/system apptainer/1.2.3
 # TODO refactor this monster at some point
-apptainer exec "$CONTAINER_PATH" ../ri/prepare.sh "$BASE_DB_DIR" "$ACTUAL_DB_DIR" "intrinsics" true
+apptainer exec "$CONTAINER_PATH" ../ri/prepare.sh "$BASE_DB_DIR" "$ACTUAL_DB_DIR" "intrinsics" "$REBUILD" "${BUILD_OPTIONS[*]}"
 
 jq -n \
   --arg db_dir "$ACTUAL_DB_DIR" \

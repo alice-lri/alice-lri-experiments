@@ -7,13 +7,14 @@ ACCURATE_RI_SRC="$(realpath ../accurate-ri)"
 ACCURATE_RI_PYTHON_SRC="${ACCURATE_RI_SRC}/python"
 RTST_SRC="$(realpath ../rtst/src)"
 RTST_MODIFIED_SRC="$(realpath ../rtst-modified/src)"
+BUILD_OPTIONS="$1"
 
 echo "Fetching dependencies..."
 conan install "${ACCURATE_RI_SRC}/lib" -s compiler.cppstd=gnu20 -s build_type=Release --output-folder="${ACCURATE_RI_SRC}/build/lib" --build=missing
 conan install "${ACCURATE_RI_SRC}/examples" -s compiler.cppstd=gnu20 -s build_type=Release --output-folder="${ACCURATE_RI_SRC}/build/examples" --build=missing
 
 echo "Building project..."
-cmake -DCMAKE_BUILD_TYPE=Release -DLOG_LEVEL=NONE -DENABLE_TRACE_FILE=OFF -DENABLE_PROFILING=OFF -DLIB_MODE=ON -S "${ACCURATE_RI_SRC}" -B "${ACCURATE_RI_SRC}/build"
+cmake -DCMAKE_BUILD_TYPE=Release -DLOG_LEVEL=NONE -DENABLE_TRACE_FILE=OFF -DENABLE_PROFILING=OFF -DLIB_MODE=ON "$BUILD_OPTIONS" -S "${ACCURATE_RI_SRC}" -B "${ACCURATE_RI_SRC}/build"
 make -C "${ACCURATE_RI_SRC}/build"
 
 echo "Building original RTST"
