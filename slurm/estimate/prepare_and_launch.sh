@@ -8,9 +8,9 @@ source ../helper/multi_batch_job_header.sh
 CONTAINER_PATH="../../container.sif"
 SRC_PATH="../../accurate-ri"
 EXECUTABLE_NAME="examples_sql"
-REBUILD=false
+REBUILD=true
 if [[ ${#BUILD_OPTIONS[@]} -ne 0 ]]; then
-  REBUILD=true
+  REBUILD=false
 fi
 
 module load cesga/system apptainer/1.2.3

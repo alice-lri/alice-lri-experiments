@@ -4,7 +4,7 @@ from enum import Enum
 import paramiko
 import os
 import re
-
+import time
 
 class Constant:
     BASE_DIR = """${STORE2}/accurate-ri-hpc"""
@@ -103,10 +103,14 @@ class HPCCluster:
         else: #TODO
             raise ValueError(f"Unsupported experiment type: {experiment.type}")
 
-        build_options = " ".join(f"{key}={'ON' if value else 'OFF'}" for key, value in experiment.build_options.items())
+        build_options_str = ""
+        if experiment.build_options:
+            build_options_str = "--build-options "
+            build_options_str += " ".join(f"{key}={'ON' if value else 'OFF'}" for key, value in experiment.build_options.items())
+
         stdin, stdout, stderr = self.__ssh.exec_command(
             f"cd {os.path.join(Constant.BASE_DIR, script_dir)} && "
-            f"yes | ./prepare_and_launch.sh --build-options {build_options}"
+            f"yes | ./prepare_and_launch.sh {build_options_str}"
         )
 
         experiment.jobs = []
@@ -182,7 +186,9 @@ class Manager:
         self.__cluster = HPCCluster()
 
     def tick(self):
+        print("Tick!")
         if len(self.__state.experiments) == 0:
+            print("No experiments to process.")
             return
 
         self.__cluster.start_connection()
@@ -191,6 +197,7 @@ class Manager:
 
         if experiment.status == ExperimentStatus.PENDING:
             self.__launch_experiment(experiment)
+            return
 
         finished_now = True
         if experiment.status == ExperimentStatus.ON_QUEUE:
@@ -283,7 +290,9 @@ def main():
     state = parse_args()
     manager = Manager(state)
 
-    manager.tick()
+    while True:
+        manager.tick()
+        time.sleep(10)
     #todo save state
 
 if __name__ == "__main__":
