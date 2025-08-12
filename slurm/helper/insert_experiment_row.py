@@ -3,7 +3,7 @@ import sqlite3
 
 parser = argparse.ArgumentParser(description='Prepare the DB for a new experiment.')
 parser.add_argument('db_path', type=str, help='Path to the SQLite database')
-parser.add_argument('type', type=str, choices=['intrinsics', 'compression'], help='Type of experiment (intrinsics or compression)')
+parser.add_argument('type', type=str, choices=['intrinsics', 'compression', 'ri'], help='Type of experiment (intrinsics or compression)')
 parser.add_argument("--build-options", type=str, help="Build options string (e.g., '-Dflag1=ON -Dflag2=OFF')")
 args = parser.parse_args()
 
