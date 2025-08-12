@@ -5,9 +5,14 @@ import paramiko
 import os
 import re
 import time
+import json
+
+from dataclasses import dataclass
+from dataclasses_json import dataclass_json
 
 class Config:
     BASE_DIR = """${STORE2}/accurate-ri-hpc"""
+    STATE_FILE = "state.json"
     SHOW_REMOTE_OUTPUT = False
 
 class JobStatus(Enum):
@@ -29,6 +34,8 @@ class JobStatus(Enum):
         else:
             raise ValueError(f"Unknown job status: {string}")
 
+@dataclass
+@dataclass_json
 class Job:
     slurm_id: int
     index: int
@@ -61,6 +68,8 @@ class ExperimentStatus(Enum):
     ON_QUEUE = 1
     COMPLETED = 2
 
+@dataclass
+@dataclass_json
 class Experiment:
     id: str
     label: str
@@ -70,8 +79,25 @@ class Experiment:
     build_options: dict[str, bool]
     jobs: list[Job]
 
+    def __init__(self, id: str = "", label: str = "", description: str = "",
+                 type: ExperimentType = ExperimentType.INTRINSICS,
+                 status: ExperimentStatus = ExperimentStatus.PENDING,
+                 build_options: dict[str, bool] = None, jobs: list[Job] = None):
+        self.id = id
+        self.label = label
+        self.description = description
+        self.type = type
+        self.status = status
+        self.build_options = build_options if build_options is not None else {}
+        self.jobs = jobs if jobs is not None else []
+
+@dataclass
+@dataclass_json
 class State:
     experiments: list[Experiment]
+
+    def __init__(self, experiments: list[Experiment] = None):
+        self.experiments = experiments if experiments is not None else []
 
 class HPCCluster:
     __ssh: paramiko.SSHClient
@@ -116,20 +142,18 @@ class HPCCluster:
 
         experiment.jobs = []
         job_index = 0
-        while not stdout.channel.exit_status_ready():
-            if stdout.channel.recv_ready():
-                line = stdout.readline()
-                if Config.SHOW_REMOTE_OUTPUT:
-                    print(line, end="")
+        for line in iter(stdout.readline, ''):
+            if Config.SHOW_REMOTE_OUTPUT:
+                print(line, end="")
 
-                batch_id_match = re.search(r"Batch ID: (\w+)", line)
-                if batch_id_match:
-                    experiment.id = batch_id_match.group(1)
+            batch_id_match = re.search(r"Batch ID: (\w+)", line)
+            if batch_id_match:
+                experiment.id = batch_id_match.group(1)
 
-                job_id_match = re.search(r"Submitted batch job (\d+)", line)
-                if job_id_match:
-                    experiment.jobs.append(Job(slurm_id=int(job_id_match.group(1)), index=job_index, status=JobStatus.PENDING))
-                    job_index += 1
+            job_id_match = re.search(r"Submitted batch job (\d+)", line)
+            if job_id_match:
+                experiment.jobs.append(Job(slurm_id=int(job_id_match.group(1)), index=job_index, status=JobStatus.PENDING))
+                job_index += 1
 
         experiment.status = ExperimentStatus.ON_QUEUE
         return stdout.channel.recv_exit_status() == 0
@@ -147,31 +171,30 @@ class HPCCluster:
         )
 
         new_slurm_ids = []
-        while not stdout.channel.exit_status_ready():
-            if stdout.channel.recv_ready():
-                line = stdout.readline()
+        for line in iter(stdout.readline, ''):
+            if Config.SHOW_REMOTE_OUTPUT:
+                print(line, end="")
 
-                if Config.SHOW_REMOTE_OUTPUT:
-                    print(line, end="")
-
-                job_id_match = re.search(r"Submitted batch job (\d+)", line)
-                if job_id_match:
-                    new_slurm_ids.append(int(job_id_match.group(1)))
+            job_id_match = re.search(r"Submitted batch job (\d+)", line)
+            if job_id_match:
+                new_slurm_ids.append(int(job_id_match.group(1)))
 
         return new_slurm_ids
 
     def merge_experiment(self, experiment: Experiment) -> bool:
-        script_inputs = [str(experiment.type), experiment.label, experiment.description]
-        script_input_str = "\n".join(script_inputs)
+        script_inputs = [str(experiment.type.value), experiment.label, experiment.description]
+        script_input_str = "\n".join(script_inputs) + "\n"
         stdin, stdout, stderr = self.__ssh.exec_command(
-            f"cd {os.path.join(Config.BASE_DIR, "merge")} && echo {script_input_str} | ./merge_experiments_db.sh {experiment.id}"
+            f"cd {os.path.join(Config.BASE_DIR, "merge")} && "
+            f"./merge_experiments_db.sh {experiment.id}"
         )
 
-        while not stdout.channel.exit_status_ready():
-            if stdout.channel.recv_ready():
-                line = stdout.readline()
-                if Config.SHOW_REMOTE_OUTPUT:
-                    print(line, end="")
+        stdin.write(script_input_str)
+        stdin.flush()
+
+        for line in iter(stdout.readline, ''):
+            if Config.SHOW_REMOTE_OUTPUT:
+                print(line, end="")
 
         return stdout.channel.recv_exit_status() == 0
 
@@ -269,6 +292,12 @@ class Manager:
         if not success:
             raise RuntimeError(f"Failed to merge experiment: {experiment.label}")
 
+def load_state() -> State:
+    if not os.path.exists(Config.STATE_FILE):
+        raise FileNotFoundError(f"{Config.STATE_FILE} not found")
+
+    with open(Config.STATE_FILE, "r") as f:
+        return State.from_json(f.read())
 
 def parse_args() -> State:
     parser = argparse.ArgumentParser()
@@ -296,10 +325,16 @@ def parse_args() -> State:
         }
 
         state.experiments = [experiment]
+    elif args.mode == "monitor":
+        state = load_state()
     else:
         raise ValueError("Unsupported mode")
 
     return state
+
+def save_state(state: State):
+    with open(Config.STATE_FILE, "w") as f:
+        f.write(state.to_json(indent=4))
 
 def main():
     state = parse_args()
@@ -307,8 +342,8 @@ def main():
 
     while True:
         manager.tick()
+        save_state(state)
         time.sleep(10)
-    #todo save state
 
 if __name__ == "__main__":
     main()
