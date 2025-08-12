@@ -23,4 +23,4 @@ fi
 
 echo "Preparing job..."
 cp "${BASE_DB_DIR}/initial.sqlite" "${ACTUAL_DB_DIR}/initial.sqlite"
-python ../helper/insert_experiment_row.py "${ACTUAL_DB_DIR}/initial.sqlite" "$ARG_TYPE"
+python ../helper/insert_experiment_row.py "${ACTUAL_DB_DIR}/initial.sqlite" "$ARG_TYPE" --build-options "$BUILD_OPTIONS"

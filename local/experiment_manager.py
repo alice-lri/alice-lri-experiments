@@ -5,7 +5,6 @@ import paramiko
 import os
 import re
 import time
-import json
 
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
@@ -339,11 +338,12 @@ def save_state(state: State):
 def main():
     state = parse_args()
     manager = Manager(state)
+    save_state(state)
 
     while True:
         manager.tick()
         save_state(state)
-        time.sleep(10)
+        time.sleep(5 * 60)
 
 if __name__ == "__main__":
     main()

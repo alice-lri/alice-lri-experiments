@@ -40,16 +40,25 @@ def get_db_files(folder_path):
     return [folder_path + "/" + f for f in os.listdir(folder_path) if re.fullmatch(r'\d+\.sqlite', f)]
 
 
-def insert_merged_experiment(cursor, table, label, description):
+def insert_merged_experiment(cursor, table, label, description, build_options=None):
     try:
         commit_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('utf-8').strip()
     except subprocess.CalledProcessError:
         commit_hash = None
 
-    cursor.execute(f"""
-        INSERT INTO {table}(timestamp, label, description, commit_hash) 
-        VALUES (DATETIME('now', 'localtime', 'subsec'), ?, ?, ?)
-    """, (label, description, commit_hash))
+    if table == Constant.EXPERIMENT_TABLE and build_options:
+        cursor.execute(f"""
+            INSERT INTO {table}(timestamp, label, description, commit_hash, use_hough_continuity, 
+                               use_scanline_conflict_solver, use_vertical_heuristics, use_horizontal_heuristics) 
+            VALUES (DATETIME('now', 'localtime', 'subsec'), ?, ?, ?, ?, ?, ?, ?)
+        """, (label, description, commit_hash,
+              build_options['use_hough_continuity'], build_options['use_scanline_conflict_solver'],
+              build_options['use_vertical_heuristics'], build_options['use_horizontal_heuristics']))
+    else:
+        cursor.execute(f"""
+            INSERT INTO {table}(timestamp, label, description, commit_hash) 
+            VALUES (DATETIME('now', 'localtime', 'subsec'), ?, ?, ?)
+        """, (label, description, commit_hash))
 
     return cursor.lastrowid
 
@@ -60,6 +69,24 @@ def assert_single_experiment(cursor, table):
 
     if len(ids) != 1:
         raise ValueError(f"Unexpected experiment IDs found: {ids}")
+
+
+def fetch_experiment_build_options(cursor):
+    cursor.execute("""
+        SELECT use_hough_continuity, use_scanline_conflict_solver, 
+               use_vertical_heuristics, use_horizontal_heuristics
+        FROM experiment
+        LIMIT 1
+    """)
+    row = cursor.fetchone()
+    if row:
+        return {
+            'use_hough_continuity': bool(row[0]),
+            'use_scanline_conflict_solver': bool(row[1]),
+            'use_vertical_heuristics': bool(row[2]),
+            'use_horizontal_heuristics': bool(row[3])
+        }
+    raise ValueError("No experiment build options found in the database.")
 
 
 def fetch_frames(cursor):
@@ -158,7 +185,13 @@ def insert_ri_frames(cursor, merged_experiment_id, frames_data_list):
 def merge_experiment_databases(db_files, master_db_path, label, description):
     master_conn = sqlite3.connect(master_db_path)
     master_c = master_conn.cursor()
-    merged_experiment_id = insert_merged_experiment(master_c, Constant.EXPERIMENT_TABLE, label, description)
+
+    build_options = None
+    with sqlite3.connect(db_files[0]) as first_conn:
+        first_c = first_conn.cursor()
+        build_options = fetch_experiment_build_options(first_c)
+    
+    merged_experiment_id = insert_merged_experiment(master_c, Constant.EXPERIMENT_TABLE, label, description, build_options)
 
     files_count = len(db_files)
 
