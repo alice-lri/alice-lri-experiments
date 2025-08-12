@@ -14,6 +14,10 @@ class Config:
     STATE_FILE = "state.json"
     SHOW_REMOTE_OUTPUT = False
 
+class JobType(Enum):
+    TRAIN = "train"
+    MAIN = "main"
+
 class JobStatus(Enum):
     PENDING = 0
     RUNNING = 1
@@ -39,11 +43,13 @@ class Job:
     slurm_id: int
     index: int
     status: JobStatus
+    type: JobType
 
-    def __init__(self, slurm_id: int, index: int, status: JobStatus):
+    def __init__(self, slurm_id: int, index: int, status: JobStatus, type: JobType):
         self.slurm_id = slurm_id
         self.index = index
         self.status = status
+        self.type = type
 
 
 class ExperimentType(Enum):
@@ -126,8 +132,10 @@ class HPCCluster:
     def launch_experiment(self, experiment: Experiment) -> bool:
         if experiment.type == ExperimentType.INTRINSICS:
             script_dir = "slurm/estimate"
-        else: #TODO
-            raise ValueError(f"Unsupported experiment type: {experiment.type}")
+            script_input = ["y"]
+        else:
+            script_dir = "slurm/ri"
+            script_input = ["y", str(experiment.type.value - 1)]
 
         build_options_str = ""
         if experiment.build_options:
@@ -136,11 +144,15 @@ class HPCCluster:
 
         stdin, stdout, stderr = self.__ssh.exec_command(
             f"cd {os.path.join(Config.BASE_DIR, script_dir)} && "
-            f"yes | ./prepare_and_launch.sh {build_options_str}"
+            f"./prepare_and_launch.sh {build_options_str}"
         )
 
+        script_input_str = "\n".join(script_input) + "\n"
+        stdin.write(script_input_str)
+        stdin.flush()
+
         experiment.jobs = []
-        job_index = 0
+        job_index = 0 if experiment.type == ExperimentType.INTRINSICS else -1
         for line in iter(stdout.readline, ''):
             if Config.SHOW_REMOTE_OUTPUT:
                 print(line, end="")
@@ -151,23 +163,33 @@ class HPCCluster:
 
             job_id_match = re.search(r"Submitted batch job (\d+)", line)
             if job_id_match:
-                experiment.jobs.append(Job(slurm_id=int(job_id_match.group(1)), index=job_index, status=JobStatus.PENDING))
+                job_type = JobType.TRAIN if job_index < 0 else JobType.MAIN
+                experiment.jobs.append(Job(slurm_id=int(job_id_match.group(1)), index=job_index,
+                                           status=JobStatus.PENDING, type=job_type))
                 job_index += 1
 
         experiment.status = ExperimentStatus.ON_QUEUE
         return stdout.channel.recv_exit_status() == 0
 
-    def relaunch_jobs(self, experiment_type: ExperimentType, experiment_id: str, job_indices: list[int]) -> list[str]:
+    def relaunch_jobs(self, experiment_type: ExperimentType, experiment_id: str, job_indices: list[int],
+                      skip_training: bool) -> list[str]:
         if experiment_type == ExperimentType.INTRINSICS:
             script_dir = "slurm/estimate"
-        else: #TODO
-            raise ValueError(f"Unsupported experiment type: {experiment_type}")
+            script_input = ["y"]
+        else:
+            script_dir = "slurm/ri"
+            script_input = ["y", str(experiment_type.value - 1)]
 
         job_indices_str = " ".join(map(str, job_indices))
+        skip_training_arg = "--skip-training" if skip_training else ""
         stdin, stdout, stderr = self.__ssh.exec_command(
             f"cd {os.path.join(Config.BASE_DIR, script_dir)} && "
-            f"yes | ./prepare_and_launch.sh --relaunch {experiment_id} {job_indices_str} --skip-build"
+            f"./prepare_and_launch.sh --relaunch {experiment_id} {job_indices_str} --skip-build {skip_training_arg}"
         )
+
+        script_input_str = "\n".join(script_input) + "\n"
+        stdin.write(script_input_str)
+        stdin.flush()
 
         new_slurm_ids = []
         for line in iter(stdout.readline, ''):
@@ -226,7 +248,7 @@ class Manager:
             self.__launch_experiment(experiment)
             return
 
-        finished_now = True
+        finished_now = False
         if experiment.status == ExperimentStatus.ON_QUEUE:
             finished_now = self.__monitor_experiment(experiment)
         if experiment.status == ExperimentStatus.COMPLETED or finished_now:
@@ -250,6 +272,7 @@ class Manager:
 
     def __monitor_experiment(self, experiment: Experiment) -> bool:
         jobs_to_relaunch = []
+        skip_training = True
         for job in experiment.jobs:
             if job.status == JobStatus.COMPLETED:
                 continue
@@ -264,13 +287,18 @@ class Manager:
             elif job.status == JobStatus.COMPLETED:
                 print(f"Job {job.index} completed successfully.")
             elif job.status == JobStatus.FAILED:
-                jobs_to_relaunch.append(job)
+                if job.type == JobType.TRAIN:
+                    jobs_to_relaunch = [] + experiment.jobs
+                    skip_training = False
+                    break
+                else:
+                    jobs_to_relaunch.append(job)
 
         if len(jobs_to_relaunch) > 0:
             indices_to_relaunch = [job.index for job in jobs_to_relaunch]
             print(f"Will relaunch the following jobs: {indices_to_relaunch}")
             new_slurm_ids = self.__cluster\
-                .relaunch_jobs(experiment.type, experiment.id, indices_to_relaunch)
+                .relaunch_jobs(experiment.type, experiment.id, indices_to_relaunch, skip_training)
 
             for job, new_slurm_id in zip(jobs_to_relaunch, new_slurm_ids):
                 print(f"Relaunched job {job.index} with new SLURM ID: {new_slurm_id}")

@@ -4,11 +4,6 @@ cd "$(dirname "${BASH_SOURCE[0]}")" || exit
 
 CONTAINER_PATH="../../container.sif"
 
-SKIP_TRAINING=0
-if [[ $# -gt 0 ]]; then
-  SKIP_TRAINING=1
-fi
-
 source ../helper/paths.sh
 source ../helper/multi_batch_job_header.sh
 
@@ -32,7 +27,7 @@ echo "Will use arg type=${ARG_TYPE}"
 module load cesga/system apptainer/1.2.3
 apptainer exec "$CONTAINER_PATH" ./prepare.sh "$BASE_DB_DIR" "$ACTUAL_DB_DIR" "$ARG_TYPE" "$REBUILD" "$BUILD_OPTIONS"
 
-if [[ "$SKIP_TRAINING" -eq 0 ]]; then
+if [[ "$SKIP_TRAINING" == false ]]; then
   echo "Launching train job..."
   TRAIN_JOB_ID=$(sbatch --parsable --job-name="accurate_compression_train" \
     -o "${ACTUAL_LOGS_DIR}/train.log" -e "${ACTUAL_LOGS_DIR}/train.log" \
