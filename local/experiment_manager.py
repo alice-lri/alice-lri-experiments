@@ -104,6 +104,29 @@ class State:
     def __init__(self, experiments: list[Experiment] = None):
         self.experiments = experiments if experiments is not None else []
 
+@dataclass
+@dataclass_json
+class ExperimentDefinition:
+    label: str
+    description: str
+    type: ExperimentType
+    build_options: dict[str, bool]
+
+    def __init__(self, label: str, description: str, type: ExperimentType, build_options: dict[str, bool]):
+        self.label = label
+        self.description = description
+        self.type = type
+        self.build_options = build_options if build_options is not None else {}
+
+@dataclass
+@dataclass_json
+class ExperimentDefinitionSet:
+    experiments: list[ExperimentDefinition]
+
+    def __init__(self, experiments: list[ExperimentDefinition]):
+        self.experiments = experiments if experiments is not None else []
+
+
 class HPCCluster:
     __ssh: paramiko.SSHClient
 
@@ -326,6 +349,44 @@ def load_state() -> State:
     with open(Config.STATE_FILE, "r") as f:
         return State.from_json(f.read())
 
+def load_definition_file(definition_file: str) -> ExperimentDefinitionSet:
+    if not os.path.exists(definition_file):
+        raise FileNotFoundError(f"{definition_file} not found")
+
+    with open(definition_file, "r") as f:
+        return ExperimentDefinitionSet.from_json(f.read())
+
+def load_state_from_args(args: argparse.Namespace, experiment: Experiment):
+    experiment.label = args.name
+    experiment.description = args.description
+    experiment.type = ExperimentType.from_string(args.type)
+    experiment.status = ExperimentStatus.PENDING
+    experiment.build_options = {}
+
+    if args.build_options:
+        build_opts = args.build_options.split()
+        for opt in build_opts:
+            key, value = opt.split("=", 1)
+            experiment.build_options[key] = (value.upper() == "ON")
+
+    return State(experiments=[experiment])
+
+def load_state_from_definition(definition: ExperimentDefinitionSet):
+    experiments = []
+    for defn in definition.experiments:
+        experiment = Experiment(
+            id="",
+            label=defn.label,
+            description=defn.description,
+            type=defn.type,
+            status=ExperimentStatus.PENDING,
+            build_options=defn.build_options.copy() if defn.build_options else {},
+            jobs=[]
+        )
+        experiments.append(experiment)
+
+    return State(experiments=experiments)
+
 def parse_args() -> State:
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", type=str, choices=["launch", "monitor"])
@@ -333,34 +394,26 @@ def parse_args() -> State:
     parser.add_argument("--build-options", type=str, help="Build options string (e.g., '-Dflag1=ON -Dflag2=OFF')")
     parser.add_argument("--name", type=str)
     parser.add_argument("--description", type=str)
+    parser.add_argument("--definition-file", type=str)
     parser.add_argument("--show-remote-output", action="store_true")
 
     args = parser.parse_args()
     experiment = Experiment()
-    state = State()
 
     Config.SHOW_REMOTE_OUTPUT = args.show_remote_output
 
     if args.mode == "launch":
-        experiment.label = args.name
-        experiment.description = args.description
-        experiment.type = ExperimentType.from_string(args.type)
-        experiment.status = ExperimentStatus.PENDING
-        experiment.build_options = {}
-        
-        if args.build_options:
-            build_opts = args.build_options.split()
-            for opt in build_opts:
-                key, value = opt.split("=", 1)
-                experiment.build_options[key] = (value.upper() == "ON")
-
-        state.experiments = [experiment]
+        if args.definition_file:
+            state = load_state_from_definition(load_definition_file(args.definition_file))
+        else:
+            state = load_state_from_args(args, experiment)
     elif args.mode == "monitor":
         state = load_state()
     else:
         raise ValueError("Unsupported mode")
 
     return state
+
 
 def save_state(state: State):
     with open(Config.STATE_FILE, "w") as f:
