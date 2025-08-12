@@ -14,6 +14,7 @@ set -eo pipefail
 CONTAINER_PATH=$1
 DB_DIR=$2
 SHARED_DIR=$3
+ARG_TYPE=$4
 
 source ../helper/paths.sh
 module load cesga/system apptainer/1.2.3
@@ -24,12 +25,12 @@ export PYTHONPATH="$ACCURATE_RI_PIP_DIR:$PYTHONPATH"
 srun apptainer exec "$CONTAINER_PATH" \
  python -u python/run_ri_experiment.py --mode batch \
  --phase=train \
+ --type="${ARG_TYPE}" \
  --db_path="${DB_DIR}/initial.sqlite" \
  --kitti_root="${KITTI_PATH}" \
  --durlar_root="${DURLAR_PATH}" \
  --private_dir="${TMPDIR}" \
  --shared_dir="${SHARED_DIR}"
- # optional add durlar_root to evaluate durlar as well
 
 echo "Train job finished."
 touch "${DB_DIR}/train_job.success"

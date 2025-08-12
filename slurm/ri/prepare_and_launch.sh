@@ -41,7 +41,7 @@ if [[ "$SKIP_TRAINING" == false ]]; then
   echo "Launching train job..."
   TRAIN_JOB_ID=$(sbatch --parsable --job-name="${BASE_JOB_NAME}_train" \
     -o "${ACTUAL_LOGS_DIR}/train.log" -e "${ACTUAL_LOGS_DIR}/train.log" \
-    train_job.sh "${CONTAINER_PATH}" "${ACTUAL_DB_DIR}" "${SHARED_DIR}")
+    train_job.sh "${CONTAINER_PATH}" "${ACTUAL_DB_DIR}" "${SHARED_DIR}" "${ARG_TYPE}")
     echo "Submitted batch job ${TRAIN_JOB_ID}"
 else
   echo "Skipping training job as requested."

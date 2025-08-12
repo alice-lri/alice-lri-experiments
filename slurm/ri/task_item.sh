@@ -26,6 +26,5 @@ python -u python/run_ri_experiment.py --mode batch \
   "${DATASETS_ARGS[@]}" \
   --private_dir="${PRIVATE_DIR}" \
   --shared_dir="${SHARED_DIR}" 2>&1 | tee "${TRACE_FILE_PATH}"
-  # optional add durlar_root to evaluate durlar as well
 
 touch "${SUCCESS_FILE_PATH}"
