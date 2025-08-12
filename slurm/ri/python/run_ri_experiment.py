@@ -39,6 +39,15 @@ class Config:
     @staticmethod
     def get_vertical_step():
         return Config.__kitti_vertical_step if Config.dataset == "kitti" else Config.__durlar_vertical_step
+    
+    @staticmethod
+    def get_experiment_sql_table():
+        if Config.experiment_type == "ri":
+            return "ri_experiment"
+        elif Config.experiment_type == "compression":
+            return "compression_experiment"
+        else:
+            raise ValueError("Unknown experiment type")
 
     @staticmethod
     def get_result_sql_table():
@@ -318,7 +327,7 @@ def run_batch(args):
     with sqlite3.connect(args.db_path) as conn:
         cur = conn.cursor()
 
-        cur.execute("SELECT MAX(id) FROM compression_experiment")
+        cur.execute(f"SELECT MAX(id) FROM {Config.get_experiment_sql_table()}")
         experiment_id = cur.fetchone()[0]
 
         assert experiment_id is not None, "Experiment ID must be defined."

@@ -27,9 +27,19 @@ echo "Will use arg type=${ARG_TYPE}"
 module load cesga/system apptainer/1.2.3
 apptainer exec "$CONTAINER_PATH" ./prepare.sh "$BASE_DB_DIR" "$ACTUAL_DB_DIR" "$ARG_TYPE" "$REBUILD" "${BUILD_OPTIONS[*]}"
 
+# TODO proper job names depending on the experiment type
+if [[ "$ARG_TYPE" == "ri" ]]; then
+  BASE_JOB_NAME="accurate_ri"
+elif [[ "$ARG_TYPE" == "compression" ]]; then
+  BASE_JOB_NAME="accurate_compression"
+else
+  echo "Unknown argument type: $ARG_TYPE"
+  exit 1
+fi
+
 if [[ "$SKIP_TRAINING" == false ]]; then
   echo "Launching train job..."
-  TRAIN_JOB_ID=$(sbatch --parsable --job-name="accurate_compression_train" \
+  TRAIN_JOB_ID=$(sbatch --parsable --job-name="${BASE_JOB_NAME}_train" \
     -o "${ACTUAL_LOGS_DIR}/train.log" -e "${ACTUAL_LOGS_DIR}/train.log" \
     train_job.sh "${CONTAINER_PATH}" "${ACTUAL_DB_DIR}" "${SHARED_DIR}")
     echo "Submitted batch job ${TRAIN_JOB_ID}"
@@ -51,7 +61,7 @@ fi
 
 for i in "${JOBS_TO_RUN[@]}"; do
   echo "Launching job ${i}..."
-  sbatch "${SBATCH_ARGS[@]}" --job-name="accurate_compression_${i}" \
+  sbatch "${SBATCH_ARGS[@]}" --job-name="${BASE_JOB_NAME}_${i}" \
     --mem-per-cpu="${MEM_PER_CPU}" -o "${ACTUAL_LOGS_DIR}/${i}.log" -e "${ACTUAL_LOGS_DIR}/${i}.log" \
     ri_job.sh "${CONTAINER_PATH}" "${ACTUAL_DB_DIR}" "${SHARED_DIR}" "${i}" "${JOB_COUNT}" "${ARG_TYPE}"
 done
