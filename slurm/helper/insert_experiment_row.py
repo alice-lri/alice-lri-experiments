@@ -4,7 +4,7 @@ import sqlite3
 parser = argparse.ArgumentParser(description='Prepare the DB for a new experiment.')
 parser.add_argument('db_path', type=str, help='Path to the SQLite database')
 parser.add_argument('type', type=str, choices=['intrinsics', 'compression'], help='Type of experiment (intrinsics or compression)')
-parser.add_argument("--build-options", type=str, nargs="*")
+parser.add_argument("--build-options", type=str, help="Build options string (e.g., '-Dflag1=ON -Dflag2=OFF')")
 args = parser.parse_args()
 
 conn = sqlite3.connect(args.db_path)
@@ -17,14 +17,13 @@ if args.type == 'intrinsics':
         "use_vertical_heuristics": True,
         "use_horizontal_heuristics": True
     }
-    input_build_options = {
-        key: (value.upper() == "ON")
-        for key, value in (opt.split("=", 1) for opt in (args.build_options or []))
-    }
-
-    for key, value in input_build_options.items():
-        mapped_key = key.lower().replace('-dflag', '')
-        build_options[mapped_key] = value
+    
+    if args.build_options:
+        input_build_options = args.build_options.split()
+        for option in input_build_options:
+            key, value = option.split("=", 1)
+            mapped_key = key.lower().replace('-dflag', '')
+            build_options[mapped_key] = (value.upper() == "ON")
 
     cur.execute("""
         INSERT INTO experiment(timestamp, use_hough_continuity, use_scanline_conflict_solver, 
