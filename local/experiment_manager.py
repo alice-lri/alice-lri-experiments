@@ -262,6 +262,8 @@ class Manager:
         if len(self.__state.experiments) == 0:
             print("No experiments to process.")
             return
+        else:
+            print(f"{len(self.__state.experiments)} experiments remaining.")
 
         self.__cluster.start_connection()
 
@@ -405,6 +407,7 @@ def parse_args() -> State:
     if args.mode == "launch":
         if args.definition_file:
             state = load_state_from_definition(load_definition_file(args.definition_file))
+            print(f"Loaded {len(state.experiments)} experiments from definition file.")
         else:
             state = load_state_from_args(args, experiment)
     elif args.mode == "monitor":
@@ -427,7 +430,7 @@ def main():
     while True:
         manager.tick()
         save_state(state)
-        time.sleep(5 * 60)
+        time.sleep(1 * 60)
 
 if __name__ == "__main__":
     main()

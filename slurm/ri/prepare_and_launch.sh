@@ -32,6 +32,7 @@ if [[ "$SKIP_TRAINING" == false ]]; then
   TRAIN_JOB_ID=$(sbatch --parsable --job-name="accurate_compression_train" \
     -o "${ACTUAL_LOGS_DIR}/train.log" -e "${ACTUAL_LOGS_DIR}/train.log" \
     train_job.sh "${CONTAINER_PATH}" "${ACTUAL_DB_DIR}" "${SHARED_DIR}")
+    echo "Submitted batch job ${TRAIN_JOB_ID}"
 else
   echo "Skipping training job as requested."
 fi
