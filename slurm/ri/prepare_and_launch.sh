@@ -29,13 +29,6 @@ fi
 
 echo "Will use arg type=${ARG_TYPE}"
 
-read -r -p "Rebuild and test (Y/n)? " REBUILD_INPUT
-REBUILD_INPUT=${REBUILD_INPUT:-y}
-REBUILD=false
-if [[ "$REBUILD_INPUT" == [Yy] ]]; then
-    REBUILD=true
-fi
-
 module load cesga/system apptainer/1.2.3
 apptainer exec "$CONTAINER_PATH" ./prepare.sh "$BASE_DB_DIR" "$ACTUAL_DB_DIR" "$ARG_TYPE" "$REBUILD" "$BUILD_OPTIONS"
 

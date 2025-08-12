@@ -131,12 +131,12 @@ class HPCCluster:
 
         build_options_str = ""
         if experiment.build_options:
-            build_options_str = "--build-options "
-            build_options_str += " ".join(f"{key}={'ON' if value else 'OFF'}" for key, value in experiment.build_options.items())
+            build_options_str = " ".join(f"{key}={'ON' if value else 'OFF'}" for key, value in experiment.build_options.items())
+            build_options_str = f"--build-options {build_options_str}"
 
         stdin, stdout, stderr = self.__ssh.exec_command(
             f"cd {os.path.join(Config.BASE_DIR, script_dir)} && "
-            f"yes | ./prepare_and_launch.sh {build_options_str}"
+            f"yes | ./prepare_and_launch.sh {build_options_str} --rebuild"
         )
 
         experiment.jobs = []
@@ -302,7 +302,7 @@ def parse_args() -> State:
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", type=str, choices=["launch", "monitor"])
     parser.add_argument("--type", type=str, choices=["intrinsics", "range_image", "compression"])
-    parser.add_argument("--build-options", type=str, nargs="*")
+    parser.add_argument("--build-options", type=str, help="Build options string (e.g., '-Dflag1=ON -Dflag2=OFF')")
     parser.add_argument("--name", type=str)
     parser.add_argument("--description", type=str)
     parser.add_argument("--show-remote-output", action="store_true")
@@ -318,10 +318,13 @@ def parse_args() -> State:
         experiment.description = args.description
         experiment.type = ExperimentType.from_string(args.type)
         experiment.status = ExperimentStatus.PENDING
-        experiment.build_options = {
-            key: (value.upper() == "ON")
-            for key, value in (opt.split("=", 1) for opt in (args.build_options or []))
-        }
+        experiment.build_options = {}
+        
+        if args.build_options:
+            build_opts = args.build_options.split()
+            for opt in build_opts:
+                key, value = opt.split("=", 1)
+                experiment.build_options[key] = (value.upper() == "ON")
 
         state.experiments = [experiment]
     elif args.mode == "monitor":

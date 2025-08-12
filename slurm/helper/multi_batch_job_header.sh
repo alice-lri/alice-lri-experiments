@@ -5,6 +5,7 @@ JOB_COUNT=32
 
 BATCH_ID="$(date +'%Y%m%d_%H%M%S_%3N')"
 RELAUNCH_BATCH=false
+REBUILD=false
 USER_REQUESTED_JOBS=()
 JOBS_TO_RUN=()
 BUILD_OPTIONS=()
@@ -40,6 +41,10 @@ while [[ $# -gt 0 ]]; do
           exit 1
         fi
       done
+      ;;
+    --rebuild)
+      REBUILD=true
+      shift
       ;;
     *)
       echo "Invalid arg: $1" >&2
