@@ -136,7 +136,7 @@ class HPCCluster:
 
         stdin, stdout, stderr = self.__ssh.exec_command(
             f"cd {os.path.join(Config.BASE_DIR, script_dir)} && "
-            f"yes | ./prepare_and_launch.sh {build_options_str} --rebuild"
+            f"yes | ./prepare_and_launch.sh {build_options_str}"
         )
 
         experiment.jobs = []
@@ -166,7 +166,7 @@ class HPCCluster:
         job_indices_str = " ".join(map(str, job_indices))
         stdin, stdout, stderr = self.__ssh.exec_command(
             f"cd {os.path.join(Config.BASE_DIR, script_dir)} && "
-            f"yes | ./prepare_and_launch.sh --relaunch {experiment_id} {job_indices_str}"
+            f"yes | ./prepare_and_launch.sh --relaunch {experiment_id} {job_indices_str} --skip-build"
         )
 
         new_slurm_ids = []
