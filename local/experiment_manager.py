@@ -13,6 +13,7 @@ class Config:
     BASE_DIR = """${STORE2}/accurate-ri-hpc"""
     STATE_FILE = "state.json"
     SHOW_REMOTE_OUTPUT = False
+    DISABLE_RELAUNCH = False
 
 class JobType(Enum):
     TRAIN = "train"
@@ -242,11 +243,14 @@ class HPCCluster:
 
         return stdout.channel.recv_exit_status() == 0
 
-    def job_status_by_id(self, job_id: int) -> JobStatus:
+    def job_status_by_id(self, job_id: int) -> JobStatus | None:
         stdin, stdout, stderr = self.__ssh.exec_command(f"sacct -n -X -P -j {job_id} --format=State")
         status_str = stdout.read().decode().strip()
 
-        return JobStatus.from_string(status_str)
+        try:
+            return JobStatus.from_string(status_str)
+        except ValueError:
+            return None
 
 
 class Manager:
@@ -302,16 +306,17 @@ class Manager:
             if job.status == JobStatus.COMPLETED:
                 continue
 
-            if job.status == JobStatus.FAILED:
-                raise RuntimeError(f"Failed job: {job.slurm_id}")
-
-            job.status = self.__cluster.job_status_by_id(job.slurm_id)
+            new_status = self.__cluster.job_status_by_id(job.slurm_id)
+            if new_status:
+                job.status = new_status
 
             if job.status == JobStatus.RUNNING:
-                print(f"Job {job.index} is currently running.")
+                print(f"Job {job.slurm_id} ({job.index}) is currently running.")
             elif job.status == JobStatus.COMPLETED:
-                print(f"Job {job.index} completed successfully.")
+                print(f"Job {job.slurm_id} ({job.index}) completed successfully.")
             elif job.status == JobStatus.FAILED:
+                print(f"Job {job.slurm_id} ({job.index}) failed.")
+
                 if job.type == JobType.TRAIN:
                     jobs_to_relaunch = [] + experiment.jobs
                     skip_training = False
@@ -319,7 +324,7 @@ class Manager:
                 else:
                     jobs_to_relaunch.append(job)
 
-        if len(jobs_to_relaunch) > 0:
+        if len(jobs_to_relaunch) > 0 and not Config.DISABLE_RELAUNCH:
             indices_to_relaunch = [job.index for job in jobs_to_relaunch]
             print(f"Will relaunch the following jobs: {indices_to_relaunch}")
             new_slurm_ids = self.__cluster\
@@ -398,11 +403,13 @@ def parse_args() -> State:
     parser.add_argument("--description", type=str)
     parser.add_argument("--definition-file", type=str)
     parser.add_argument("--show-remote-output", action="store_true")
+    parser.add_argument("--disable-relaunch", action="store_true")
 
     args = parser.parse_args()
     experiment = Experiment()
 
     Config.SHOW_REMOTE_OUTPUT = args.show_remote_output
+    Config.DISABLE_RELAUNCH = args.disable_relaunch
 
     if args.mode == "launch":
         if args.definition_file:
