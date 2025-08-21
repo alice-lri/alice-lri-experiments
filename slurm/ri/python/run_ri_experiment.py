@@ -232,6 +232,8 @@ def evaluate_compression(dataset, target_path, intrinsics_filename, out_filename
             decoder_cmd = build_naive_decoder_cmd(out_filename)
             run_process(decoder_cmd)
             naive_points, _ = load_binary(os.path.join(Config.private_dir, target_filename))
+            naive_points = remove_outliers(naive_points)
+
 
             cr_naive = original_size / naive_size
 
@@ -258,6 +260,7 @@ def evaluate_compression(dataset, target_path, intrinsics_filename, out_filename
             decoder_cmd = build_accurate_decoder_cmd(out_filename, intrinsics_file)
             run_process(decoder_cmd)
             accurate_points, _ = load_binary(os.path.join(Config.private_dir, target_filename))
+            accurate_points = remove_outliers(accurate_points)
 
             cr_accurate = original_size / accurate_size
 

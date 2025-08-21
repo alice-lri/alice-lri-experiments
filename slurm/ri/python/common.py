@@ -12,6 +12,12 @@ def load_binary(file_path):
 
     return points[mask], intensity[mask]
 
+def remove_outliers(points, max_coordinate=1000.0):
+    points = np.array(points)
+    mask = np.all(np.abs(points) <= max_coordinate, axis=1)
+
+    return points[mask]
+
 def calculate_phi(points):
     distances_xy = np.sqrt(points[:, 0] ** 2 + points[:, 1] ** 2)
     return np.arctan2(points[:, 2], distances_xy)
