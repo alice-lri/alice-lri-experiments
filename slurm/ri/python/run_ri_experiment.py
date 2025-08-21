@@ -62,7 +62,7 @@ class Config:
 class Globals:
     env = None
 
-def compute_p_cloud_mse(pc1, pc2):
+def compute_p_cloud_errors(pc1, pc2):
     pcd1 = o3d.geometry.PointCloud()
     pcd2 = o3d.geometry.PointCloud()
 
@@ -72,7 +72,7 @@ def compute_p_cloud_mse(pc1, pc2):
     dists1 = pcd1.compute_point_cloud_distance(pcd2)
     dists2 = pcd2.compute_point_cloud_distance(pcd1)
 
-    return np.mean(np.array(dists1)**2), np.mean(np.array(dists2)**2)
+    return np.mean(np.array(dists1)), np.mean(np.array(dists2)), np.mean(np.array(dists1)**2), np.mean(np.array(dists2)**2)
 
 
 def run_process(cmd):
@@ -169,7 +169,8 @@ def evaluate_ri(dataset, target_path, intrinsics_filename):
     x_accurate, y_accurate, z_accurate = accurate_ri.unproject_to_point_cloud(intrinsics, ri_accurate)
 
     points_accurate = np.column_stack((x_accurate, y_accurate, z_accurate))
-    accurate_to_original_mse, original_to_accurate_mse = compute_p_cloud_mse(points_accurate, points_original)
+    accurate_to_original_rmse, original_to_accurate_rmse, accurate_to_original_mse, original_to_accurate_mse =\
+        compute_p_cloud_errors(points_accurate, points_original)
 
     df_rows.append({
         "method": "accurate",
@@ -177,6 +178,8 @@ def evaluate_ri(dataset, target_path, intrinsics_filename):
         "ri_height": ri_accurate.height,
         "original_points_count": points_original.shape[0],
         "reconstructed_points_count": points_accurate.shape[0],
+        "reconstructed_to_original_rmse": accurate_to_original_rmse,
+        "original_to_reconstructed_rmse": original_to_accurate_rmse,
         "reconstructed_to_original_mse": accurate_to_original_mse,
         "original_to_reconstructed_mse": original_to_accurate_mse,
     })
@@ -192,7 +195,8 @@ def evaluate_ri(dataset, target_path, intrinsics_filename):
         pbea_ri = point_cloud_to_range_image(ri_mapper, points_original)
         points_pbea = range_image_to_point_cloud(ri_mapper, pbea_ri)
 
-        pbea_to_original_mse, original_to_pbea_mse = compute_p_cloud_mse(points_pbea, points_original)
+        pbea_to_original_rmse, original_to_pbea_rmse, pbea_to_original_mse, original_to_pbea_mse =\
+            compute_p_cloud_errors(points_pbea, points_original)
 
         df_rows.append({
             "method": "pbea",
@@ -200,6 +204,8 @@ def evaluate_ri(dataset, target_path, intrinsics_filename):
             "ri_height": ri_height,
             "original_points_count": points_original.shape[0],
             "reconstructed_points_count": points_pbea.shape[0],
+            "reconstructed_to_original_rmse": pbea_to_original_rmse,
+            "original_to_reconstructed_rmse": original_to_pbea_rmse,
             "reconstructed_to_original_mse": pbea_to_original_mse,
             "original_to_reconstructed_mse": original_to_pbea_mse,
         })
@@ -238,7 +244,8 @@ def evaluate_compression(dataset, target_path, intrinsics_filename, out_filename
             cr_naive = original_size / naive_size
 
             print("Computing naive metrics...")
-            naive_to_original_mse, original_to_naive_mse = compute_p_cloud_mse(naive_points, target_points)
+            naive_to_original_rmse, original_to_naive_rmse, naive_to_original_mse, original_to_naive_mse =\
+                compute_p_cloud_errors(naive_points, target_points)
 
             print(f"Compression Ratio (Naive): {cr_naive}")
             print(f"MSE (Naive to Original): {naive_to_original_mse}")
@@ -246,6 +253,8 @@ def evaluate_compression(dataset, target_path, intrinsics_filename, out_filename
 
             current_df_row["naive_points_count"] = naive_points.shape[0]
             current_df_row["naive_size_bytes"] = naive_size
+            current_df_row["naive_to_original_rmse"] = naive_to_original_rmse
+            current_df_row["original_to_naive_rmse"] = original_to_naive_rmse
             current_df_row["naive_to_original_mse"] = naive_to_original_mse
             current_df_row["original_to_naive_mse"] = original_to_naive_mse
 
@@ -265,7 +274,8 @@ def evaluate_compression(dataset, target_path, intrinsics_filename, out_filename
             cr_accurate = original_size / accurate_size
 
             print("Computing accurate metrics...")
-            accurate_to_original_mse, original_to_accurate_mse = compute_p_cloud_mse(accurate_points, target_points)
+            accurate_to_original_rmse, original_to_accurate_rmse, accurate_to_original_mse, original_to_accurate_mse =\
+                compute_p_cloud_errors(accurate_points, target_points)
 
             print(f"Compression Ratio (Accurate): {cr_accurate}")
             print(f"MSE (Accurate to Original): {accurate_to_original_mse}")
@@ -273,6 +283,8 @@ def evaluate_compression(dataset, target_path, intrinsics_filename, out_filename
 
             current_df_row["accurate_points_count"] = accurate_points.shape[0]
             current_df_row["accurate_size_bytes"] = accurate_size
+            current_df_row["accurate_to_original_rmse"] = accurate_to_original_rmse
+            current_df_row["original_to_accurate_rmse"] = original_to_accurate_rmse
             current_df_row["accurate_to_original_mse"] = accurate_to_original_mse
             current_df_row["original_to_accurate_mse"] = original_to_accurate_mse
 
