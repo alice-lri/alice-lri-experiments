@@ -22,7 +22,7 @@ if args.type == 'intrinsics':
         input_build_options = args.build_options.split()
         for option in input_build_options:
             key, value = option.split("=", 1)
-            mapped_key = key.lower().replace('-dflag', '')
+            mapped_key = key.lower().replace('-dflag_', '')
             build_options[mapped_key] = (value.upper() == "ON")
 
     cur.execute("""
