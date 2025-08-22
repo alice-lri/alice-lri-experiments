@@ -103,7 +103,8 @@ def fetch_compression_frames(cursor):
                    SELECT dataset_frame_id, horizontal_step, vertical_step, tile_size, error_threshold, 
                           original_points_count, naive_points_count, original_size_bytes, naive_size_bytes, 
                           accurate_size_bytes, accurate_points_count, naive_to_original_mse, original_to_naive_mse, 
-                          accurate_to_original_mse, original_to_accurate_mse
+                          accurate_to_original_mse, original_to_accurate_mse, naive_to_original_rmse, original_to_naive_rmse,
+                          accurate_to_original_rmse, original_to_accurate_rmse
                    FROM compression_frame_result
                    """)
     return cursor.fetchall()
@@ -112,7 +113,8 @@ def fetch_compression_frames(cursor):
 def fetch_ri_frames(cursor):
     cursor.execute("""
                    SELECT dataset_frame_id, method, ri_width, ri_height, original_points_count, 
-                          reconstructed_points_count, reconstructed_to_original_mse, original_to_reconstructed_mse
+                          reconstructed_points_count, reconstructed_to_original_mse, original_to_reconstructed_mse,
+                          reconstructed_to_original_rmse, original_to_reconstructed_rmse
                    FROM ri_frame_result
                    """)
     return cursor.fetchall()
@@ -165,8 +167,10 @@ def insert_compression_frames(cursor, merged_experiment_id, frames_data_list):
        INSERT INTO compression_frame_result(experiment_id, dataset_frame_id, horizontal_step, vertical_step, tile_size, 
                                             error_threshold, original_points_count, naive_points_count, original_size_bytes,
                                             naive_size_bytes, accurate_size_bytes, accurate_points_count, naive_to_original_mse,
-                                            original_to_naive_mse, accurate_to_original_mse, original_to_accurate_mse)
-       VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                            original_to_naive_mse, accurate_to_original_mse, original_to_accurate_mse,
+                                            naive_to_original_rmse, original_to_naive_rmse, accurate_to_original_rmse,
+                                            original_to_accurate_rmse)
+       VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        """, insert_data)
 
 
@@ -175,10 +179,10 @@ def insert_ri_frames(cursor, merged_experiment_id, frames_data_list):
 
     cursor.executemany("""
                        INSERT INTO ri_frame_result(experiment_id, dataset_frame_id, method, ri_width, ri_height,
-                                                   original_points_count,
-                                                   reconstructed_points_count, reconstructed_to_original_mse,
-                                                   original_to_reconstructed_mse)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                                   original_points_count, reconstructed_points_count, 
+                                                   reconstructed_to_original_mse, original_to_reconstructed_mse,
+                                                   reconstructed_to_original_rmse, original_to_reconstructed_rmse)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                        """, insert_data)
 
 
