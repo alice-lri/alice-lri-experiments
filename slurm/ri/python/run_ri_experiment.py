@@ -6,7 +6,7 @@ import subprocess
 import pandas as pd
 import open3d as o3d
 import argparse
-import accurate_ri
+import alice_lri
 from common import *
 from ri_default_mapper import RangeImageDefaultMapper
 
@@ -16,7 +16,7 @@ class Config:
     accurate_encoder_exec = "../../rtst-modified/build/pcc_encoder_accurate"
     naive_decoder_exec = "../../rtst-modified/build/pcc_decoder"
     accurate_decoder_exec = "../../rtst-modified/build/pcc_decoder_accurate"
-    accurate_ri_lib_path = "../../accurate-ri/build/lib"
+    alice_lri_lib_path = "../../accurate-ri/build/lib"
     fmt = "binary"
     tile_size = "4"
     error_thresholds = [0.001, 0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1]
@@ -147,10 +147,10 @@ def train(train_path, intrinsics_filename):
     train_points, _ = load_binary(train_path)
 
     print("Training...")
-    intrinsics = accurate_ri.train(train_points[:, 0], train_points[:, 1], train_points[:, 2])
+    intrinsics = alice_lri.train(train_points[:, 0], train_points[:, 1], train_points[:, 2])
 
     intrinsics_file = os.path.join(Config.shared_dir, intrinsics_filename)
-    accurate_ri.write_to_json(intrinsics, intrinsics_file)
+    alice_lri.intrinsics_to_json_file(intrinsics, intrinsics_file)
 
 
 def evaluate_ri(dataset, target_path, intrinsics_filename):
@@ -162,11 +162,11 @@ def evaluate_ri(dataset, target_path, intrinsics_filename):
     points_original, _ = load_binary(target_path)
     x_original, y_original, z_original = points_original[:, 0], points_original[:, 1], points_original[:, 2]
 
-    intrinsics = accurate_ri.read_from_json(intrinsics_file)
+    intrinsics = alice_lri.intrinsics_from_json_file(intrinsics_file)
 
     print("Evaluating accurate method...")
-    ri_accurate = accurate_ri.project_to_range_image(intrinsics, x_original, y_original, z_original)
-    x_accurate, y_accurate, z_accurate = accurate_ri.unproject_to_point_cloud(intrinsics, ri_accurate)
+    ri_accurate = alice_lri.project_to_range_image(intrinsics, x_original, y_original, z_original)
+    x_accurate, y_accurate, z_accurate = alice_lri.unproject_to_point_cloud(intrinsics, ri_accurate)
 
     points_accurate = np.column_stack((x_accurate, y_accurate, z_accurate))
     accurate_to_original_rmse, original_to_accurate_rmse, accurate_to_original_mse, original_to_accurate_mse =\
@@ -457,7 +457,7 @@ def main():
     args = parse_args()
 
     Globals.env = os.environ.copy()
-    Globals.env["LD_LIBRARY_PATH"] = os.path.abspath(Config.accurate_ri_lib_path)
+    Globals.env["LD_LIBRARY_PATH"] = os.path.abspath(Config.alice_lri_lib_path)
 
     if args.mode == "single":
         run_single(args)
