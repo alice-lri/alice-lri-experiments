@@ -161,14 +161,9 @@ class HPCCluster:
             script_dir = "slurm/ri"
             script_input = ["y", str(experiment.type.value - 1)]
 
-        build_options_str = ""
-        if experiment.build_options:
-            build_options_str = " ".join(f"{key}={'ON' if value else 'OFF'}" for key, value in experiment.build_options.items())
-            build_options_str = f"--build-options {build_options_str}"
-
         stdin, stdout, stderr = self.__ssh.exec_command(
             f"cd {os.path.join(Config.BASE_DIR, script_dir)} && "
-            f"./prepare_and_launch.sh {build_options_str}"
+            f"./prepare_and_launch.sh {HPCCluster.__build_options_arg(experiment)}"
         )
 
         script_input_str = "\n".join(script_input) + "\n"
@@ -195,20 +190,23 @@ class HPCCluster:
         experiment.status = ExperimentStatus.ON_QUEUE
         return stdout.channel.recv_exit_status() == 0
 
-    def relaunch_jobs(self, experiment_type: ExperimentType, experiment_id: str, job_indices: list[int],
+    def relaunch_jobs(self, experiment: Experiment, job_indices: list[int],
                       skip_training: bool) -> list[str]:
-        if experiment_type == ExperimentType.INTRINSICS:
+        if experiment.type == ExperimentType.INTRINSICS:
             script_dir = "slurm/estimate"
             script_input = ["y"]
         else:
             script_dir = "slurm/ri"
-            script_input = ["y", str(experiment_type.value - 1)]
+            script_input = ["y", str(experiment.type.value - 1)]
 
         job_indices_str = " ".join(map(str, job_indices))
         skip_training_arg = "--skip-training" if skip_training else ""
         stdin, stdout, stderr = self.__ssh.exec_command(
             f"cd {os.path.join(Config.BASE_DIR, script_dir)} && "
-            f"./prepare_and_launch.sh --relaunch {experiment_id} {job_indices_str} --skip-build {skip_training_arg}"
+            f"./prepare_and_launch.sh "
+            f"--relaunch {experiment.id} {job_indices_str} "
+            f"--skip-build {skip_training_arg} "
+            f"{HPCCluster.__build_options_arg(experiment)}"
         )
 
         script_input_str = "\n".join(script_input) + "\n"
@@ -251,6 +249,15 @@ class HPCCluster:
             return JobStatus.from_string(status_str)
         except ValueError:
             return None
+
+    @staticmethod
+    def __build_options_arg(experiment: Experiment) -> str:
+        build_options_str = ""
+        if experiment.build_options:
+            build_options_str = " ".join(f"{key}={'ON' if value else 'OFF'}" for key, value in experiment.build_options.items())
+            build_options_str = f"--build-options {build_options_str}"
+
+        return build_options_str
 
 
 class Manager:
@@ -328,7 +335,7 @@ class Manager:
             indices_to_relaunch = [job.index for job in jobs_to_relaunch]
             print(f"Will relaunch the following jobs: {indices_to_relaunch}")
             new_slurm_ids = self.__cluster\
-                .relaunch_jobs(experiment.type, experiment.id, indices_to_relaunch, skip_training)
+                .relaunch_jobs(experiment, indices_to_relaunch, skip_training)
 
             for job, new_slurm_id in zip(jobs_to_relaunch, new_slurm_ids):
                 print(f"Relaunched job {job.index} with new SLURM ID: {new_slurm_id}")
