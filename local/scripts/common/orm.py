@@ -14,6 +14,12 @@ class Database:
         self.conn.commit()
         return cur
 
+    def executemany(self, query: str, seq_of_params: list[tuple]):
+        cur = self.conn.cursor()
+        cur.executemany(query, seq_of_params)
+        self.conn.commit()
+        return cur
+
     def close(self):
         self.conn.close()
 
@@ -95,6 +101,25 @@ class OrmEntity:
         query = f"SELECT * FROM {cls.__table__} WHERE {condition}"
         rows = db.execute(query, params).fetchall()
         return [cls(**row) for row in rows]
+
+    @classmethod
+    def save_all(cls: type[T], db: Database, objects: list[T]):
+        if not objects:
+            return
+
+        if any(getattr(obj, "id", None) is not None for obj in objects):
+            raise ValueError("save_all only supports inserting new objects (id must be None).")
+
+        placeholders = ", ".join("?" for _ in cls.__fields__)
+        query = f"INSERT INTO {cls.__table__} ({', '.join(cls.__fields__)}) VALUES ({placeholders})"
+        values = [tuple(getattr(obj, f) for f in cls.__fields__) for obj in objects]
+
+        db.executemany(query, values)
+
+        last_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+        start_id = last_id - len(objects) + 1
+        for i, obj in enumerate(objects):
+            obj.id = start_id + i
 
 """
 class User(OrmEntity, table_name="users"):
