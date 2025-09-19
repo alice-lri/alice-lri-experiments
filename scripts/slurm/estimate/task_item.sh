@@ -1,13 +1,12 @@
 #!/bin/bash
 set -eo pipefail
 
-EXECUTABLE_PATH=$1
-DB_DIR=$2
-TASK_INDEX=$3
-TASK_COUNT=$4
+DB_DIR=$1
+TASK_INDEX=$2
+TASK_COUNT=$3
 
-EXEC_DIR=$(dirname "$EXECUTABLE_PATH")
-EXEC_FILE=$(basename "$EXECUTABLE_PATH")
+EXEC_DIR=$(dirname "$INTRINSICS_SQL_EXECUTABLE_PATH")
+EXEC_FILE=$(basename "$INTRINSICS_SQL_EXECUTABLE_PATH")
 
 source ../helper/prepare_task_item.sh
 
