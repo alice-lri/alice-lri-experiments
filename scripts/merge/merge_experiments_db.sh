@@ -28,7 +28,7 @@ read -rp "Experiment description: " DESCRIPTION
 
 echo "Merging experiments databases from ${TARGET_DIR}..."
 
-module load cesga/system apptainer/1.2.3
+module load $ALICE_LRI_HPC_MODULES
 apptainer exec "$CONTAINER_PATH" \
   python helper/merge_db.py "$TARGET_DIR" "$BASE_DB_DIR/master.sqlite" \
   --type="${ARG_TYPE}" \

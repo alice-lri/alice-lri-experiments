@@ -1,11 +1,10 @@
 #!/bin/bash
 set -eo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")" || exit
+pushd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null
 
-source ../../common/load_env.sh
 source ../helper/multi_batch_job_header.sh
 
-module load cesga/system apptainer/1.2.3
+module load $ALICE_LRI_HPC_MODULES
 apptainer exec "$CONTAINER_PATH" ../helper/prepare_job.sh "$ACTUAL_DB_DIR" "intrinsics" "$REBUILD" "${BUILD_OPTIONS[*]}"
 
 # TODO maybe do not use this whole json thing (env instead)
@@ -27,3 +26,5 @@ for i in "${JOBS_TO_RUN[@]}"; do
   sbatch --job-name="accurate_ri_${i}" -o "${ACTUAL_LOGS_DIR}/${i}.log" -e "${ACTUAL_LOGS_DIR}/${i}.log" \
    job.sh "${ACTUAL_DB_DIR}" "${i}" "${JOB_COUNT}"
 done
+
+popd > /dev/null

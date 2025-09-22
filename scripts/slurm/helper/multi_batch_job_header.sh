@@ -1,5 +1,8 @@
 #!/bin/bash
 set -eo pipefail
+pushd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null
+
+source ../../common/load_env.sh
 
 JOB_COUNT=32
 
@@ -106,3 +109,5 @@ echo "Batch ID: ${BATCH_ID}"
 mkdir -p "${ACTUAL_DB_DIR}"
 mkdir -p "${ACTUAL_LOGS_DIR}"
 mkdir -p "${SHARED_DIR}"
+
+popd > /dev/null

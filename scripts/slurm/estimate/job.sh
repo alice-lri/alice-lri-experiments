@@ -13,7 +13,7 @@ JOB_INDEX=$2
 JOB_COUNT=$3
 
 source ../../common/load_env.sh
-module load cesga/system apptainer/1.2.3
+module load $ALICE_LRI_HPC_MODULES
 
 echo "Beginning job ${JOB_INDEX}..."
 

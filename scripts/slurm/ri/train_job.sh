@@ -17,7 +17,7 @@ SHARED_DIR=$3
 ARG_TYPE=$4
 
 source ../helper/paths.sh
-module load cesga/system apptainer/1.2.3
+module load $ALICE_LRI_HPC_MODULES
 
 echo "Beginning train job..."
 

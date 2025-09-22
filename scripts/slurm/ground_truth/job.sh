@@ -6,22 +6,22 @@
 #SBATCH -c 1
 #SBATCH -t 06:00:00
 #SBATCH --mem-per-cpu=3G
-#SBATCH --mail-type=begin
-#SBATCH --mail-type=end
-#SBATCH --mail-user=s.soutullo@usc.es
 set -eo pipefail
+pushd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null
 
-CONDA_ENV_NAME=$1
-DB_DIR=$2
-JOB_INDEX=$3
-JOB_COUNT=$4
+DB_DIR=$1
+JOB_INDEX=$2
+JOB_COUNT=$3
+
+source ../../common/load_env.sh
+module load $ALICE_LRI_HPC_MODULES
 
 echo "Beginning job ${JOB_INDEX}..."
 
-module load cesga/system miniconda3/22.11.1-1
-conda activate "${CONDA_ENV_NAME}"
-
-srun task.sh "$CONDA_ENV_NAME" "$DB_DIR" "$JOB_INDEX" "$JOB_COUNT"
+export PYTHONPATH="$ACCURATE_RI_PIP_DIR:$PYTHONPATH"
+srun apptainer exec "$CONTAINER_PATH" ./task.sh "$DB_DIR" "$JOB_INDEX" "$JOB_COUNT"
 
 echo "Job ${JOB_INDEX} finished."
 touch "${DB_DIR}/job_${JOB_INDEX}.success"
+
+popd > /dev/null

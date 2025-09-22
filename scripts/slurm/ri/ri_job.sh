@@ -19,7 +19,7 @@ JOB_COUNT=$5
 ARG_TYPE=$6
 
 source ../helper/paths.sh
-module load cesga/system apptainer/1.2.3
+module load $ALICE_LRI_HPC_MODULES
 
 echo "Beginning job ${JOB_INDEX}..."
 

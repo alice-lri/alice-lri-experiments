@@ -1,6 +1,6 @@
 import numpy as np
 
-from local.scripts.common.datasets.base import Dataset
+from base import Dataset
 
 
 class KITTI(Dataset):

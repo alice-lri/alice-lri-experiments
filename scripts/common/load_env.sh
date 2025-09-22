@@ -7,6 +7,7 @@ while [ "$dir" != "/" ]; do
     set -o allexport
     source "$dir/.env"
     set +o allexport
+    echo "Loaded environment variables from $dir/.env"
     return 0 2>/dev/null || exit 0
   fi
   dir="$(dirname "$dir")"

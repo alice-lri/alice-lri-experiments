@@ -1,29 +1,16 @@
 import os
 
 from dotenv import load_dotenv
-
 load_dotenv()
 
-from local.scripts.common.orm import *
+from ...common.helper.orm import *
+from ...common.helper.entities import *
 
 class OldScanlineGt(OrmEntity, table_name="dataset_frame_scanline_info_empirical"):
     dataset_frame_id: int
     scanline_idx: int
     laser_idx: int
 
-class ScanlineGt(OrmEntity, table_name="dataset_frame_scanline_gt"):
-    dataset_frame_id: int
-    laser_id: int
-    scanline_idx: int
-
-class LaserGt(OrmEntity, table_name="dataset_laser_gt"):
-    id: int
-    dataset_id: int
-    laser_idx: int
-
-class DatasetFrame(OrmEntity, table_name="dataset_frame"):
-    id: int
-    dataset_id: int
 
 def main():
     old_db = Database(os.getenv("OLD_SQLITE_DB"))
@@ -31,7 +18,7 @@ def main():
 
     print("Fetching laser IDs...")
     dataset_laser_idx_to_laser_id: dict[tuple[int, int], int] = {}
-    for laser_gt in LaserGt.all(db):
+    for laser_gt in DatasetLaserGt.all(db):
         dataset_laser_idx_to_laser_id[(laser_gt.dataset_id, laser_gt.laser_idx)] = laser_gt.id
 
     print("Fetching dataset frame IDs...")
@@ -44,11 +31,11 @@ def main():
     for old_gt in OldScanlineGt.all(old_db):
         dataset_id = dataset_frame_id_to_dataset_id[old_gt.dataset_frame_id]
         laser_id = dataset_laser_idx_to_laser_id[(dataset_id, old_gt.laser_idx)]
-        gt = ScanlineGt(dataset_frame_id=old_gt.dataset_frame_id, laser_id=laser_id, scanline_idx=old_gt.scanline_idx)
+        gt = DatasetFrameScanlineGt(dataset_frame_id=old_gt.dataset_frame_id, laser_id=laser_id, scanline_idx=old_gt.scanline_idx)
         new_gts.append(gt)
 
     print("Saving...")
-    ScanlineGt.save_all(db, new_gts)
+    DatasetFrameScanlineGt.save_all(db, new_gts)
     db.close()
     old_db.close()
 
