@@ -1,0 +1,38 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%files
+    conda_env.yml conda_env.yml
+    apt_packages.txt apt_packages.txt
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+    export TZ=Europe/Madrid
+    export CONDA_PLUGINS_AUTO_ACCEPT_TOS=true
+
+    # Base packages
+    apt update
+    xargs apt install -y < apt_packages.txt
+
+    # Conan
+    curl -L https://github.com/conan-io/conan/releases/download/2.17.0/conan-2.17.0-amd64.deb -o conan.deb
+    dpkg -i conan.deb
+    conan profile detect
+
+    # Conda
+    curl -L https://repo.anaconda.com/miniconda/Miniconda3-py313_25.7.0-2-Linux-x86_64.sh -o miniconda.sh
+    bash miniconda.sh -b -p /opt/conda
+    export PATH=/opt/conda/bin:$PATH
+    conda init
+
+    # Create environment and install deps
+    conda env create -f conda_env.yml
+
+%environment
+    export APPTAINER_NO_HOME=1
+
+    source /opt/conda/etc/profile.d/conda.sh
+    conda activate "$CONDA_ENV_NAME"
+
+%runscript
+    exec python3 "$@"
