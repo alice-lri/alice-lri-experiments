@@ -8,8 +8,8 @@ import open3d as o3d
 import argparse
 import alice_lri
 
-from ....common.helper.ri.ri_utils import *
-from ....common.helper.ri.ri_default_mapper import *
+from ...common.helper.ri.ri_utils import *
+from ...common.helper.ri.ri_default_mapper import *
 
 from dotenv import load_dotenv
 load_dotenv()

@@ -16,7 +16,7 @@ fi
 if [[ "$ARG_TYPE" != "intrinsics" ]]; then
   echo "Quick test..."
   export PYTHONPATH="$ACCURATE_RI_PIP_DIR:$PYTHONPATH"
-  python -u python/run_ri_experiment.py --mode test
+  python -u run_ri_experiment.py --mode test
 fi
 
 echo "Preparing job..."

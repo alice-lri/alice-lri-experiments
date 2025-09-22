@@ -16,7 +16,7 @@ if [[ "${ARG_TYPE}" == "ri" ]]; then
 fi
 
 echo "Running task $TASK_INDEX of $TASK_COUNT..."
-python -u python/run_ri_experiment.py --mode batch \
+python -u run_ri_experiment.py --mode batch \
   --phase=evaluate \
   --type="${ARG_TYPE}" \
   --task_id="$TASK_INDEX" \

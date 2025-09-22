@@ -19,7 +19,7 @@ echo "Beginning train job..."
 
 export PYTHONPATH="$ACCURATE_RI_PIP_DIR:$PYTHONPATH"
 srun apptainer exec "$CONTAINER_PATH" \
- python -u python/run_ri_experiment.py --mode batch \
+ python -u run_ri_experiment.py --mode batch \
  --phase=train \
  --type="${ARG_TYPE}" \
  --db_path="${DB_DIR}/initial.sqlite" \
