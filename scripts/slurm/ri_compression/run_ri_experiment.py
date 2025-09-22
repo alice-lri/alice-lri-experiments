@@ -11,8 +11,8 @@ import alice_lri
 from ...common.helper.ri.ri_utils import *
 from ...common.helper.ri.ri_default_mapper import *
 
-from dotenv import load_dotenv
-load_dotenv()
+from ...common.load_env import load_env
+load_env()
 
 class Config:
     original_encoder_exec = os.getenv("RTST_ORIGINAL_ENCODER")

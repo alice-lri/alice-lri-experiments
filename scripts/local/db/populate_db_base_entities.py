@@ -6,8 +6,8 @@ from ...common.helper.datasets.durlar import *
 from ...common.helper.ground_truth import *
 import os
 
-from dotenv import load_dotenv
-load_dotenv()
+from ...common.load_env import load_env
+load_env()
 
 class DatasetConfiguration:
     info: Dataset
