@@ -7,16 +7,19 @@ import pandas as pd
 import open3d as o3d
 import argparse
 import alice_lri
-from common import *
-from ri_default_mapper import RangeImageDefaultMapper
 
+from ....common.helper.ri.ri_utils import *
+from ....common.helper.ri.ri_default_mapper import *
+
+from dotenv import load_dotenv
+load_dotenv()
 
 class Config:
-    naive_encoder_exec = "../../rtst-modified/build/pcc_encoder"
-    accurate_encoder_exec = "../../rtst-modified/build/pcc_encoder_accurate"
-    naive_decoder_exec = "../../rtst-modified/build/pcc_decoder"
-    accurate_decoder_exec = "../../rtst-modified/build/pcc_decoder_accurate"
-    alice_lri_lib_path = "../../accurate-ri/build/lib"
+    original_encoder_exec = os.getenv("RTST_ORIGINAL_ENCODER")
+    original_decoder_exec = os.getenv("RTST_ORIGINAL_DECODER")
+    modified_encoder_exec = os.getenv("RTST_MODIFIED_ENCODER")
+    modified_decoder_exec = os.getenv("RTST_MODIFIED_DECODER")
+    alice_lri_lib_path = os.getenv("ALICE_LRI_LIB_PATH")
     fmt = "binary"
     tile_size = "4"
     error_thresholds = [0.001, 0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1]
@@ -96,7 +99,7 @@ def get_frame_path(args, dataset, relative_path):
 
 def build_naive_encoder_cmd(input_dir, input_file, output_file, error_threshold):
     return [
-        os.path.abspath(Config.naive_encoder_exec),
+        os.path.abspath(Config.original_encoder_exec),
         "--path", input_dir,
         "--file", input_file,
         "-p", Config.get_horizontal_step(),
@@ -110,7 +113,7 @@ def build_naive_encoder_cmd(input_dir, input_file, output_file, error_threshold)
 
 def build_accurate_encoder_cmd(input_dir, input_file, intrinsics_file, output_file, error_threshold):
     return [
-        os.path.abspath(Config.accurate_encoder_exec),
+        os.path.abspath(Config.modified_encoder_exec),
         "--path", input_dir,
         "--file", input_file,
         "-i", intrinsics_file,
@@ -123,7 +126,7 @@ def build_accurate_encoder_cmd(input_dir, input_file, intrinsics_file, output_fi
 
 def build_naive_decoder_cmd(input_file):
     return [
-        os.path.abspath(Config.naive_decoder_exec),
+        os.path.abspath(Config.original_decoder_exec),
         "-p", Config.get_horizontal_step(),
         "-y", Config.get_vertical_step(),
         "-f", Config.fmt,
@@ -134,7 +137,7 @@ def build_naive_decoder_cmd(input_file):
 
 def build_accurate_decoder_cmd(input_file, intrinsics_file):
     return [
-        os.path.abspath(Config.accurate_decoder_exec),
+        os.path.abspath(Config.modified_decoder_exec),
         "-i", intrinsics_file,
         "-f", Config.fmt,
         "-l", Config.tile_size,

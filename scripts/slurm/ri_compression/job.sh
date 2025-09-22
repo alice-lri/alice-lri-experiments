@@ -6,19 +6,15 @@
 #SBATCH -c 1
 #SBATCH -t 06:00:00
 #SBATCH --mem-per-cpu=3G
-#SBATCH --mail-type=begin
-#SBATCH --mail-type=end
-#SBATCH --mail-user=s.soutullo@usc.es
 set -eo pipefail
 
-CONTAINER_PATH=$1
-DB_DIR=$2
-SHARED_DIR=$3
-JOB_INDEX=$4
-JOB_COUNT=$5
-ARG_TYPE=$6
+DB_DIR=$1
+SHARED_DIR=$2
+JOB_INDEX=$3
+JOB_COUNT=$4
+ARG_TYPE=$5
 
-source ../helper/paths.sh
+source ../../common/load_env.sh
 module load $ALICE_LRI_HPC_MODULES
 
 echo "Beginning job ${JOB_INDEX}..."

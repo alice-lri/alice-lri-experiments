@@ -26,3 +26,17 @@ def calculate_range(points):
 def calculate_range_xy(points):
     return np.sqrt(points[:, 0] ** 2 + points[:, 1] ** 2)
 
+
+def calculate_xyz(phi, theta, r):
+    x = r * np.cos(phi) * np.cos(theta)
+    y = r * np.cos(phi) * np.sin(theta)
+    z = r * np.sin(phi)
+
+    return np.stack((x, y, z), axis=-1, dtype=np.float64)
+
+
+def remove_outliers(points, max_coordinate=1000.0):
+    points = np.array(points)
+    mask = np.all(np.abs(points) <= max_coordinate, axis=1)
+
+    return points[mask]

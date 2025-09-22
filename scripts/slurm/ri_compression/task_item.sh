@@ -8,7 +8,6 @@ TASK_COUNT=$4
 ARG_TYPE=$5
 
 source ../helper/prepare_task_item.sh
-source ../helper/paths.sh
 
 DATASETS_ARGS=()
 DATASETS_ARGS+=("--kitti_root=${KITTI_PATH}")

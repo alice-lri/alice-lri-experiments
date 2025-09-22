@@ -1,10 +1,7 @@
 #!/bin/bash
 set -eo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")" || exit
+pushd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null
 
-CONTAINER_PATH="../../container.sif"
-
-source ../helper/paths.sh
 source ../helper/multi_batch_job_header.sh
 
 echo "Select experiment type:"
@@ -27,7 +24,6 @@ echo "Will use arg type=${ARG_TYPE}"
 module load $ALICE_LRI_HPC_MODULES
 apptainer exec "$CONTAINER_PATH" ./prepare.sh "$BASE_DB_DIR" "$ACTUAL_DB_DIR" "$ARG_TYPE" "$REBUILD" "${BUILD_OPTIONS[*]}"
 
-# TODO proper job names depending on the experiment type
 if [[ "$ARG_TYPE" == "ri" ]]; then
   BASE_JOB_NAME="accurate_ri"
 elif [[ "$ARG_TYPE" == "compression" ]]; then
@@ -58,11 +54,11 @@ elif [ "$ARG_TYPE" == "compression" ]; then
     MEM_PER_CPU="3G"
 fi
 
-
 for i in "${JOBS_TO_RUN[@]}"; do
   echo "Launching job ${i}..."
   sbatch "${SBATCH_ARGS[@]}" --job-name="${BASE_JOB_NAME}_${i}" \
     --mem-per-cpu="${MEM_PER_CPU}" -o "${ACTUAL_LOGS_DIR}/${i}.log" -e "${ACTUAL_LOGS_DIR}/${i}.log" \
-    ri_job.sh "${CONTAINER_PATH}" "${ACTUAL_DB_DIR}" "${SHARED_DIR}" "${i}" "${JOB_COUNT}" "${ARG_TYPE}"
+    job.sh "${ACTUAL_DB_DIR}" "${SHARED_DIR}" "${i}" "${JOB_COUNT}" "${ARG_TYPE}"
 done
 
+popd > /dev/null
