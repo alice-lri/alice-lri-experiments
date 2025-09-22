@@ -25,20 +25,20 @@ class Config:
     datasets_frames: dict[str, tuple[Dataset, str]] = {
         "kitti": DatasetConfiguration(
             KITTI(),
-            os.getenv("KITTI_ROOT"),
+            os.getenv("LOCAL_KITTI_PATH"),
             "*/*/velodyne_points/data/*.bin",
             "2011_09_26/2011_09_26_drive_0001_sync/velodyne_points/data/0000000000.bin",
         ),
         "durlar": DatasetConfiguration(
             DurLAR(),
-            os.getenv("DURLAR_ROOT"),
+            os.getenv("LOCAL_DURLAR_PATH"),
             "*/ouster_points/data/*.bin",
             "DurLAR_20210716/ouster_points/data/0000000000.bin",
         )
     }
 
 def main():
-    with Database(os.getenv("SQLITE_DB")) as db:
+    with Database(os.getenv("LOCAL_SQLITE_DB")) as db:
         for d_name, d_configuration in Config.datasets_frames.items():
             dataset = DatasetEntity(name=d_name, laser_count=d_configuration.info.laser_count)
             dataset.save(db)

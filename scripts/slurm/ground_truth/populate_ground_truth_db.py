@@ -1,5 +1,4 @@
 import argparse
-import argparse
 import os
 
 from scripts.common.helper.orm import Database
@@ -11,8 +10,8 @@ from ...common.helper.ground_truth import *
 
 class Config:
     datasets: dict[str, tuple[Dataset, str]] = {
-        "kitti": (KITTI(), os.getenv("KITTI_ROOT")),
-        "durlar": (DurLAR(), os.getenv("DURLAR_ROOT")),
+        "kitti": (KITTI(), os.getenv("KITTI_PATH")),
+        "durlar": (DurLAR(), os.getenv("DURLAR_PATH")),
     }
 
 
