@@ -12,12 +12,6 @@ class DatasetFrame(OrmEntity, table_name="dataset_frame"):
     dataset_id: int
     relative_path: str
 
-class DatasetFrameGt(OrmEntity, table_name="dataset_frame_gt"):
-    id: int | None
-    dataset_frame_id: int
-    points_count: int
-    scanlines_count: int
-
 class DatasetLaserGt(OrmEntity, table_name="dataset_laser_gt"):
     id: int | None
     dataset_id: int
@@ -27,6 +21,12 @@ class DatasetLaserGt(OrmEntity, table_name="dataset_laser_gt"):
     horizontal_offset: float
     horizontal_resolution: float
     horizontal_angle_offset: float
+
+class DatasetFrameGt(OrmEntity, table_name="dataset_frame_gt"):
+    id: int | None
+    dataset_frame_id: int
+    points_count: int
+    scanlines_count: int
 
 class DatasetFrameScanlineGt(OrmEntity, table_name="dataset_frame_scanline_gt"):
     id: int | None

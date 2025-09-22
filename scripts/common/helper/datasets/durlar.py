@@ -4,6 +4,10 @@ from base import Dataset
 class DurLAR(Dataset):
 
     @property
+    def laser_count(self) -> int:
+        return 128
+
+    @property
     def v_offsets(self) -> list[float]:
         return [0.03948696519285808, 0.039488849176797305, 0.03947743833311064, 0.03944817174837266,
                 0.039434128520796766, 0.03943182893416684, 0.03941507314308524, 0.03938160327556467,

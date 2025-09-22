@@ -6,6 +6,10 @@ from base import Dataset
 class KITTI(Dataset):
 
     @property
+    def laser_count(self) -> int:
+        return 64
+
+    @property
     def v_offsets(self) -> list[float]:
         return [0.10517547, 0.10582327, 0.10652189, 0.10736023, 0.10795722, 0.10849071, 0.10912581, 0.10990064,
                 0.11056115, 0.11125976, 0.11185676, 0.11236484, 0.11299995, 0.11357154, 0.11428286, 0.11493066,

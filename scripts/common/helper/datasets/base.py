@@ -3,6 +3,11 @@ from abc import ABC, abstractmethod
 class Dataset(ABC):
     @property
     @abstractmethod
+    def laser_count(self) -> int:
+        pass
+
+    @property
+    @abstractmethod
     def v_offsets(self) -> list[float]:
         pass
 
