@@ -8,12 +8,11 @@
 #SBATCH --mem-per-cpu=3G
 set -eo pipefail
 
-CONTAINER_PATH=$1
-DB_DIR=$2
-SHARED_DIR=$3
-ARG_TYPE=$4
+DB_DIR=$1
+SHARED_DIR=$2
+ARG_TYPE=$3
 
-source ../helper/paths.sh
+source ../../common/load_env.sh
 module load $ALICE_LRI_HPC_MODULES
 
 echo "Beginning train job..."
