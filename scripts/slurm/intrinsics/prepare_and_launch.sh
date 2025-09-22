@@ -7,7 +7,6 @@ source ../helper/multi_batch_job_header.sh
 module load $ALICE_LRI_HPC_MODULES
 apptainer exec "$CONTAINER_PATH" ../helper/prepare_job.sh "$ACTUAL_DB_DIR" "intrinsics" "$REBUILD" "${BUILD_OPTIONS[*]}"
 
-# TODO maybe do not use this whole json thing (env instead)
 jq -n \
   --arg db_dir "$ACTUAL_DB_DIR" \
   --arg durlar "$DURLAR_PATH" \

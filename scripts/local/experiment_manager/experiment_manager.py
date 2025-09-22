@@ -155,10 +155,10 @@ class HPCCluster:
 
     def launch_experiment(self, experiment: Experiment) -> bool:
         if experiment.type == ExperimentType.INTRINSICS:
-            script_dir = "slurm/estimate"
+            script_dir = "scripts/slurm/intrinsics"
             script_input = ["y"]
         else:
-            script_dir = "slurm/ri"
+            script_dir = "scripts/slurm/ri_compression"
             script_input = ["y", str(experiment.type.value - 1)]
 
         stdin, stdout, stderr = self.__ssh.exec_command(
@@ -193,10 +193,10 @@ class HPCCluster:
     def relaunch_jobs(self, experiment: Experiment, job_indices: list[int],
                       skip_training: bool) -> list[str]:
         if experiment.type == ExperimentType.INTRINSICS:
-            script_dir = "slurm/estimate"
+            script_dir = "scripts/slurm/intrinsics"
             script_input = ["y"]
         else:
-            script_dir = "slurm/ri"
+            script_dir = "scripts/slurm/ri_compression"
             script_input = ["y", str(experiment.type.value - 1)]
 
         job_indices_str = " ".join(map(str, job_indices))
