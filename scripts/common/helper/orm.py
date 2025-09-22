@@ -1,7 +1,15 @@
 import sqlite3
 from typing import TypeVar
 
-T = TypeVar("T", bound="BaseModel")
+T = TypeVar("T", bound="OrmEntity")
+
+class SQLExpr:
+    def __init__(self, expr: str):
+        self.expr = expr
+
+    def __repr__(self):
+        return f"SQLExpr({self.expr!r})"
+
 
 class Database:
     def __init__(self, db_path: str):
@@ -45,7 +53,7 @@ class OrmEntity:
             int: "INTEGER",
             str: "TEXT",
             float: "REAL",
-            bool: "INTEGER",  # SQLite has no native boolean
+            bool: "INTEGER",
         }
         return mapping.get(py_type, "TEXT")
 
@@ -62,18 +70,35 @@ class OrmEntity:
 
     def save(self, db: Database):
         if getattr(self, "id", None) is None:
-            placeholders = ", ".join("?" for _ in self.__fields__)
-            db.execute(
-                f"INSERT INTO {self.__table__} ({', '.join(self.__fields__)}) VALUES ({placeholders})",
-                tuple(getattr(self, f) for f in self.__fields__)
-            )
+            field_names, placeholders, params = [], [], []
+
+            for f in self.__fields__:
+                val = getattr(self, f)
+                field_names.append(f)
+                if isinstance(val, SQLExpr):
+                    placeholders.append(val.expr)
+                else:
+                    placeholders.append("?")
+                    params.append(val)
+
+            sql = f"INSERT INTO {self.__table__} ({', '.join(field_names)}) VALUES ({', '.join(placeholders)})"
+            db.execute(sql, tuple(params))
+
             self.id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
         else:
-            set_clause = ", ".join(f"{f}=?" for f in self.__fields__)
-            db.execute(
-                f"UPDATE {self.__table__} SET {set_clause} WHERE id=?",
-                tuple(getattr(self, f) for f in self.__fields__) + (self.id,)
-            )
+            set_clause_parts, params = [], []
+
+            for f in self.__fields__:
+                val = getattr(self, f)
+                if isinstance(val, SQLExpr):
+                    set_clause_parts.append(f"{f}={val.expr}")
+                else:
+                    set_clause_parts.append(f"{f}=?")
+                    params.append(val)
+
+            sql = f"UPDATE {self.__table__} SET {', '.join(set_clause_parts)} WHERE id=?"
+            params.append(self.id)
+            db.execute(sql, tuple(params))
 
     def save_or_ignore(self, db: Database):
         try:
@@ -110,48 +135,39 @@ class OrmEntity:
         if any(getattr(obj, "id", None) is not None for obj in objects):
             raise ValueError("save_all only supports inserting new objects (id must be None).")
 
-        placeholders = ", ".join("?" for _ in cls.__fields__)
-        query = f"INSERT INTO {cls.__table__} ({', '.join(cls.__fields__)}) VALUES ({placeholders})"
-        values = [tuple(getattr(obj, f) for f in cls.__fields__) for obj in objects]
+        field_names = cls.__fields__
 
-        db.executemany(query, values)
+        first_obj = objects[0]
+        placeholders = []
+        expr_mode = []
+
+        for f in field_names:
+            val = getattr(first_obj, f)
+            if isinstance(val, SQLExpr):
+                placeholders.append(val.expr)
+                expr_mode.append("expr")
+            else:
+                placeholders.append("?")
+                expr_mode.append("param")
+
+        sql = f"INSERT INTO {cls.__table__} ({', '.join(field_names)}) VALUES ({', '.join(placeholders)})"
+
+        values = []
+        for obj in objects:
+            row_params = []
+            for f, mode in zip(field_names, expr_mode):
+                val = getattr(obj, f)
+                if mode == "param":
+                    row_params.append(val)
+                elif mode == "expr":
+                    if not isinstance(val, SQLExpr):
+                        raise ValueError(f"Field {f} must be SQLExpr in all rows when using save_all.")
+
+            values.append(tuple(row_params))
+
+        db.executemany(sql, values)
 
         last_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
         start_id = last_id - len(objects) + 1
         for i, obj in enumerate(objects):
             obj.id = start_id + i
-
-"""
-class User(OrmEntity, table_name="users"):
-    id: int
-    name: str
-    email: str
-    age: int
-
-
-if __name__ == "__main__":
-    db = Database("test.db")
-
-    # Create table automatically
-    User.create_table(db)
-
-    # Create a user
-    u = User(name="Alice", email="alice@example.com", age=30)
-    u.save(db)
-
-    # Retrieve
-    user = User.get(db, u.id)
-    print(user.id, user.name, user.email, user.age)
-
-    # Update
-    user.age = 31
-    user.save(db)
-
-    # List all
-    for u in User.all(db):
-        print(u.id, u.name, u.email, u.age)
-
-    # Delete
-    user.delete(db)
-    db.close()
-"""

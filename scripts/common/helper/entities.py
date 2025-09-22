@@ -1,4 +1,6 @@
-from orm import OrmEntity
+from typing import Union
+from orm import OrmEntity, SQLExpr
+
 
 class DatasetEntity(OrmEntity, table_name="dataset"):
     id: int
@@ -25,3 +27,28 @@ class DatasetFrameScanlineGt(OrmEntity, table_name="dataset_frame_scanline_gt"):
     dataset_frame_id: int
     laser_id: int
     scanline_idx: int
+
+class IntrinsicsExperiment(OrmEntity, table_name="intrinsics_experiment"):
+    id: int
+    timestamp: Union[int, SQLExpr]
+    label: str
+    description: str
+    commit_hash: str
+    use_hough_continuity: bool
+    use_scanline_conflict_solver: bool
+    use_vertical_heuristics: bool
+    use_horizontal_heuristics: bool
+
+class RangeImageExperiment(OrmEntity, table_name="ri_experiment"):
+    id: int
+    timestamp: Union[int, SQLExpr]
+    label: str
+    description: str
+    commit_hash: str
+
+class CompressionExperiment(OrmEntity, table_name="compression_experiment"):
+    id: int
+    timestamp: Union[int, SQLExpr]
+    label: str
+    description: str
+    commit_hash: str
