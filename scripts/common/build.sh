@@ -13,9 +13,6 @@ echo "Building project..."
 cmake -DCMAKE_BUILD_TYPE=Release -DLOG_LEVEL=NONE -DENABLE_TRACE_FILE=OFF -DENABLE_PROFILING=OFF $BUILD_OPTIONS -S "${ALICE_LRI_SRC}" -B "${ALICE_LRI_SRC}/build"
 make -C "${ALICE_LRI_SRC}/build"
 
-echo "Building original RTST"
-make -C "$RTST_SRC"
-
 echo "Building modified RTST"
 make -C "$RTST_MODIFIED_SRC"
 
