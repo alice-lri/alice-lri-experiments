@@ -24,27 +24,26 @@ class Args:
 
 def main():
     parse_args()
-    db = Database(Args.db_path)
+    with Database(Args.db_path) as db:
+        datasets = DatasetEntity.all(db)
+        dataset_id_to_name = {dataset.id: dataset.name for dataset in datasets}
 
-    datasets = DatasetEntity.all(db)
-    dataset_id_to_name = {dataset.id: dataset.name for dataset in datasets}
+        frames = DatasetFrame.where(db, "id % ? = ?", (Args.total_processes, Args.process_id))
+        print(f"Process {Args.process_id}/{Args.total_processes} - Assigned {len(frames)} frames")
 
-    frames = DatasetFrame.where(db, "id % ? = ?", (Args.total_processes, Args.process_id))
-    print(f"Process {Args.process_id}/{Args.total_processes} - Assigned {len(frames)} frames")
+        all_gt_entities = []
+        for i, frame in enumerate(frames):
+            print(f"Processing {frame['relative_path']}")
 
-    all_gt_entities = []
-    for i, frame in enumerate(frames):
-        print(f"Processing {frame['relative_path']}")
+            gr_result = compute_ground_truth_from_frame(frame, dataset_id_to_name)
+            gt_entities = build_scanline_gt_entities(frame.id, gr_result)
+            all_gt_entities.extend(gt_entities)
 
-        gr_result = compute_ground_truth_from_frame(frame, dataset_id_to_name)
-        gt_entities = build_scanline_gt_entities(frame.id, gr_result)
-        all_gt_entities.extend(gt_entities)
+            print(f"Process {Args.process_id}/{Args.total_processes} - Processed {i + 1}/{len(frames)} frames")
 
-        print(f"Process {Args.process_id}/{Args.total_processes} - Processed {i + 1}/{len(frames)} frames")
-
-    print(f"Process {Args.process_id}/{Args.total_processes} - Saving...")
-    DatasetFrameScanlineGt.save_all(db, all_gt_entities)
-    print(f"Process {Args.process_id}/{Args.total_processes} - Finished all {len(frames)} frames successfully")
+        print(f"Process {Args.process_id}/{Args.total_processes} - Saving...")
+        DatasetFrameScanlineGt.save_all(db, all_gt_entities)
+        print(f"Process {Args.process_id}/{Args.total_processes} - Finished all {len(frames)} frames successfully")
 
 
 def parse_args():

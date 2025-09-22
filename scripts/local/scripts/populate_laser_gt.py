@@ -17,30 +17,28 @@ class Config:
 
 
 def main():
-    db = Database(os.getenv("SQLITE_DB"))
-    datasets = DatasetEntity.all(db)
+    with Database(os.getenv("SQLITE_DB")) as db:
+        datasets = DatasetEntity.all(db)
 
-    for dataset_entity in datasets:
-        dataset_data, frame_path = Config.datasets_frames[dataset_entity.name]
-        points, _ = load_binary(frame_path)
-        points = points[calculate_range(points) > 0]
+        for dataset_entity in datasets:
+            dataset_data, frame_path = Config.datasets_frames[dataset_entity.name]
+            points, _ = load_binary(frame_path)
+            points = points[calculate_range(points) > 0]
 
-        _, gt_result = compute_ground_truth(points, dataset_data.v_angles, dataset_data.v_offsets, dataset_data.h_offsets, dataset_data.h_resolutions)
-        for gt_scanline in gt_result["scanlines"]:
-            gt_entity = DatasetLaserGt(
-                dataset_id=dataset_entity.id,
-                laser_idx=gt_scanline['laser_idx'],
-                vertical_offset=gt_scanline['v_offset'],
-                vertical_angle=gt_scanline['v_angle'],
-                horizontal_offset=gt_scanline['h_offset'],
-                horizontal_resolution=gt_scanline['h_resolution'],
-                horizontal_angle_offset=gt_scanline['theta_offset']
+            _, gt_result = compute_ground_truth(
+                points, dataset_data.v_angles, dataset_data.v_offsets, dataset_data.h_offsets, dataset_data.h_resolutions
             )
-            gt_entity.save(db)
-
-    db.close()
-
-
+            for gt_scanline in gt_result["scanlines"]:
+                gt_entity = DatasetLaserGt(
+                    dataset_id=dataset_entity.id,
+                    laser_idx=gt_scanline['laser_idx'],
+                    vertical_offset=gt_scanline['v_offset'],
+                    vertical_angle=gt_scanline['v_angle'],
+                    horizontal_offset=gt_scanline['h_offset'],
+                    horizontal_resolution=gt_scanline['h_resolution'],
+                    horizontal_angle_offset=gt_scanline['theta_offset']
+                )
+                gt_entity.save(db)
 
 
 if __name__ == "__main__":

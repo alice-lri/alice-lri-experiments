@@ -1,7 +1,7 @@
 import sqlite3
 from typing import TypeVar
 
-T = TypeVar("T", bound="OrmEntity")
+EntityType = TypeVar("EntityType", bound="OrmEntity")
 
 class SQLExpr:
     def __init__(self, expr: str):
@@ -15,6 +15,12 @@ class Database:
     def __init__(self, db_path: str):
         self.conn = sqlite3.connect(db_path)
         self.conn.row_factory = sqlite3.Row
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
     def execute(self, query: str, params: tuple = ()):
         cur = self.conn.cursor()
@@ -34,7 +40,7 @@ class Database:
 
 class OrmEntity:
     __table__: str
-    id: int
+    id: int | None
 
     def __init_subclass__(cls, table_name: str, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -68,7 +74,7 @@ class OrmEntity:
                 fields_sql.append(f"{field} {sql_type}")
         db.execute(f"CREATE TABLE IF NOT EXISTS {cls.__table__} ({', '.join(fields_sql)})")
 
-    def save(self, db: Database):
+    def save(self, db: Database) -> int:
         if getattr(self, "id", None) is None:
             field_names, placeholders, params = [], [], []
 
@@ -100,11 +106,13 @@ class OrmEntity:
             params.append(self.id)
             db.execute(sql, tuple(params))
 
-    def save_or_ignore(self, db: Database):
+        return self.id
+
+    def save_or_ignore(self, db: Database) -> int | None:
         try:
-            self.save(db)
+            return self.save(db)
         except sqlite3.IntegrityError:
-            pass
+            return None
 
     def delete(self, db: Database):
         if getattr(self, "id", None) is not None:
@@ -112,23 +120,29 @@ class OrmEntity:
             self.id = None
 
     @classmethod
-    def get(cls: type[T], db: Database, id_: int) -> T | None:
+    def get(cls: type[EntityType], db: Database, id_: int) -> EntityType | None:
         row = db.execute(f"SELECT * FROM {cls.__table__} WHERE id=?", (id_,)).fetchone()
         return cls(**row) if row else None
 
     @classmethod
-    def all(cls: type[T], db: Database) -> list[T]:
+    def all(cls: type[EntityType], db: Database) -> list[EntityType]:
         rows = db.execute(f"SELECT * FROM {cls.__table__}").fetchall()
         return [cls(**row) for row in rows]
 
     @classmethod
-    def where(cls: type[T], db: Database, condition: str, params: tuple = ()) -> list[T]:
+    def where(cls: type[EntityType], db: Database, condition: str, params: tuple = ()) -> list[EntityType]:
         query = f"SELECT * FROM {cls.__table__} WHERE {condition}"
         rows = db.execute(query, params).fetchall()
         return [cls(**row) for row in rows]
 
     @classmethod
-    def save_all(cls: type[T], db: Database, objects: list[T]):
+    def one(cls: type[EntityType], db: Database, condition: str = "1", params: tuple = ()) -> EntityType | None:
+        query = f"SELECT * FROM {cls.__table__} WHERE {condition} LIMIT 1"
+        row = db.execute(query, params).fetchone()
+        return cls(**row) if row else None
+
+    @classmethod
+    def save_all(cls: type[EntityType], db: Database, objects: list[EntityType]):
         if not objects:
             return
 

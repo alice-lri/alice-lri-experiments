@@ -1,8 +1,8 @@
 #!/bin/bash
 set -eo pipefail
+pushd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null
 
-source ../slurm/helper/paths.sh
-CONTAINER_PATH="../container.sif"
+source ../../common/load_env.sh
 
 if [ -z "$1" ]; then
   TARGET_DIR=$(ls -td1 "${BASE_DB_DIR}"/*/ | head -1)
@@ -17,3 +17,4 @@ else
   TARGET_DIR="$BASE_DB_DIR/$1"
 fi
 
+popd > /dev/null
