@@ -5,7 +5,7 @@ pushd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null
 source ../helper/multi_batch_job_header.sh
 
 echo "Preparing job..."
-cp "${BASE_DB_DIR}/master.sqlite" "${ACTUAL_DB_DIR}/initial.sqlite"
+cp "${BASE_DB_DIR}/initial.sqlite" "${ACTUAL_DB_DIR}/initial.sqlite"
 
 for i in "${JOBS_TO_RUN[@]}"; do
   echo "Launching job ${i}..."
