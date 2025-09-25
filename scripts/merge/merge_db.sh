@@ -44,4 +44,10 @@ apptainer exec "$CONTAINER_PATH" \
 
 echo "Experiments database merged successfully."
 
+if [[ "$REMOVE_TARGET" == true ]]; then
+  echo "Removing target directory ${TARGET_DIR}..."
+  rm -rf "$TARGET_DIR"
+  echo "Target directory removed."
+fi
+
 popd > /dev/null

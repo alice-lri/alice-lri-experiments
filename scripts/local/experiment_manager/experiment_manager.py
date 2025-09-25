@@ -14,6 +14,7 @@ class Config:
     STATE_FILE = "state.json"
     SHOW_REMOTE_OUTPUT = False
     DISABLE_RELAUNCH = False
+    REMOVE_TARGET_DIR_AFTER_MERGE = False
 
 class JobType(Enum):
     TRAIN = "train"
@@ -227,9 +228,10 @@ class HPCCluster:
     def merge_experiment(self, experiment: Experiment) -> bool:
         script_inputs = [str(experiment.type.value), experiment.label, experiment.description]
         script_input_str = "\n".join(script_inputs) + "\n"
+        remove_target_arg = "--remove-target-dir" if Config.REMOVE_TARGET_DIR_AFTER_MERGE else ""
         stdin, stdout, stderr = self.__ssh.exec_command(
-            f"cd {os.path.join(Config.BASE_DIR, "merge")} && "
-            f"./merge_experiments_db.sh {experiment.id}"
+            f"cd {os.path.join(Config.BASE_DIR, "scripts/merge")} && "
+            f"./merge_db.sh --target-dir {experiment.id} {remove_target_arg}"
         )
 
         stdin.write(script_input_str)
@@ -411,12 +413,14 @@ def parse_args() -> State:
     parser.add_argument("--definition-file", type=str)
     parser.add_argument("--show-remote-output", action="store_true")
     parser.add_argument("--disable-relaunch", action="store_true")
+    parser.add_argument("--remove-target-dir-after-merge", action="store_true")
 
     args = parser.parse_args()
     experiment = Experiment()
 
     Config.SHOW_REMOTE_OUTPUT = args.show_remote_output
     Config.DISABLE_RELAUNCH = args.disable_relaunch
+    Config.REMOVE_TARGET_DIR_AFTER_MERGE = args.remove_target_dir_after_merge
 
     if args.mode == "launch":
         if args.definition_file:
