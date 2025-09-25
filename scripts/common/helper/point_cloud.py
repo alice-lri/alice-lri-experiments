@@ -1,4 +1,5 @@
 import numpy as np
+#TODO fix all relative imports in python everywhere. probably use PYTHONPATH
 
 def load_binary(file_path):
     data = np.fromfile(file_path, dtype=np.float32)

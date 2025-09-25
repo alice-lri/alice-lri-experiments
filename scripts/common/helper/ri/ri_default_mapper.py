@@ -1,5 +1,5 @@
-from ..point_cloud import *
-from ri_mapper import *
+from common.helper.point_cloud import *
+from common.helper.ri.ri_mapper import *
 
 class RangeImageDefaultMapper(RangeImageMapper):
 
