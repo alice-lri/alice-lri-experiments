@@ -1,12 +1,12 @@
 import glob
-from ...common.helper.orm import *
-from ...common.helper.entities import *
-from ...common.helper.datasets.kitti import *
-from ...common.helper.datasets.durlar import *
-from ...common.helper.ground_truth import *
+from scripts.common.helper.orm import *
+from scripts.common.helper.entities import *
+from scripts.common.helper.datasets.kitti import *
+from scripts.common.helper.datasets.durlar import *
+from scripts.common.helper.ground_truth import *
 import os
 
-from ...common.load_env import load_env
+from scripts.common.load_env import load_env
 load_env()
 
 class DatasetConfiguration:

@@ -8,10 +8,10 @@ import open3d as o3d
 import argparse
 import alice_lri
 
-from ...common.helper.ri.ri_utils import *
-from ...common.helper.ri.ri_default_mapper import *
+from scripts.common.helper.ri.ri_utils import *
+from scripts.common.helper.ri.ri_default_mapper import *
 
-from ...common.load_env import load_env
+from scripts.common.load_env import load_env
 load_env()
 
 class Config:

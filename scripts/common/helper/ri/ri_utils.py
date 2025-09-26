@@ -1,5 +1,5 @@
-from ..point_cloud import *
 from ri_mapper import *
+from scripts.common.helper.point_cloud import *
 
 
 def point_cloud_to_range_image(ri_mapper: RangeImageMapper, points, intensities=None):

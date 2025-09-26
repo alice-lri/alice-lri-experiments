@@ -4,8 +4,8 @@ import re
 import shutil
 import subprocess
 
-from ...common.helper.orm import *
-from ...common.helper.entities import *
+from scripts.common.helper.orm import *
+from scripts.common.helper.entities import *
 
 class Constant:
     ARG_EXPERIMENTS = "experiments"

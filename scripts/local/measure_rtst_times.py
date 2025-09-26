@@ -3,9 +3,8 @@ import subprocess
 import pandas as pd
 import alice_lri
 
-from common.helper.ri.ri_default_mapper import *
-
-from common.load_env import load_env
+from scripts.common.helper.point_cloud import load_binary
+from scripts.common.load_env import load_env
 load_env()
 
 class Config:

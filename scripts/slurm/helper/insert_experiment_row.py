@@ -1,7 +1,7 @@
 import argparse
 
-from ...common.helper.entities import *
-from ...common.helper.orm import Database
+from scripts.common.helper.entities import *
+from scripts.common.helper.orm import Database
 
 
 def main():

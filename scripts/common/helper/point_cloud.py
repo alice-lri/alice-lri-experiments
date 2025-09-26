@@ -1,5 +1,5 @@
 import numpy as np
-#TODO fix all relative imports in python everywhere. probably use PYTHONPATH
+#TODO fix all relative imports in python everywhere. probably use PYTHONPATH: take care of slurm tasks that use python
 
 def load_binary(file_path):
     data = np.fromfile(file_path, dtype=np.float32)

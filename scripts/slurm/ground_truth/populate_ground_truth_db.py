@@ -2,10 +2,10 @@ import argparse
 import os
 
 from scripts.common.helper.orm import Database
-from ...common.helper.datasets.durlar import *
-from ...common.helper.datasets.kitti import *
-from ...common.helper.entities import *
-from ...common.helper.ground_truth import *
+from scripts.common.helper.datasets.durlar import *
+from scripts.common.helper.datasets.kitti import *
+from scripts.common.helper.entities import *
+from scripts.common.helper.ground_truth import *
 
 
 class Config:
