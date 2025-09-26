@@ -10,6 +10,14 @@ From: ubuntu:22.04
     export TZ=Europe/Madrid
     export CONDA_PLUGINS_AUTO_ACCEPT_TOS=true
 
+    apt update
+    apt install -y ca-certificates
+
+    # Use snapshot-enabled sources for reproducibility
+    echo "deb [snapshot=20250922T000000Z] http://archive.ubuntu.com/ubuntu/ jammy main restricted universe multiverse" > /etc/apt/sources.list
+    echo "deb [snapshot=20250922T000000Z] http://archive.ubuntu.com/ubuntu/ jammy-updates main restricted universe multiverse" >> /etc/apt/sources.list
+    echo "deb [snapshot=20250922T000000Z] http://security.ubuntu.com/ubuntu jammy-security main restricted universe multiverse" >> /etc/apt/sources.list
+
     # Base packages
     apt update
     xargs apt install -y < apt_packages.txt
