@@ -145,12 +145,12 @@ def build_accurate_decoder_cmd(input_file, intrinsics_file):
     ]
 
 
-def train(train_path, intrinsics_filename):
-    print("Loading train points from:", train_path)
-    train_points, _ = load_binary(train_path)
+def estimate_intrinsics(estimate_cloud_path, intrinsics_filename):
+    print("Loading estimation cloud points from:", estimate_cloud_path)
+    estimation_points, _ = load_binary(estimate_cloud_path)
 
-    print("Training...")
-    intrinsics = alice_lri.train(train_points[:, 0], train_points[:, 1], train_points[:, 2])
+    print("Estimating intrinsics...")
+    intrinsics = alice_lri.estimate_intrinsics(estimation_points[:, 0], estimation_points[:, 1], estimation_points[:, 2])
 
     intrinsics_file = os.path.join(Config.shared_dir, intrinsics_filename)
     alice_lri.intrinsics_to_json_file(intrinsics, intrinsics_file)
@@ -313,20 +313,20 @@ def evaluate(dataset, frame_path, intrinsics_filename, compression_out_filename)
 
 
 def run_single(args):
-    train_parts = args.train.split(":")
+    estimate_parts = args.estimate.split(":")
     target_parts = args.target.split(":")
-    train_path = get_frame_path(args, train_parts[0], train_parts[1])
+    estimate_path = get_frame_path(args, estimate_parts[0], estimate_parts[1])
     target_path = get_frame_path(args, target_parts[0], target_parts[1])
 
     intrinsics_filename = "intrinsics.json"
     compression_out_filename = "out.tar.gz"
 
-    train(train_path, intrinsics_filename)
+    estimate_intrinsics(estimate_path, intrinsics_filename)
 
     df = evaluate(target_parts[0], target_path, intrinsics_filename, compression_out_filename)
 
-    df["train_dataset"] = train_parts[0]
-    df["train_path"] = train_parts[1]
+    df["estimate_dataset"] = estimate_parts[0]
+    df["estimate_path"] = estimate_parts[1]
     df["target_dataset"] = target_parts[0]
     df["target_path"] = target_parts[1]
 
@@ -356,7 +356,7 @@ def run_batch(args):
         assert dataset_map, "At least one dataset must be used."
 
         dataset_ids = list(dataset_map.keys())
-        path_filter = "%0000000000.bin" if args.phase == "train" else "%"
+        path_filter = "%0000000000.bin" if args.phase == "estimate" else "%"
         placeholders = ",".join(["?"] * len(dataset_ids))
         frames_query = f"""
             SELECT id, dataset_id, relative_path
@@ -376,12 +376,12 @@ def run_batch(args):
             frame_path = get_frame_path(args, dataset, relative_path)
             derived_filename = relative_path.replace("/", "_")
 
-            if args.phase == "train":
+            if args.phase == "estimate":
                 intrinsics_filename = f"{derived_filename}.json"
-                train(frame_path, intrinsics_filename)
+                estimate_intrinsics(frame_path, intrinsics_filename)
             elif args.phase == "evaluate":
-                corresponding_train_derived_filename = re.sub(r"\d{10}\.bin$", "0000000000.bin", derived_filename)
-                intrinsics_filename = f"{corresponding_train_derived_filename}.json"
+                corresponding_estimate_derived_filename = re.sub(r"\d{10}\.bin$", "0000000000.bin", derived_filename)
+                intrinsics_filename = f"{corresponding_estimate_derived_filename}.json"
                 compression_out_filename = f"{derived_filename}.tar.gz"
 
                 df = evaluate(dataset, frame_path, intrinsics_filename, compression_out_filename)
@@ -392,14 +392,14 @@ def run_batch(args):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Compare naive and accurate point cloud compression.")
+    parser = argparse.ArgumentParser(description="Compare baseline and ALICE-LRI point cloud compression using RTST.")
     parser.add_argument("--mode", required=True, choices=["batch", "single", "test"], help="Mode: batch or single.")
-    parser.add_argument("--phase", default=None, choices=["train", "evaluate"], help="Execution phase (batch mode).")
+    parser.add_argument("--phase", default=None, choices=["estimate", "evaluate"], help="Execution phase (batch mode).")
     parser.add_argument("--type", default=None, choices=["ri", "compression"], help="What do with the range image, just project and unproject (ri) or compress (compress).")
     parser.add_argument("--task_id", type=int, default=None, help="Task ID (batch mode).")
     parser.add_argument("--task_count", type=int, default=None, help="Task count (batch mode).")
     parser.add_argument("--db_path", type=str, default=None, help="Path to the database file (batch mode).")
-    parser.add_argument("--train", type=str, default=None, help="Train path (single mode).")
+    parser.add_argument("--estimate", type=str, default=None, help="Estimation cloud path (single mode).")
     parser.add_argument("--target", type=str, default=None, help="Target path (single mode).")
     parser.add_argument("--output_csv", type=str, default=None, help="Optional output CSV file (single mode).")
     parser.add_argument("--kitti_root", type=str, default=None, help="Path to KITTI dataset root directory (optional).")
@@ -428,18 +428,18 @@ def parse_args():
             parser.error("--db_path and --phase are required in batch mode.")
         if args.phase == "evaluate" and (args.task_id is None or args.task_count is None or args.type is None):
             parser.error("--type, --task_id and --task_count are required in batch mode when phase is 'evaluate'.")
-        elif args.phase == "train":
+        elif args.phase == "estimate":
             args.task_id = 0
             args.task_count = 1
     elif args.mode == "single":
-        if args.train is None or args.target is None or args.output_csv is None or args.type is None:
-            parser.error("--type, --train, --target, and --output_csv are required in single mode.")
+        if args.estimate is None or args.target is None or args.output_csv is None or args.type is None:
+            parser.error("--type, --estimate, --target, and --output_csv are required in single mode.")
 
-        train_parts = args.train.split(":")
+        estimate_parts = args.estimate.split(":")
         target_parts = args.target.split(":")
 
-        if len(train_parts) != 2 or train_parts[0] not in ["kitti", "durlar"]:
-            parser.error("Invalid format for --train. Expected 'dataset:path'")
+        if len(estimate_parts) != 2 or estimate_parts[0] not in ["kitti", "durlar"]:
+            parser.error("Invalid format for --estimate. Expected 'dataset:path'")
 
         if len(target_parts) != 2 or target_parts[0] not in ["kitti", "durlar"]:
             parser.error("Invalid format for --target. Expected 'dataset:path'")

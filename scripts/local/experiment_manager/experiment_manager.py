@@ -17,7 +17,7 @@ class Config:
     REMOVE_TARGET_DIR_AFTER_MERGE = False
 
 class JobType(Enum):
-    TRAIN = "train"
+    ESTIMATE = "estimate"
     MAIN = "main"
 
 class JobStatus(Enum):
@@ -183,7 +183,7 @@ class HPCCluster:
 
             job_id_match = re.search(r"Submitted batch job (\d+)", line)
             if job_id_match:
-                job_type = JobType.TRAIN if job_index < 0 else JobType.MAIN
+                job_type = JobType.ESTIMATE if job_index < 0 else JobType.MAIN
                 experiment.jobs.append(Job(slurm_id=int(job_id_match.group(1)), index=job_index,
                                            status=JobStatus.PENDING, type=job_type))
                 job_index += 1
@@ -191,8 +191,7 @@ class HPCCluster:
         experiment.status = ExperimentStatus.ON_QUEUE
         return stdout.channel.recv_exit_status() == 0
 
-    def relaunch_jobs(self, experiment: Experiment, job_indices: list[int],
-                      skip_training: bool) -> list[str]:
+    def relaunch_jobs(self, experiment: Experiment, job_indices: list[int], skip_estimation: bool) -> list[str]:
         if experiment.type == ExperimentType.INTRINSICS:
             script_dir = "scripts/slurm/intrinsics"
             script_input = ["y"]
@@ -201,12 +200,12 @@ class HPCCluster:
             script_input = ["y", str(experiment.type.value - 1)]
 
         job_indices_str = " ".join(map(str, job_indices))
-        skip_training_arg = "--skip-training" if skip_training else ""
+        skip_estimation_arg = "--skip-estimation" if skip_estimation else ""
         stdin, stdout, stderr = self.__ssh.exec_command(
             f"cd {os.path.join(Config.BASE_DIR, script_dir)} && "
             f"./prepare_and_launch.sh "
             f"--relaunch {experiment.id} {job_indices_str} "
-            f"--skip-build {skip_training_arg} "
+            f"--skip-build {skip_estimation_arg} "
             f"{HPCCluster.__build_options_arg(experiment)}"
         )
 
@@ -310,7 +309,7 @@ class Manager:
 
     def __monitor_experiment(self, experiment: Experiment) -> bool:
         jobs_to_relaunch = []
-        skip_training = True
+        skip_estimation = True
         for job in experiment.jobs:
             if job.status == JobStatus.COMPLETED:
                 continue
@@ -326,9 +325,9 @@ class Manager:
             elif job.status == JobStatus.FAILED:
                 print(f"Job {job.slurm_id} ({job.index}) failed.")
 
-                if job.type == JobType.TRAIN:
+                if job.type == JobType.ESTIMATE:
                     jobs_to_relaunch = [] + experiment.jobs
-                    skip_training = False
+                    skip_estimation = False
                     break
                 else:
                     jobs_to_relaunch.append(job)
@@ -336,8 +335,7 @@ class Manager:
         if len(jobs_to_relaunch) > 0 and not Config.DISABLE_RELAUNCH:
             indices_to_relaunch = [job.index for job in jobs_to_relaunch]
             print(f"Will relaunch the following jobs: {indices_to_relaunch}")
-            new_slurm_ids = self.__cluster\
-                .relaunch_jobs(experiment, indices_to_relaunch, skip_training)
+            new_slurm_ids = self.__cluster.relaunch_jobs(experiment, indices_to_relaunch, skip_estimation)
 
             for job, new_slurm_id in zip(jobs_to_relaunch, new_slurm_ids):
                 print(f"Relaunched job {job.index} with new SLURM ID: {new_slurm_id}")

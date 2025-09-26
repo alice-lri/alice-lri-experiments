@@ -10,12 +10,12 @@ BUILD_OPTIONS="$4"
 
 if [[ "$REBUILD" == true ]]; then
   source ../../common/build.sh "$BUILD_OPTIONS"
-  pip install "${ACCURATE_RI_PYTHON_SRC}" --target "${ACCURATE_RI_PIP_DIR}" --upgrade
+  pip install "${ALICE_LRI_PYTHON_SRC}" --target "${ALICE_LRI_PIP_DIR}" --upgrade
 fi
 
 if [[ "$ARG_TYPE" != "intrinsics" ]]; then
   echo "Quick test..."
-  export PYTHONPATH="$ACCURATE_RI_PIP_DIR:$PYTHONPATH"
+  export PYTHONPATH="$ALICE_LRI_PIP_DIR:$PYTHONPATH"
   python -u run_ri_experiment.py --mode test
 fi
 

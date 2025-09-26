@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J accurate_ri
+#SBATCH -J alice_lri_gt
 #SBATCH -o logs/%j.log
 #SBATCH -e logs/%j.log
 #SBATCH -n 64
@@ -18,7 +18,7 @@ module load $ALICE_LRI_HPC_MODULES
 
 echo "Beginning job ${JOB_INDEX}..."
 
-export PYTHONPATH="$ACCURATE_RI_PIP_DIR:$PYTHONPATH"
+export PYTHONPATH="$ALICE_LRI_PIP_DIR:$PYTHONPATH"
 srun apptainer exec "$CONTAINER_PATH" ./task.sh "$DB_DIR" "$JOB_INDEX" "$JOB_COUNT"
 
 echo "Job ${JOB_INDEX} finished."

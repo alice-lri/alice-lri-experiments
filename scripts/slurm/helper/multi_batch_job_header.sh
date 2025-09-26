@@ -9,7 +9,7 @@ JOB_COUNT=32
 BATCH_ID="$(date +'%Y%m%d_%H%M%S_%3N')"
 RELAUNCH_BATCH=false
 REBUILD=true
-SKIP_TRAINING=false
+SKIP_ESTIMATION=false
 USER_REQUESTED_JOBS=()
 JOBS_TO_RUN=()
 BUILD_OPTIONS=()
@@ -50,8 +50,8 @@ while [[ $# -gt 0 ]]; do
       REBUILD=false
       shift
       ;;
-    --skip-training)
-      SKIP_TRAINING=true
+    --skip-estimation)
+      SKIP_ESTIMATION=true
       shift
       ;;
     *)

@@ -116,12 +116,12 @@ def build_accurate_decoder_cmd(input_file, intrinsics_file):
     ]
 
 
-def train(train_path):
-    print("Loading train points from:", train_path)
-    train_points, _ = load_binary(train_path)
+def estimate_intrinsics(estimation_cloud_path):
+    print("Loading estimation cloud points from:", estimation_cloud_path)
+    estimation_points, _ = load_binary(estimation_cloud_path)
 
-    print("Training...")
-    intrinsics = alice_lri.train(train_points[:, 0], train_points[:, 1], train_points[:, 2])
+    print("Estimating intrinsics...")
+    intrinsics = alice_lri.estimate_intrinsics(estimation_points[:, 0], estimation_points[:, 1], estimation_points[:, 2])
 
     intrinsics_file = os.path.abspath(Config.intrinsics_json)
     alice_lri.intrinsics_to_json_file(intrinsics, intrinsics_file)
@@ -169,7 +169,7 @@ def main():
     Globals.env = os.environ.copy()
     Globals.env["LD_LIBRARY_PATH"] = os.path.abspath(Config.alice_lri_lib_path)
 
-    train(get_frame_path(Config.target_frames[0]))
+    estimate_intrinsics(get_frame_path(Config.target_frames[0]))
 
     df = None
     for frame_path in Config.target_frames:

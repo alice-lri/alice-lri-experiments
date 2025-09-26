@@ -25,27 +25,27 @@ module load $ALICE_LRI_HPC_MODULES
 apptainer exec "$CONTAINER_PATH" ../helper/prepare_job.sh "$ACTUAL_DB_DIR" "$ARG_TYPE" "$REBUILD" "${BUILD_OPTIONS[*]}"
 
 if [[ "$ARG_TYPE" == "ri" ]]; then
-  BASE_JOB_NAME="accurate_ri"
+  BASE_JOB_NAME="alice_lri_ri"
 elif [[ "$ARG_TYPE" == "compression" ]]; then
-  BASE_JOB_NAME="accurate_compression"
+  BASE_JOB_NAME="alice_lri_compression"
 else
   echo "Unknown argument type: $ARG_TYPE"
   exit 1
 fi
 
-if [[ "$SKIP_TRAINING" == false ]]; then
-  echo "Launching train job..."
-  TRAIN_JOB_ID=$(sbatch --parsable --job-name="${BASE_JOB_NAME}_train" \
-    -o "${ACTUAL_LOGS_DIR}/train.log" -e "${ACTUAL_LOGS_DIR}/train.log" \
-    train_job.sh "${ACTUAL_DB_DIR}" "${SHARED_DIR}" "${ARG_TYPE}")
-    echo "Submitted batch job ${TRAIN_JOB_ID}"
+if [[ "$SKIP_ESTIMATION" == false ]]; then
+  echo "Launching intrinsics estimation job..."
+  ESTIMATE_JOB_ID=$(sbatch --parsable --job-name="${BASE_JOB_NAME}_estimate" \
+    -o "${ACTUAL_LOGS_DIR}/estimate.log" -e "${ACTUAL_LOGS_DIR}/estimate.log" \
+    estimate_job.sh "${ACTUAL_DB_DIR}" "${SHARED_DIR}" "${ARG_TYPE}")
+    echo "Submitted batch job ${ESTIMATE_JOB_ID}"
 else
-  echo "Skipping training job as requested."
+  echo "Skipping intrinsics estimation job as requested."
 fi
 
 SBATCH_ARGS=()
-if [[ -n "$TRAIN_JOB_ID" ]]; then
-  SBATCH_ARGS+=("--dependency=afterok:${TRAIN_JOB_ID}")
+if [[ -n "$ESTIMATE_JOB_ID" ]]; then
+  SBATCH_ARGS+=("--dependency=afterok:${ESTIMATE_JOB_ID}")
 fi
 
 if [ "$ARG_TYPE" == "ri" ]; then

@@ -19,7 +19,7 @@ module load $ALICE_LRI_HPC_MODULES
 
 echo "Beginning job ${JOB_INDEX}..."
 
-export PYTHONPATH="$ACCURATE_RI_PIP_DIR:$PYTHONPATH"
+export PYTHONPATH="$ALICE_LRI_PIP_DIR:$PYTHONPATH"
 srun apptainer exec "$CONTAINER_PATH" ./task.sh "$DB_DIR" "$SHARED_DIR" "$JOB_INDEX" "$JOB_COUNT" "$ARG_TYPE"
 
 echo "Job ${JOB_INDEX} finished."

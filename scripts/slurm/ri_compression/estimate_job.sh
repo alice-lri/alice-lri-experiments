@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J accurate_compression
+#SBATCH -J alice_lri_application
 #SBATCH -o logs/%j.log
 #SBATCH -e logs/%j.log
 #SBATCH -n 1
@@ -15,12 +15,12 @@ ARG_TYPE=$3
 source ../../common/load_env.sh
 module load $ALICE_LRI_HPC_MODULES
 
-echo "Beginning train job..."
+echo "Beginning intrinsics estimation job..."
 
-export PYTHONPATH="$ACCURATE_RI_PIP_DIR:$PYTHONPATH"
+export PYTHONPATH="$ALICE_LRI_PIP_DIR:$PYTHONPATH"
 srun apptainer exec "$CONTAINER_PATH" \
  python -u run_ri_experiment.py --mode batch \
- --phase=train \
+ --phase=estimate \
  --type="${ARG_TYPE}" \
  --db_path="${DB_DIR}/initial.sqlite" \
  --kitti_root="${KITTI_PATH}" \
@@ -28,5 +28,5 @@ srun apptainer exec "$CONTAINER_PATH" \
  --private_dir="${TMPDIR}" \
  --shared_dir="${SHARED_DIR}"
 
-echo "Train job finished."
-touch "${DB_DIR}/train_job.success"
+echo "Intrinsics estimation job finished."
+touch "${DB_DIR}/estimate_job.success"
