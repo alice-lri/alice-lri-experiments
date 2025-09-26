@@ -10,6 +10,9 @@ BUILD_OPTIONS="$4"
 
 if [[ "$REBUILD" == true ]]; then
   source scripts/common/build.sh "$BUILD_OPTIONS"
+
+  echo "Building and installing Python package..."
+  rm -Rf "${ALICE_LRI_PYTHON_SRC}/build"
   pip install "${ALICE_LRI_PYTHON_SRC}" --target "${ALICE_LRI_PIP_DIR}" --upgrade
 fi
 
