@@ -18,8 +18,10 @@ module load $ALICE_LRI_HPC_MODULES
 echo "Beginning intrinsics estimation job..."
 
 export PYTHONPATH="$ALICE_LRI_PIP_DIR:$PYTHONPATH"
+
+pushd "$PROJECT_ROOT" > /dev/null
 srun apptainer exec "$CONTAINER_PATH" \
- python -u run_ri_experiment.py --mode batch \
+ python -u -m scripts.slurm.ri_compression.run_ri_experiment --mode batch \
  --phase=estimate \
  --type="${ARG_TYPE}" \
  --db_path="${DB_DIR}/initial.sqlite" \
@@ -27,6 +29,7 @@ srun apptainer exec "$CONTAINER_PATH" \
  --durlar_root="${DURLAR_PATH}" \
  --private_dir="${TMPDIR}" \
  --shared_dir="${SHARED_DIR}"
+popd > /dev/null
 
 echo "Intrinsics estimation job finished."
 touch "${DB_DIR}/estimate_job.success"

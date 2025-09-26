@@ -36,11 +36,14 @@ else
 fi
 
 module load $ALICE_LRI_HPC_MODULES
+
+pushd "$PROJECT_ROOT" > /dev/null
 apptainer exec "$CONTAINER_PATH" \
-  python helper/merge_db.py "$TARGET_DIR" "$BASE_DB_DIR/master.sqlite" \
+  python -m scripts.merge.helper.merge_db "$TARGET_DIR" "$BASE_DB_DIR/master.sqlite" \
   --type="${ARG_TYPE}" \
   --label="$LABEL" \
   --description="$DESCRIPTION"
+popd > /dev/null
 
 echo "Experiments database merged successfully."
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eo pipefail
-pushd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null
+pushd "$PROJECT_ROOT" > /dev/null
 
 ACTUAL_DB_DIR="$1"
 ARG_TYPE="$2"
@@ -9,18 +9,18 @@ BUILD_OPTIONS="$4"
 
 
 if [[ "$REBUILD" == true ]]; then
-  source ../../common/build.sh "$BUILD_OPTIONS"
+  source scripts/common/build.sh "$BUILD_OPTIONS"
   pip install "${ALICE_LRI_PYTHON_SRC}" --target "${ALICE_LRI_PIP_DIR}" --upgrade
 fi
 
 if [[ "$ARG_TYPE" != "intrinsics" ]]; then
   echo "Quick test..."
   export PYTHONPATH="$ALICE_LRI_PIP_DIR:$PYTHONPATH"
-  python -u run_ri_experiment.py --mode test
+  python -u -m scripts.slurm.ri_compression.run_ri_experiment --mode test
 fi
 
 echo "Preparing job..."
 cp "${BASE_DB_DIR}/initial.sqlite" "${ACTUAL_DB_DIR}/initial.sqlite"
-python ../helper/insert_experiment_row.py "${ACTUAL_DB_DIR}/initial.sqlite" "$ARG_TYPE" --build-options "$BUILD_OPTIONS"
+python -m scripts.slurm.helper.insert_experiment_row "${ACTUAL_DB_DIR}/initial.sqlite" "$ARG_TYPE" --build-options "$BUILD_OPTIONS"
 
 popd > /dev/null

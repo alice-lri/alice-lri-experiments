@@ -16,7 +16,8 @@ if [[ "${ARG_TYPE}" == "ri" ]]; then
 fi
 
 echo "Running task $TASK_INDEX of $TASK_COUNT..."
-python -u run_ri_experiment.py --mode batch \
+pushd "${PROJECT_ROOT}" > /dev/null
+python -u -m scripts.slurm.ri_compression.run_ri_experiment --mode batch \
   --phase=evaluate \
   --type="${ARG_TYPE}" \
   --task_id="$TASK_INDEX" \
@@ -25,5 +26,6 @@ python -u run_ri_experiment.py --mode batch \
   "${DATASETS_ARGS[@]}" \
   --private_dir="${PRIVATE_DIR}" \
   --shared_dir="${SHARED_DIR}" 2>&1 | tee "${TRACE_FILE_PATH}"
+popd > /dev/null
 
 touch "${SUCCESS_FILE_PATH}"
