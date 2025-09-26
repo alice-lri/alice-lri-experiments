@@ -9,6 +9,7 @@ import time
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
+#TODO maybe split and cleanup
 class Config:
     BASE_DIR = """${STORE2}/accurate-ri-hpc"""
     STATE_FILE = "state.json"

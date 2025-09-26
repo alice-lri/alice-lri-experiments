@@ -17,7 +17,7 @@ jq -n \
       durlar: $durlar,
       kitti: $kitti
     }
-  }' > "${SRC_PATH}/build/examples/config.json"
+  }' > "$INTRINSICS_SQL_CONFIG_JSON_PATH"
 
 
 for i in "${JOBS_TO_RUN[@]}"; do
