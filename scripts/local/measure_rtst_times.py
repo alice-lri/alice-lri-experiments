@@ -58,7 +58,7 @@ def run_process_capture_time(cmd):
     execution_time = None
     for line in result.stdout.split('\n'):
         if '[EXECUTION TIME (ms)]:' in line:
-            execution_time = int(line.split(':')[-1].strip())
+            execution_time = float(line.split(':')[-1].strip())
             break
 
     return execution_time
@@ -176,6 +176,7 @@ def main():
     for frame_path in Config.target_frames:
         print(f"Measuring times for frame: {frame_path}")
         current_df = measure_times(get_frame_path(frame_path))
+        current_df["frame_path"] = frame_path
 
         df = pd.concat([df, current_df], ignore_index=True) if df is not None else current_df
 
