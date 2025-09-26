@@ -38,17 +38,23 @@ class Config:
     }
 
 def main():
-    with Database(os.getenv("LOCAL_SQLITE_DB")) as db:
+    db_path = os.getenv("LOCAL_SQLITE_DB")
+    print(f"Will populate base entities in the database {db_path}")
+
+    with Database(db_path) as db:
         for d_name, d_configuration in Config.datasets_frames.items():
+            print(f"Populating for dataset: {d_name}")
             dataset = DatasetEntity(name=d_name, laser_count=d_configuration.info.laser_count)
             dataset.save(db)
 
+            print(" - Adding frames...")
             frames_paths = glob.glob(os.path.join(d_configuration.base_path, d_configuration.frames_glob))
             frames_rel_paths = [os.path.relpath(path, d_configuration.base_path) for path in frames_paths]
             frames = [DatasetFrame(dataset_id=dataset.id, relative_path=path) for path in frames_rel_paths]
 
             DatasetFrame.save_all(db, frames)
 
+            print(" - Adding ground truth values...")
             points, _ = load_binary(os.path.join(d_configuration.base_path, d_configuration.first_frame_path))
             points = points[calculate_range(points) > 0]
 
@@ -68,6 +74,8 @@ def main():
                     horizontal_angle_offset=gt_scanline['theta_offset']
                 )
                 gt_entity.save(db)
+
+    print("Database population completed.")
 
 
 if __name__ == "__main__":

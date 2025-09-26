@@ -1,5 +1,5 @@
 import numpy as np
-from base import Dataset
+from scripts.common.helper.datasets.base import Dataset
 
 class DurLAR(Dataset):
 

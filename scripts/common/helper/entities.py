@@ -1,5 +1,5 @@
 from typing import Union
-from orm import OrmEntity, SQLExpr
+from scripts.common.helper.orm import OrmEntity, SQLExpr
 
 
 class DatasetEntity(OrmEntity, table_name="dataset"):

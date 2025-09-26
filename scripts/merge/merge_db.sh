@@ -35,11 +35,17 @@ else
   echo "Merging experiments databases from ${TARGET_DIR}..."
 fi
 
+MASTER_DB="${BASE_DB_DIR}/master.sqlite"
+if [[ ! -f "$MASTER_DB" ]]; then
+  echo "Master database not found at ${MASTER_DB}. Copying initial database to master."
+  cp "${BASE_DB_DIR}/initial.sqlite" "$MASTER_DB"
+fi
+
 module load $ALICE_LRI_HPC_MODULES
 
 pushd "$PROJECT_ROOT" > /dev/null
 apptainer exec "$CONTAINER_PATH" \
-  python -m scripts.merge.helper.merge_db "$TARGET_DIR" "$BASE_DB_DIR/master.sqlite" \
+  python -m scripts.merge.helper.merge_db "$TARGET_DIR" "$MASTER_DB" \
   --type="${ARG_TYPE}" \
   --label="$LABEL" \
   --description="$DESCRIPTION"

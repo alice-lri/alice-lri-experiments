@@ -1,4 +1,4 @@
-from point_cloud import *
+from scripts.common.helper.point_cloud import *
 
 def compute_ground_truth(points, v_angles, v_offsets, h_offsets, h_resolutions, threshold=5e-4):
     assert np.all(np.diff(v_angles) > 0), "v_angles are not in ascending order"
