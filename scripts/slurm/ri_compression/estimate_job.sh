@@ -20,7 +20,7 @@ echo "Beginning intrinsics estimation job..."
 export PYTHONPATH="$ALICE_LRI_PIP_DIR:$PYTHONPATH"
 
 pushd "$PROJECT_ROOT" > /dev/null
-srun apptainer exec "$CONTAINER_PATH" \
+srun apptainer run "$CONTAINER_PATH" \
  python -u -m scripts.slurm.ri_compression.run_ri_experiment --mode batch \
  --phase=estimate \
  --type="${ARG_TYPE}" \

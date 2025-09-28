@@ -36,11 +36,14 @@ From: ubuntu:22.04
     # Create environment and install deps
     conda env create -f conda_env.yml
 
-%environment
-    export APPTAINER_NO_HOME=1
-
+%runscript
+    #!/bin/bash
+    set -e
     source /opt/conda/etc/profile.d/conda.sh
     conda activate "$CONDA_ENV_NAME"
 
-%runscript
-    exec python3 "$@"
+    if [ $# -eq 0 ]; then
+        exec /bin/bash
+    else
+        exec "$@"
+    fi

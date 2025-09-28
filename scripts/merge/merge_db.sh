@@ -44,7 +44,7 @@ fi
 module load $ALICE_LRI_HPC_MODULES
 
 pushd "$PROJECT_ROOT" > /dev/null
-apptainer exec "$CONTAINER_PATH" \
+apptainer run "$CONTAINER_PATH" \
   python -m scripts.merge.helper.merge_db "$TARGET_DIR" "$MASTER_DB" \
   --type="${ARG_TYPE}" \
   --label="$LABEL" \

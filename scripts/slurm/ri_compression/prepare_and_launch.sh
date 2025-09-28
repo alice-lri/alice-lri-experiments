@@ -22,7 +22,7 @@ fi
 echo "Will use arg type=${ARG_TYPE}"
 
 module load $ALICE_LRI_HPC_MODULES
-apptainer exec "$CONTAINER_PATH" ../helper/prepare_job.sh "$ACTUAL_DB_DIR" "$ARG_TYPE" "$REBUILD" "${BUILD_OPTIONS[*]}"
+apptainer run "$CONTAINER_PATH" ../helper/prepare_job.sh "$ACTUAL_DB_DIR" "$ARG_TYPE" "$REBUILD" "${BUILD_OPTIONS[*]}"
 
 if [[ "$ARG_TYPE" == "ri" ]]; then
   BASE_JOB_NAME="alice_lri_ri"

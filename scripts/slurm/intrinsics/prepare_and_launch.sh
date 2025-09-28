@@ -5,7 +5,7 @@ pushd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null
 source ../helper/multi_batch_job_header.sh
 
 module load $ALICE_LRI_HPC_MODULES
-apptainer exec "$CONTAINER_PATH" ../helper/prepare_job.sh "$ACTUAL_DB_DIR" "intrinsics" "$REBUILD" "${BUILD_OPTIONS[*]}"
+apptainer run "$CONTAINER_PATH" ../helper/prepare_job.sh "$ACTUAL_DB_DIR" "intrinsics" "$REBUILD" "${BUILD_OPTIONS[*]}"
 
 jq -n \
   --arg db_dir "$ACTUAL_DB_DIR" \

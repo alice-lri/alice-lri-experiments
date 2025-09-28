@@ -19,7 +19,7 @@ module load $ALICE_LRI_HPC_MODULES
 echo "Beginning job ${JOB_INDEX}..."
 
 export PYTHONPATH="$ALICE_LRI_PIP_DIR:$PYTHONPATH"
-srun apptainer exec "$CONTAINER_PATH" ./task.sh "$DB_DIR" "$JOB_INDEX" "$JOB_COUNT"
+srun apptainer run "$CONTAINER_PATH" ./task.sh "$DB_DIR" "$JOB_INDEX" "$JOB_COUNT"
 
 echo "Job ${JOB_INDEX} finished."
 touch "${DB_DIR}/job_${JOB_INDEX}.success"
