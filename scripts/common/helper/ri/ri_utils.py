@@ -1,4 +1,4 @@
-from ri_mapper import *
+from scripts.common.helper.ri.ri_mapper import *
 from scripts.common.helper.point_cloud import *
 
 
