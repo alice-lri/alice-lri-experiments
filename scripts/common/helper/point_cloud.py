@@ -3,11 +3,13 @@ import numpy as np
 
 def load_binary(file_path):
     data = np.fromfile(file_path, dtype=np.float32)
-    data = data.reshape((-1, 4))  # Assuming the format is x, y, z, intensity
+    data = data.reshape((-1, 4))
     points = data[:, :3]
     intensity = data[:, 3]
 
-    return points, intensity
+    mask = calculate_range(points) > 0
+
+    return points[mask], intensity[mask]
 
 
 def calculate_phi(points):
