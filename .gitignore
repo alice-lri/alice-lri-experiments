@@ -2,3 +2,5 @@
 .idea/
 container.sif
 *.pyc
+
+scripts/cpp/build/
