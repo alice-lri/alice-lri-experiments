@@ -7,7 +7,6 @@
 #SBATCH -t 06:00:00
 #SBATCH --mem-per-cpu=3G
 set -eo pipefail
-pushd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null
 
 DB_DIR=$1
 JOB_INDEX=$2
@@ -23,5 +22,3 @@ srun apptainer run "$CONTAINER_PATH" ./task.sh "$DB_DIR" "$JOB_INDEX" "$JOB_COUN
 
 echo "Job ${JOB_INDEX} finished."
 touch "${DB_DIR}/job_${JOB_INDEX}.success"
-
-popd > /dev/null
