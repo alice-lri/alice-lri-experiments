@@ -120,9 +120,9 @@ class ExperimentDefinition:
     label: str
     description: str
     type: ExperimentType
-    build_options: dict[str, bool]
+    build_options: dict[str, bool] = None
 
-    def __init__(self, label: str, description: str, type: ExperimentType, build_options: dict[str, bool]):
+    def __init__(self, label: str, description: str, type: ExperimentType, build_options: dict[str, bool]=None):
         self.label = label
         self.description = description
         self.type = type
