@@ -32,7 +32,7 @@ def main():
 
         all_gt_entities = []
         for i, frame in enumerate(frames):
-            print(f"Processing {frame['relative_path']}")
+            print(f"Processing {frame.relative_path}")
 
             gr_result = compute_ground_truth_from_frame(frame, dataset_id_to_name)
             gt_entities = build_scanline_gt_entities(frame.id, gr_result)
