@@ -66,8 +66,11 @@ def backup_db(merged_db_path):
 def merge_experiment_databases(db_files, master_db_path, label, description):
     with Database(master_db_path) as master_db:
         with Database(db_files[0]) as first_db:
-            experiment = IntrinsicsExperiment.one(first_db)
+            first_db_experiments = IntrinsicsExperiment.all(first_db)
+            assert len(first_db_experiments) == 1, "Only one experiment per database is supported."
+            experiment = first_db_experiments[0]
 
+            experiment.id = None
             experiment.label = label
             experiment.description = description
             experiment.commit_hash = get_commit_hash()
