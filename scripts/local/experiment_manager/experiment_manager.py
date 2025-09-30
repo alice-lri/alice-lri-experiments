@@ -59,17 +59,24 @@ class ExperimentType(Enum):
     INTRINSICS = 1
     RANGE_IMAGE = 2
     COMPRESSION = 3
+    GROUND_TRUTH = 4
 
     @staticmethod
     def from_string(string: str):
-        if string == "intrinsics":
-            return ExperimentType.INTRINSICS
-        elif string == "range_image":
-            return ExperimentType.RANGE_IMAGE
-        elif string == "compression":
-            return ExperimentType.COMPRESSION
+        types_map = ExperimentType.types_map()
+        if string in ExperimentType.types_map():
+            return types_map[string]
         else:
             raise ValueError(f"Unknown experiment type: {string}")
+
+    @staticmethod
+    def types_map() -> dict[str, 'ExperimentType']:
+        return {
+            "intrinsics": ExperimentType.INTRINSICS,
+            "range_image": ExperimentType.RANGE_IMAGE,
+            "compression": ExperimentType.COMPRESSION,
+            "ground_truth": ExperimentType.GROUND_TRUTH,
+        }
 
 class ExperimentStatus(Enum):
     PENDING = 0
@@ -156,24 +163,18 @@ class HPCCluster:
         self.__ssh.close()
 
     def launch_experiment(self, experiment: Experiment) -> bool:
-        if experiment.type == ExperimentType.INTRINSICS:
-            script_dir = "scripts/slurm/intrinsics"
-            script_input = ["y"]
-        else:
-            script_dir = "scripts/slurm/ri_compression"
-            script_input = ["y", str(experiment.type.value - 1)]
+        script_dir, script_input = HPCCluster.__get_script_dir_and_input(experiment.type)
 
         stdin, stdout, stderr = self.__ssh.exec_command(
             f"cd {os.path.join(Config.BASE_DIR, script_dir)} && "
             f"./prepare_and_launch.sh {HPCCluster.__build_options_arg(experiment)}"
         )
-
         script_input_str = "\n".join(script_input) + "\n"
         stdin.write(script_input_str)
         stdin.flush()
 
         experiment.jobs = []
-        job_index = 0 if experiment.type == ExperimentType.INTRINSICS else -1
+        job_index = 0 if experiment.type in [ExperimentType.INTRINSICS, ExperimentType.GROUND_TRUTH] else -1
         for line in iter(stdout.readline, ''):
             if Config.SHOW_REMOTE_OUTPUT:
                 print(line, end="")
@@ -193,12 +194,7 @@ class HPCCluster:
         return stdout.channel.recv_exit_status() == 0
 
     def relaunch_jobs(self, experiment: Experiment, job_indices: list[int], skip_estimation: bool) -> list[str]:
-        if experiment.type == ExperimentType.INTRINSICS:
-            script_dir = "scripts/slurm/intrinsics"
-            script_input = ["y"]
-        else:
-            script_dir = "scripts/slurm/ri_compression"
-            script_input = ["y", str(experiment.type.value - 1)]
+        script_dir, script_input = HPCCluster.__get_script_dir_and_input(experiment.type)
 
         job_indices_str = " ".join(map(str, job_indices))
         skip_estimation_arg = "--skip-estimation" if skip_estimation else ""
@@ -260,6 +256,20 @@ class HPCCluster:
             build_options_str = f"--build-options {build_options_str}"
 
         return build_options_str
+
+    @staticmethod
+    def __get_script_dir_and_input(experiment_type: ExperimentType) -> tuple[str, list[str]]:
+        if experiment_type == ExperimentType.INTRINSICS:
+            script_dir = "scripts/slurm/intrinsics"
+            script_input = ["y"]
+        elif experiment_type == ExperimentType.GROUND_TRUTH:
+            script_dir = "scripts/slurm/ground_truth"
+            script_input = ["y"]
+        else:
+            script_dir = "scripts/slurm/ri_compression"
+            script_input = ["y", str(experiment_type.value - 1)]
+
+        return script_dir, script_input
 
 
 class Manager:
@@ -357,6 +367,7 @@ class Manager:
         if not success:
             raise RuntimeError(f"Failed to merge experiment: {experiment.label}")
 
+
 def load_state() -> State:
     if not os.path.exists(Config.STATE_FILE):
         raise FileNotFoundError(f"{Config.STATE_FILE} not found")
@@ -364,12 +375,14 @@ def load_state() -> State:
     with open(Config.STATE_FILE, "r") as f:
         return State.from_json(f.read())
 
+
 def load_definition_file(definition_file: str) -> ExperimentDefinitionSet:
     if not os.path.exists(definition_file):
         raise FileNotFoundError(f"{definition_file} not found")
 
     with open(definition_file, "r") as f:
         return ExperimentDefinitionSet.from_json(f.read())
+
 
 def load_state_from_args(args: argparse.Namespace, experiment: Experiment):
     experiment.label = args.name
@@ -385,6 +398,7 @@ def load_state_from_args(args: argparse.Namespace, experiment: Experiment):
             experiment.build_options[key] = (value.upper() == "ON")
 
     return State(experiments=[experiment])
+
 
 def load_state_from_definition(definition: ExperimentDefinitionSet):
     experiments = []
@@ -402,10 +416,11 @@ def load_state_from_definition(definition: ExperimentDefinitionSet):
 
     return State(experiments=experiments)
 
+
 def parse_args() -> State:
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", type=str, choices=["launch", "monitor"])
-    parser.add_argument("--type", type=str, choices=["intrinsics", "range_image", "compression"])
+    parser.add_argument("--type", type=str, choices=ExperimentType.types_map().keys())
     parser.add_argument("--build-options", type=str, help="Build options string (e.g., '-Dflag1=ON -Dflag2=OFF')")
     parser.add_argument("--name", type=str)
     parser.add_argument("--description", type=str)
@@ -438,6 +453,7 @@ def parse_args() -> State:
 def save_state(state: State):
     with open(Config.STATE_FILE, "w") as f:
         f.write(state.to_json(indent=4))
+
 
 def main():
     state = parse_args()
