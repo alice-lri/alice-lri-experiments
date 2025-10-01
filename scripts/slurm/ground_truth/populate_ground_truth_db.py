@@ -30,18 +30,23 @@ def main():
         frames = DatasetFrame.where(db, "id % ? = ?", (Args.total_processes, Args.process_id))
         print(f"Process {Args.process_id}/{Args.total_processes} - Assigned {len(frames)} frames")
 
-        all_gt_entities = []
+        all_frame_gt_entities = []
+        all_scanline_gt_entities = []
         for i, frame in enumerate(frames):
             print(f"Processing {frame.relative_path}")
 
-            gr_result = compute_ground_truth_from_frame(frame, dataset_id_to_name)
-            gt_entities = build_scanline_gt_entities(frame.id, gr_result)
-            all_gt_entities.extend(gt_entities)
+            gt_result = compute_ground_truth_from_frame(frame, dataset_id_to_name)
+            gt_frame_entity = build_frame_gt_entity(frame.id, gt_result)
+            gt_scanline_entities = build_scanline_gt_entities(frame.id, gt_result)
+
+            all_frame_gt_entities.append(gt_frame_entity)
+            all_scanline_gt_entities.extend(gt_scanline_entities)
 
             print(f"Process {Args.process_id}/{Args.total_processes} - Processed {i + 1}/{len(frames)} frames")
 
         print(f"Process {Args.process_id}/{Args.total_processes} - Saving...")
-        DatasetFrameScanlineGt.save_all(db, all_gt_entities)
+        DatasetFrameGt.save_all(db, all_frame_gt_entities)
+        DatasetFrameScanlineGt.save_all(db, all_scanline_gt_entities)
         print(f"Process {Args.process_id}/{Args.total_processes} - Finished all {len(frames)} frames successfully")
 
 
@@ -70,6 +75,14 @@ def compute_ground_truth_from_frame(frame: DatasetFrame, dataset_id_to_name: dic
     )
 
     return gt_result
+
+
+def build_frame_gt_entity(dataset_frame_id: int, gt_result: dict):
+    return DatasetFrameGt(
+        dataset_frame_id=dataset_frame_id,
+        points_count=gt_result["points_count"],
+        scanlines_count=gt_result["scanlines_count"]
+    )
 
 
 def build_scanline_gt_entities(dataset_frame_id: int, gt_result: dict):
