@@ -2,12 +2,12 @@ import os
 
 import pandas as pd
 
-from scripts.local import measure_rtst_times
-from scripts.local.paper.utils import df_to_latex, write_paper_data
+from scripts.local.runtime import measure_rtst_times
+from scripts.local.paper.helper.utils import df_to_latex, write_paper_data
 
 
 class Config:
-    CSV_FILE = "rtst_times.csv"
+    CSV_FILE = os.getenv("RESULT_RTST_TIMES_CSV")
     CSV_COLUMNS = {
         "naive_encoding_time": ("\\textbf{Encoding time (ms)}", "Original"),
         "accurate_encoding_time": ("\\textbf{Encoding time (ms)}", "Ours"),
@@ -67,6 +67,7 @@ def main():
     times_latex = df_to_latex(times_df, bold_rows=True, escape=False, multicolumn_format="c", multirow=True, float_format="%.2f")
 
     write_paper_data(times_latex, "rtst_times.tex")
+
 
 if __name__ == "__main__":
     main()

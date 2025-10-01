@@ -2,6 +2,7 @@ import os
 import subprocess
 import pandas as pd
 import alice_lri
+import tempfile
 
 from scripts.common.helper.point_cloud import load_binary
 from scripts.common.load_env import load_env
@@ -26,9 +27,8 @@ class Config:
         "2011_10_03/2011_10_03_drive_0047_sync/velodyne_points/data/0000000000.bin",
     ]
 
-    intrinsics_json = "intrinsics.json"
-    output_csv = "rtst_times.csv"
-    rtst_out_filename = "out.tar.gz"
+    intrinsics_json_path = os.path.join(tempfile.gettempdir(), "intrinsics.json")
+    rtst_out_filename = "rtst_out.tar.gz"
 
     alice_lri_lib_path = os.getenv("ALICE_LRI_LIB_PATH")
     fmt = "binary"
@@ -52,7 +52,7 @@ class Globals:
 
 
 def run_process_capture_time(cmd):
-    result = subprocess.run(cmd, check=True, env=Globals.env, capture_output=True, text=True)
+    result = subprocess.run(cmd, check=True, env=Globals.env, capture_output=True, text=True, cwd=tempfile.gettempdir())
 
     execution_time = None
     for line in result.stdout.split('\n'):
@@ -117,23 +117,23 @@ def build_accurate_decoder_cmd(input_file, intrinsics_file):
 
 
 def estimate_intrinsics(estimation_cloud_path):
-    print("Loading estimation cloud points from:", estimation_cloud_path)
+    print("Loading estimation cloud from:", estimation_cloud_path)
     estimation_points, _ = load_binary(estimation_cloud_path)
 
     print("Estimating intrinsics...")
     intrinsics = alice_lri.estimate_intrinsics(estimation_points[:, 0], estimation_points[:, 1], estimation_points[:, 2])
 
-    intrinsics_file = os.path.abspath(Config.intrinsics_json)
+    intrinsics_file = os.path.abspath(Config.intrinsics_json_path)
     alice_lri.intrinsics_to_json_file(intrinsics, intrinsics_file)
 
 
 def measure_times(target_path):
     target_dir = os.path.dirname(target_path)
     target_filename = os.path.basename(target_path)
-    intrinsics_file = os.path.abspath(Config.intrinsics_json)
+    intrinsics_file = os.path.abspath(Config.intrinsics_json_path)
     df_rows = []
 
-    print("Loading target points from:", target_path)
+    print("Loading target cloud from:", target_path)
     for error_threshold in Config.error_thresholds:
         print(f"Error threshold: {error_threshold}")
         current_df_row = {}
@@ -179,7 +179,7 @@ def main():
 
         df = pd.concat([df, current_df], ignore_index=True) if df is not None else current_df
 
-    df.to_csv(Config.output_csv, index=False)
+    df.to_csv(Globals.env["RESULT_RTST_TIMES_CSV"], index=False)
 
 
 if __name__ == "__main__":

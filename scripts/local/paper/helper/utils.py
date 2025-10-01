@@ -2,10 +2,6 @@ import os
 import re
 import pandas as pd
 
-class __Config:
-    data_path = "output/data/"
-    figures_path = "output/figures/"
-
 
 def df_to_latex(df: pd.DataFrame, **kwargs) -> str:
     latex = df.to_latex(**kwargs)
@@ -85,12 +81,20 @@ def fix_multi_row(latex: str) -> str:
 
     return latex
 
+
 def df_format_ints(df: pd.DataFrame) -> pd.DataFrame:
     return df.applymap(lambda x: f"{x:,}" if isinstance(x, int) else x)
 
 
+def df_from_sql_table(table: str, connection) -> pd.DataFrame:
+    query = f"SELECT * FROM {table}"
+    df = pd.read_sql_query(query, connection)
+
+    return df
+
+
 def write_paper_data(latex: str, filename: str):
-    target_path = os.path.join(__Config.data_path, filename)
+    target_path = os.path.join(os.getenv("PAPER_DATA_DIR"), filename)
     with open(target_path, "w") as f:
         f.write(latex)
 
