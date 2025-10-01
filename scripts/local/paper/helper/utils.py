@@ -1,6 +1,8 @@
 import os
 import re
 import pandas as pd
+import numpy as np
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
 
 def df_to_latex(df: pd.DataFrame, **kwargs) -> str:
@@ -86,9 +88,10 @@ def df_format_ints(df: pd.DataFrame) -> pd.DataFrame:
     return df.applymap(lambda x: f"{x:,}" if isinstance(x, int) else x)
 
 
-def df_from_sql_table(table: str, connection) -> pd.DataFrame:
-    query = f"SELECT * FROM {table}"
-    df = pd.read_sql_query(query, connection)
+def df_from_sql_table(connection, table: str, where: str|None=None, params: tuple|None=None) -> pd.DataFrame:
+    clause = f"WHERE {where}" if where else ""
+    query = f"SELECT * FROM {table} {clause}"
+    df = pd.read_sql_query(query, connection, params=params)
 
     return df
 
@@ -100,3 +103,34 @@ def write_paper_data(latex: str, filename: str):
 
     print(latex)
     print(f"Data written to {target_path}")
+
+
+def metrics_from_labels(y_true, y_pred, labels=None):
+    if labels is None:
+        labels = np.unique(np.concatenate([y_true, y_pred]))
+
+    oa = accuracy_score(y_true, y_pred)
+    p, r, f1, support = precision_recall_fscore_support(
+        y_true, y_pred, labels=labels, average=None, zero_division=0
+    )
+    mp = p.mean()
+    mr = r.mean()
+    mf1 = f1.mean()
+
+    pw, rw, f1w, _ = precision_recall_fscore_support(
+        y_true, y_pred, labels=labels, average="weighted", zero_division=0
+    )
+
+    return {
+        "samples": int(len(y_true)),
+        "incorrect": int((np.array(y_true) != np.array(y_pred)).sum()),
+        "oa": oa * 100,
+        "mp": mp * 100, "mr": mr * 100, "mf1": mf1 * 100,
+        "wp": pw * 100, "wr": rw * 100, "wf1": f1w * 100,
+    }
+
+def compute_metrics(df, true_col, pred_col):
+    y_true = df[true_col].to_numpy()
+    y_pred = df[pred_col].to_numpy()
+
+    return pd.Series(metrics_from_labels(y_true, y_pred))
