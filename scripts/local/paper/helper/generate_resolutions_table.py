@@ -33,20 +33,24 @@ def main():
 # TODO update tables to new schema
 def fetch_and_compute_confusion_matrix(experiment_id: int, robust_point_count_threshold=64) -> pd.DataFrame:
     query = """
-            SELECT name AS dataset,
-                   dfe.dataset_frame_id NOT IN (
-                       SELECT DISTINCT dataset_frame_id
-                       FROM dataset_frame_scanline_info_empirical
-                       WHERE points_count < ?
-                   ) AS robust,
-                   dfe.scanlines_count AS true, ifr.scanlines_count AS pred, COUNT(*) AS count
-            FROM dataset d
-                     INNER JOIN main.dataset_frame df ON d.id = df.dataset_id
-                     INNER JOIN main.intrinsics_frame_result ifr ON df.id = ifr.dataset_frame_id
-                     INNER JOIN main.dataset_frame_empirical dfe ON df.id = dfe.dataset_frame_id
-            WHERE experiment_id == ?
-            GROUP BY name, robust, dfe.scanlines_count, ifr.scanlines_count;
-            """
+        SELECT name AS dataset,
+               dfsie.dataset_frame_id NOT IN (
+                   SELECT DISTINCT dataset_frame_id
+                   FROM dataset_frame_scanline_info_empirical
+                   WHERE points_count < ?
+               ) AS robust,
+               dfsie.horizontal_resolution AS true, 
+               COALESCE(irsi.horizontal_resolution, 0) AS pred,
+               COUNT(*) AS count
+        FROM dataset_frame_scanline_info_empirical dfsie
+                 JOIN dataset_frame df ON df.id = dfsie.dataset_frame_id
+                 JOIN dataset d ON df.dataset_id = d.id
+                 LEFT JOIN intrinsics_frame_result ifr ON ifr.dataset_frame_id = dfsie.dataset_frame_id
+                 LEFT JOIN intrinsics_result_scanline_info irsi ON irsi.intrinsics_result_id = ifr.id 
+                        AND irsi.scanline_idx = dfsie.scanline_idx
+        WHERE experiment_id = ?
+        GROUP BY name, robust, dfsie.horizontal_resolution, irsi.horizontal_resolution;
+    """
 
     return pd_read_sqlite_query(Config.DB_PATH, query, params=(robust_point_count_threshold, experiment_id))
 
@@ -54,10 +58,7 @@ def fetch_and_compute_confusion_matrix(experiment_id: int, robust_point_count_th
 # TODO complete formatting
 def format_final_table(df: pd.DataFrame) -> pd.DataFrame:
     df = df.sort_values(by=["dataset", "subset"], ascending=[False, True])
-
-    cols = df.columns.tolist()
-    cols.insert(cols.index("dataset") + 1, cols.pop(cols.index("subset")))
-    df = df[cols]
+    df = df[["dataset", "subset", "samples", "incorrect", "oa"]]
 
     return df
 

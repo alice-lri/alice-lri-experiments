@@ -6,12 +6,15 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 def metrics_from_confusion_df(
         df: pd.DataFrame, true_col="true", pred_col="pred", count_col="count", group_cols: list[str] | None = None
 ) -> pd.DataFrame:
+
     if group_cols:
-        return df.groupby(group_cols).apply(
+        result_df = df.groupby(group_cols).apply(
             lambda g: __metrics_single_group(g, true_col, pred_col, count_col), include_groups=False
         ).reset_index()
     else:
-        return __metrics_single_group(df, true_col, pred_col, count_col).to_frame().T
+        result_df = __metrics_single_group(df, true_col, pred_col, count_col).to_frame().T
+
+    return result_df.astype({"samples": np.int64, "incorrect": np.int64}, copy=False)
 
 
 def __metrics_single_group(df: pd.DataFrame, true_col: str, pred_col: str, count_col: str) -> pd.Series:
