@@ -1,5 +1,7 @@
 import os
 import re
+import sqlite3
+
 import pandas as pd
 import numpy as np
 from dask.dataframe import Aggregation
@@ -88,6 +90,14 @@ def fix_multi_row(latex: str) -> str:
 
 def df_format_ints(df: pd.DataFrame) -> pd.DataFrame:
     return df.applymap(lambda x: f"{x:,}" if isinstance(x, int) else x)
+
+
+def pd_read_sqlite_query(path: str, query: str, **kwargs) -> pd.DataFrame:
+    conn = sqlite3.connect(path)
+    df = pd.read_sql_query(query, conn, **kwargs)
+    conn.close()
+
+    return df
 
 
 def df_from_sql_table(connection, table: str, where: str|None=None, params: tuple|None=None) -> pd.DataFrame:
