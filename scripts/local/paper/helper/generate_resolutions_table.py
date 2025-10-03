@@ -34,49 +34,44 @@ def main():
 
 # TODO update tables to new schema
 def fetch_and_compute_confusion_matrix(experiment_id: int, robust_point_count_threshold=64) -> pd.DataFrame:
-    # TODO clean up this by extracting a core query string
-    query = """
-        SELECT name AS dataset,
-               COALESCE(dfsie.dataset_frame_id NOT IN (
-                   SELECT DISTINCT dataset_frame_id
-                   FROM dataset_frame_scanline_info_empirical
-                   WHERE points_count < ?
-               ), 0) AS robust,
-               COALESCE(dfsie.horizontal_resolution, 0) AS true, 
-               COALESCE(irsi.horizontal_resolution, 0) AS pred,
-               COUNT(*) AS count
-        FROM dataset d
-            INNER JOIN dataset_frame df ON df.dataset_id = d.id
-            INNER JOIN dataset_frame_scanline_info_empirical dfsie ON dfsie.dataset_frame_id = df.id
-            INNER JOIN intrinsics_frame_result ifr ON ifr.dataset_frame_id = df.id
-            LEFT JOIN intrinsics_result_scanline_info irsi ON irsi.intrinsics_result_id = ifr.id
-                AND irsi.scanline_idx = dfsie.scanline_idx 
-        WHERE experiment_id = ?
-        GROUP BY name, robust, dfsie.horizontal_resolution, irsi.horizontal_resolution
-            
-        UNION
-
-        SELECT name AS dataset,
-               COALESCE(dfsie.dataset_frame_id NOT IN (
-                   SELECT DISTINCT dataset_frame_id
-                   FROM dataset_frame_scanline_info_empirical
-                   WHERE points_count < ?
-               ), 0) AS robust,
-               COALESCE(dfsie.horizontal_resolution, 0) AS true,
-               COALESCE(irsi.horizontal_resolution, 0) AS pred,
-               COUNT(*) AS count
-        FROM dataset d
-                 INNER JOIN dataset_frame df ON df.dataset_id = d.id
-                 INNER JOIN intrinsics_frame_result ifr ON ifr.dataset_frame_id = df.id
-                 INNER JOIN intrinsics_result_scanline_info irsi ON irsi.intrinsics_result_id = ifr.id
-                 LEFT JOIN dataset_frame_scanline_info_empirical dfsie ON dfsie.dataset_frame_id = df.id
-                    AND irsi.scanline_idx = dfsie.scanline_idx
-        WHERE experiment_id = ?
-        GROUP BY name, robust, dfsie.horizontal_resolution, irsi.horizontal_resolution
+    base_query = """
+         SELECT name AS dataset,
+                COALESCE(dfsie.dataset_frame_id NOT IN (
+                    SELECT DISTINCT dataset_frame_id
+                    FROM dataset_frame_scanline_info_empirical
+                    WHERE points_count < ?
+                ), 0) AS robust,
+                COALESCE(dfsie.horizontal_resolution, 0) AS true,
+                COALESCE(irsi.horizontal_resolution, 0) AS pred,
+                COUNT(*) AS count
+         FROM dataset d
+                  INNER JOIN dataset_frame df ON df.dataset_id = d.id
+                  INNER JOIN intrinsics_frame_result ifr ON ifr.dataset_frame_id = df.id
+                  {}
+         WHERE experiment_id = ?
+         GROUP BY name, robust, dfsie.horizontal_resolution, irsi.horizontal_resolution
     """
 
-    return pd_read_sqlite_query(Config.DB_PATH, query,
-                                params=(robust_point_count_threshold, experiment_id, robust_point_count_threshold, experiment_id))
+    left_join_pred = """
+        INNER JOIN dataset_frame_scanline_info_empirical dfsie ON dfsie.dataset_frame_id = df.id
+        LEFT JOIN intrinsics_result_scanline_info irsi ON irsi.intrinsics_result_id = ifr.id
+            AND irsi.scanline_idx = dfsie.scanline_idx 
+    """
+
+    left_join_true = """
+        INNER JOIN intrinsics_result_scanline_info irsi ON irsi.intrinsics_result_id = ifr.id
+        LEFT JOIN dataset_frame_scanline_info_empirical dfsie ON dfsie.dataset_frame_id = df.id
+            AND irsi.scanline_idx = dfsie.scanline_idx
+    """
+
+    query = f"""
+        {base_query.format(left_join_pred)}
+        UNION
+        {base_query.format(left_join_true)}
+    """
+
+    params = (robust_point_count_threshold, experiment_id, robust_point_count_threshold, experiment_id)
+    return pd_read_sqlite_query(Config.DB_PATH, query, params=params)
 
 
 # TODO complete formatting
