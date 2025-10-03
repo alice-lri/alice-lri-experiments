@@ -1,6 +1,7 @@
 import os
 
 import pandas as pd
+from typing import Callable
 
 from scripts.common.load_env import load_env
 from scripts.local.paper.helper.utils import pd_read_sqlite_query
@@ -15,14 +16,20 @@ def main():
     print(f"Using database at {Config.DB_PATH}")
 
     print("Computing scanline ablation results from DB. This may take a while...")
-    scanline_ablation_final_df = generate_scanline_ablation_df()
+    scanline_ablation_df = generate_ablation_df(fetch_and_compute_scanline_ablation)
+
+    print("Computing resolution ablation results from DB. This will take a long while (go for a coffee)...")
+    resolution_ablation_df = generate_ablation_df(fetch_and_compute_resolution_ablation)
 
     pd.set_option('display.max_columns', None)
-    print(scanline_ablation_final_df)
+    print("Scanline ablation results:")
+    print(scanline_ablation_df)
+    print("Resolution ablation results:")
+    print(resolution_ablation_df)
 
 
-def generate_scanline_ablation_df() -> pd.DataFrame:
-    scanline_ablation_all_df = fetch_and_compute_scanline_ablation()
+def generate_ablation_df(fetch_func: Callable[[], pd.DataFrame]) -> pd.DataFrame:
+    scanline_ablation_all_df = fetch_func()
     scanline_ablation_robust_only_df = scanline_ablation_all_df[scanline_ablation_all_df["robust"] == True]
 
     all_cols = set(scanline_ablation_all_df.columns.tolist())
@@ -37,6 +44,7 @@ def generate_scanline_ablation_df() -> pd.DataFrame:
 
     merge_cols = list(set(scanline_ablation_all_df.columns) - {"incorrect_count_robust_only", "incorrect_count"})
     scanline_ablation_final_df = scanline_ablation_all_df.merge(scanline_ablation_robust_only_df, on=merge_cols)
+
     return scanline_ablation_final_df
 
 
@@ -61,6 +69,35 @@ def fetch_and_compute_scanline_ablation(robust_point_count_threshold=64) -> pd.D
              INNER JOIN experiment e ON e.id = ifr.experiment_id
              INNER JOIN dataset_frame_empirical dfe ON df.id = dfe.dataset_frame_id
         GROUP BY exp_id, dataset, robust;
+    """
+
+    return pd_read_sqlite_query(Config.DB_PATH, query, params=(robust_point_count_threshold, ))
+
+
+def fetch_and_compute_resolution_ablation(robust_point_count_threshold=64) -> pd.DataFrame:
+    query = """
+        SELECT e.id AS exp_id,
+            e.use_hough_continuity,
+            e.use_scanline_conflict_solver,
+            e.use_vertical_heuristics,
+            e.use_horizontal_heuristics,
+            d.name AS dataset,
+            dfsie.dataset_frame_id NOT IN (
+                SELECT DISTINCT dataset_frame_id
+                FROM dataset_frame_scanline_info_empirical
+                WHERE points_count < ?
+            ) AS robust,
+            COUNT(CASE WHEN 
+                dfsie.horizontal_resolution != COALESCE(irsi.horizontal_resolution, -1)
+            THEN 1 END) AS incorrect_count
+        FROM dataset d
+                 INNER JOIN dataset_frame df ON df.dataset_id = d.id
+                 INNER JOIN intrinsics_frame_result ifr ON ifr.dataset_frame_id = df.id
+                 INNER JOIN experiment e ON e.id = ifr.experiment_id
+                 INNER JOIN dataset_frame_scanline_info_empirical dfsie ON dfsie.dataset_frame_id = df.id
+                 LEFT JOIN intrinsics_result_scanline_info irsi ON irsi.intrinsics_result_id = ifr.id
+                    AND irsi.scanline_idx = dfsie.scanline_idx
+        GROUP BY exp_id, dataset, robust
     """
 
     return pd_read_sqlite_query(Config.DB_PATH, query, params=(robust_point_count_threshold, ))
