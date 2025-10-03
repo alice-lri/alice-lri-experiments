@@ -41,9 +41,9 @@ def fetch_and_compute_confusion_matrix(experiment_id: int, robust_point_count_th
                    ) AS robust,
                    dfe.scanlines_count AS true, ifr.scanlines_count AS pred, COUNT(*) AS count
             FROM dataset d
-                     INNER JOIN main.dataset_frame df ON d.id = df.dataset_id
-                     INNER JOIN main.intrinsics_frame_result ifr ON df.id = ifr.dataset_frame_id
-                     INNER JOIN main.dataset_frame_empirical dfe ON df.id = dfe.dataset_frame_id
+                     INNER JOIN dataset_frame df ON d.id = df.dataset_id
+                     INNER JOIN intrinsics_frame_result ifr ON df.id = ifr.dataset_frame_id
+                     INNER JOIN dataset_frame_empirical dfe ON df.id = dfe.dataset_frame_id
             WHERE experiment_id == ?
             GROUP BY name, robust, dfe.scanlines_count, ifr.scanlines_count;
             """
