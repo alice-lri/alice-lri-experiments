@@ -1,14 +1,27 @@
+from scripts.common.helper.entities import IntrinsicsExperiment, RangeImageExperiment, CompressionExperiment
+from scripts.common.helper.orm import Database
 from scripts.local.paper.helper.utils import pd_read_sqlite_query
 
 
 def fetch_main_experiment_id(db_path: str) -> int:
-    query = """
-            SELECT id FROM experiment
-            WHERE use_hough_continuity AND use_scanline_conflict_solver
-              AND use_vertical_heuristics AND use_horizontal_heuristics \
-            """
+    with Database(db_path) as db:
+        experiments = IntrinsicsExperiment.all(db)
+        experiments = [exp for exp in experiments if exp.all_flags_enabled()]
 
-    df = pd_read_sqlite_query(db_path, query)
-    assert len(df) == 1, f"Expected exactly one experiment, got {len(df)}"
+        assert(len(experiments) == 1), f"Expected exactly one experiment with all flags enabled, got {len(experiments)}"
 
-    return int(df.iloc[0]["id"])
+        return experiments[0].id
+
+
+def fetch_ri_experiment_id(db_path: str) -> int:
+    with Database(db_path) as db:
+        experiments = RangeImageExperiment.all(db)
+        assert len(experiments) == 1, f"Expected exactly one experiment, got {len(experiments)}"
+        return experiments[0].id
+
+
+def fetch_compression_experiment_id(db_path: str) -> int:
+    with Database(db_path) as db:
+        experiments = CompressionExperiment.all(db)
+        assert len(experiments) == 1, f"Expected exactly one experiment, got {len(experiments)}"
+        return experiments[0].id

@@ -9,12 +9,12 @@ from scripts.local.paper.helper.utils import df_to_latex, write_paper_data
 class Config:
     CSV_FILE = os.getenv("RESULT_RTST_TIMES_CSV")
     CSV_COLUMNS = {
-        "naive_encoding_time": ("\\textbf{Encoding time (ms)}", "Original"),
-        "accurate_encoding_time": ("\\textbf{Encoding time (ms)}", "Ours"),
-        "overhead_encoding": ("\\textbf{Encoding time (ms)}", "Overhead"),
-        "naive_decoding_time": ("\\textbf{Decoding time (ms)}", "Original"),
-        "accurate_decoding_time": ("\\textbf{Decoding time (ms)}", "Ours"),
-        "overhead_decoding": ("\\textbf{Decoding time (ms)}", "Overhead"),
+        "naive_encoding_time": ("\\textbf{Encoding Time (ms)}", "Original"),
+        "accurate_encoding_time": ("\\textbf{Encoding Time (ms)}", "Ours"),
+        "overhead_encoding": ("\\textbf{Encoding Time (ms)}", "Overhead"),
+        "naive_decoding_time": ("\\textbf{Decoding Time (ms)}", "Original"),
+        "accurate_decoding_time": ("\\textbf{Decoding Time (ms)}", "Ours"),
+        "overhead_decoding": ("\\textbf{Decoding Time (ms)}", "Overhead"),
     }
 
 

@@ -45,6 +45,14 @@ class IntrinsicsExperiment(OrmEntity, table_name="intrinsics_experiment"):
     use_vertical_heuristics: bool
     use_horizontal_heuristics: bool
 
+    def all_flags_enabled(self) -> bool:
+        return (
+            self.use_hough_continuity and
+            self.use_scanline_conflict_solver and
+            self.use_vertical_heuristics and
+            self.use_horizontal_heuristics
+        )
+
 class IntrinsicsFrameResult(OrmEntity, table_name="intrinsics_frame_result"):
     id: int | None
     experiment_id: int
