@@ -83,3 +83,19 @@ WHERE experiment_id = 2 AND dataset = 'kitti' AND relative_path LIKE '%2011_09_3
   AND method = 'pbea' AND ri_width = 4000 AND ri_height = 64
 ORDER BY relative_path
 
+
+SELECT error_threshold,
+       AVG(original_size_bytes * 1.0 / naive_size_bytes) AS cr_base,
+       AVG(original_size_bytes * 1.0 / accurate_size_bytes) AS cr_alice,
+       AVG((original_to_naive_rmse + naive_to_original_rmse) / 2) AS chamfer_base,
+       AVG((original_to_accurate_rmse + accurate_to_original_rmse) / 2) AS chamfer_alice,
+       AVG(10 * LOG(max_range * max_range / original_to_naive_mse) / LOG(10)) AS psnr_base,
+       AVG(10 * LOG(max_range * max_range / original_to_accurate_mse) / LOG(10)) AS psnr_alice,
+       AVG((original_points_count - naive_points_count) * 1.0 / original_points_count * 100) AS sampling_error_base,
+       AVG((original_points_count - accurate_points_count) * 1.0 / original_points_count * 100) AS sampling_error_alice
+FROM compression_frame_result AS cfs
+        JOIN dataset_frame df ON cfs.dataset_frame_id = df.id
+        JOIN dataset d ON df.dataset_id = d.id
+WHERE experiment_id = 2
+GROUP BY error_threshold
+ORDER BY error_threshold;

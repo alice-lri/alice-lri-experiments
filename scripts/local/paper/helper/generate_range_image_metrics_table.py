@@ -43,7 +43,7 @@ def create_temp_sql_view(conn: sqlite3.Connection):
         SELECT d.name AS dataset, relative_path, experiment_id, rfs.method AS method, ri_width, ri_height,
             (original_to_reconstructed_rmse + reconstructed_to_original_rmse) / 2 AS chamfer,
             10 * log(max_range * max_range / original_to_reconstructed_mse) / log(10) as psnr,
-            (original_points_count - reconstructed_points_count) / original_points_count * 100 as sampling_error,
+            (original_points_count - reconstructed_points_count) * 1.0 / original_points_count * 100 as sampling_error,
             d.max_range AS max_range
         FROM ri_frame_result AS rfs
             JOIN dataset_frame df ON rfs.dataset_frame_id = df.id
