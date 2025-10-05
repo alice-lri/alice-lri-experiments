@@ -4,6 +4,7 @@ import sqlite3
 
 import pandas as pd
 import numpy as np
+from matplotlib import pyplot as plt
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
 def df_to_latex(df: pd.DataFrame, **kwargs) -> str:
@@ -144,3 +145,29 @@ def compute_metrics(df, true_col, pred_col):
     y_pred = df[pred_col].to_numpy()
 
     return pd.Series(metrics_from_labels(y_true, y_pred))
+
+
+def save_point_cloud_visualization(path, points, intensity, cmap='viridis', point_size=0.01, figure_size=(12, 8), elev=30, azim=30, zoom=1.0):
+    fig = plt.figure(figsize=figure_size)
+    ax = fig.add_subplot(111, projection='3d', facecolor='black')  # Set axes background to black
+
+    ax.scatter(points[:, 0], points[:, 1], points[:, 2], c=intensity, cmap=cmap, s=point_size, vmin=0, vmax=1)
+    ax.set_axis_off()
+
+    ax.view_init(elev=elev, azim=azim)
+
+    max_range = np.array([points[:, 0].max()-points[:, 0].min(),
+                          points[:, 1].max()-points[:, 1].min(),
+                          points[:, 2].max()-points[:, 2].min()]).max() / 2.0 / zoom
+
+    mid_x = mid_y = mid_z = 0
+
+    ax.set_xlim(mid_x - max_range, mid_x + max_range)
+    ax.set_ylim(mid_y - max_range, mid_y + max_range)
+    ax.set_zlim(mid_z - max_range, mid_z + max_range)
+
+    fig.patch.set_facecolor('black')  # Set figure background to black
+    plt.tight_layout(pad=0)  # Reduce padding and margins
+
+    fig.savefig(path, bbox_inches='tight')
+    plt.close(fig)
