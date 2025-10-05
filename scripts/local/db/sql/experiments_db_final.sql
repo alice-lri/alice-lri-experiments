@@ -2,7 +2,8 @@ CREATE TABLE dataset
 (
     id integer PRIMARY KEY AUTOINCREMENT,
     name text NOT NULL UNIQUE,
-    laser_count integer NOT NULL
+    laser_count integer NOT NULL,
+    max_range real NOT NULL
 );
 CREATE INDEX dataset_name_idx ON dataset (name);
 

@@ -4,10 +4,7 @@ import sqlite3
 
 import pandas as pd
 import numpy as np
-from dask.dataframe import Aggregation
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
-import dask.dataframe as dd
-from sqlalchemy import Table, MetaData, select
 
 def df_to_latex(df: pd.DataFrame, **kwargs) -> str:
     latex = df.to_latex(**kwargs)
@@ -108,11 +105,6 @@ def df_from_sql_table(connection, table: str, where: str|None=None, params: tupl
     return df
 
 
-def ddf_from_sqlite_table(db_path: str, table: str) :
-    uri = f"sqlite:///{db_path}"
-    return dd.read_sql_table(table_name=table, con=uri, index_col="id")
-
-
 def write_paper_data(latex: str, filename: str):
     target_path = os.path.join(os.getenv("PAPER_DATA_DIR"), filename)
     with open(target_path, "w") as f:
@@ -152,26 +144,3 @@ def compute_metrics(df, true_col, pred_col):
     y_pred = df[pred_col].to_numpy()
 
     return pd.Series(metrics_from_labels(y_true, y_pred))
-
-
-def make_metrics_agg(true_col, pred_col):
-    return Aggregation(
-        name="metrics",
-        chunk=lambda df: df[[true_col, pred_col]],  # pass through relevant cols
-        agg=lambda parts: pd.concat(parts),         # concatenate intermediate results
-        finalize=lambda df: compute_metrics(df, true_col, pred_col)
-    )
-
-"""
-df = pd.DataFrame({
-    "name": ["A","A","B","B","B"],
-    "scanlines_count_gt": [1,0,1,1,0],
-    "scanlines_count_estimated": [1,1,0,1,0]
-})
-ddf = dd.from_pandas(df, npartitions=2)
-
-metrics_agg = make_metrics_agg("scanlines_count_gt", "scanlines_count_estimated")
-
-result = ddf.groupby("name").agg(metrics_agg)
-print(result.compute())
-"""

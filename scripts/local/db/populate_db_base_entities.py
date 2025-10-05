@@ -44,7 +44,11 @@ def main():
     with Database(db_path) as db:
         for d_name, d_configuration in Config.datasets_frames.items():
             print(f"Populating for dataset: {d_name}")
-            dataset = DatasetEntity(name=d_name, laser_count=d_configuration.info.laser_count)
+            dataset = DatasetEntity(
+                name=d_name,
+                max_range=d_configuration.info.max_range,
+                laser_count=d_configuration.info.laser_count
+            )
             dataset.save(db)
 
             print(" - Adding frames...")

@@ -8,6 +8,11 @@ class Dataset(ABC):
 
     @property
     @abstractmethod
+    def max_range(self) -> float:
+        pass
+
+    @property
+    @abstractmethod
     def v_offsets(self) -> list[float]:
         pass
 

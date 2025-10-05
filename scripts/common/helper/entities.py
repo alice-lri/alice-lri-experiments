@@ -6,6 +6,7 @@ class DatasetEntity(OrmEntity, table_name="dataset"):
     id: int | None
     name: str
     laser_count: int
+    max_range: float
 
 class DatasetFrame(OrmEntity, table_name="dataset_frame"):
     id: int | None
