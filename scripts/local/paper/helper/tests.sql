@@ -81,7 +81,7 @@ SELECT relative_path, chamfer
 FROM ri_data
 WHERE experiment_id = 2 AND dataset = 'kitti' AND relative_path LIKE '%2011_09_30_drive_0018_sync%'
   AND method = 'pbea' AND ri_width = 4000 AND ri_height = 64
-ORDER BY relative_path
+ORDER BY relative_path;
 
 
 SELECT error_threshold,
@@ -99,3 +99,12 @@ FROM compression_frame_result AS cfs
 WHERE experiment_id = 2
 GROUP BY error_threshold
 ORDER BY error_threshold;
+
+SELECT original_size_bytes * 1.0 / naive_size_bytes AS cr_base,
+       original_size_bytes * 1.0 / accurate_size_bytes AS cr_alice,
+       (original_to_naive_rmse + naive_to_original_rmse) / 2 AS chamfer_base,
+       (original_to_accurate_rmse + accurate_to_original_rmse) / 2 AS chamfer_alice
+FROM compression_frame_result AS cfs
+         JOIN dataset_frame df ON cfs.dataset_frame_id = df.id
+WHERE experiment_id = 2
+ORDER BY relative_path;
