@@ -171,3 +171,46 @@ def save_point_cloud_visualization(path, points, intensity, cmap='viridis', poin
 
     fig.savefig(path, bbox_inches='tight')
     plt.close(fig)
+
+
+def save_range_image(path, range_image, elevation_range=None, aspect_ratio=None, cmap='nipy_spectral', origin="lower", show_colorbar=True):
+    x_range = 2 * np.pi
+    x_ticks_count = 9
+    y_label = 'Pixel Index (Phi)'
+
+    plt.figure(figsize=(12, 4))
+
+    if elevation_range:
+        y_range = elevation_range[1] - elevation_range[0]
+        calc_aspect_ratio = (range_image.shape[1] / x_range) / (range_image.shape[0] / y_range)
+        aspect_ratio = calc_aspect_ratio if aspect_ratio is None else aspect_ratio
+        y_label = 'Phi (Degrees)'
+
+        y_ticks_count = int(32 * y_range / np.pi)
+        y_ticks = np.linspace(0, range_image.shape[0] - 1, num=y_ticks_count)
+        y_tick_labels = np.linspace(elevation_range[0], elevation_range[1], num=y_ticks_count)
+
+        if origin == "upper":
+            y_tick_labels = list(reversed(y_tick_labels))
+
+        plt.yticks(y_ticks, [f"{label:.0f}°" for label in np.rad2deg(y_tick_labels)])
+
+    if aspect_ratio is None:
+        aspect_ratio = 10
+
+    plt.ylabel(y_label)
+    plt.xlabel('Theta (Degrees)')
+    x_ticks = np.linspace(0, range_image.shape[1] - 1, num=x_ticks_count)
+    x_tick_labels = np.linspace(0, x_range, num=x_ticks_count)
+    plt.xticks(x_ticks, [f"{label:.0f}°" for label in np.rad2deg(x_tick_labels)])
+
+    plt.imshow(range_image, cmap=cmap, interpolation='none', origin=origin, aspect=aspect_ratio)
+
+    if show_colorbar:
+        plt.colorbar(label='Range (meters)')
+
+    plt.grid(False)
+
+    plt.savefig(path, bbox_inches='tight')
+    plt.tight_layout()
+    plt.close()
