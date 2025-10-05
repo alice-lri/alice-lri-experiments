@@ -1,3 +1,4 @@
+-- TODO delete this file and migrations
 CREATE TABLE dataset
 (
     id integer PRIMARY KEY AUTOINCREMENT,
