@@ -20,7 +20,7 @@ struct TimingResult {
 
 struct DatasetConfig {
     std::string name;
-    std::string basePath;
+    const char* basePath;
     std::vector<std::string> sequences;
 };
 
@@ -33,7 +33,7 @@ private:
         return {
             {
                 "kitti",
-                "../../Datasets/LiDAR/kitti/",
+                std::getenv("LOCAL_KITTI_PATH"),
                 {
                     "2011_09_26/2011_09_26_drive_0001_sync/velodyne_points/data/",
                     "2011_09_26/2011_09_26_drive_0117_sync/velodyne_points/data/",
@@ -49,7 +49,7 @@ private:
             },
             {
                 "durlar",
-                "../../Datasets/LiDAR/durlar/dataset/DurLAR/",
+                std::getenv("LOCAL_DURLAR_PATH"),
                 {
                     "DurLAR_20210716/ouster_points/data/",
                     "DurLAR_20210901/ouster_points/data/",
@@ -147,12 +147,17 @@ private:
 public:
     void measureAllDatasets() {
         auto datasets = getDatasetConfigs();
+        for (const auto& dataset : datasets) {
+            if (!dataset.basePath) {
+                throw std::runtime_error("Environment variable for dataset " + dataset.name + " not set");
+            }
+        }
         
         for (const auto& dataset : datasets) {
             std::cout << "\n=== Processing dataset: " << dataset.name << " ===" << std::endl;
             
             for (const auto& sequence : dataset.sequences) {
-                std::string sequencePath = dataset.basePath + sequence;
+                std::string sequencePath = std::filesystem::path(dataset.basePath) / sequence;
                 std::cout << "\n--- Processing sequence: " << sequence << " ---" << std::endl;
                 
                 auto [firstFrame, lastFrame] = getFirstAndLastFrameFile(sequencePath);
@@ -258,7 +263,12 @@ public:
         }
     }
     
-    void saveToCSV(const std::string& filename = "timing_results.csv") {
+    void saveToCSV() {
+        const char* filename = std::getenv("RESULT_ALICE_TIMES_CSV");
+        if(!filename) {
+            throw std::runtime_error("Environment variable RESULT_ALICE_TIMES_CSV not set");
+        }
+
         std::ofstream file(filename);
         if (!file.is_open()) {
             std::cerr << "Error: Could not open file " << filename << " for writing." << std::endl;
@@ -287,6 +297,10 @@ public:
 };
 
 int main(int argc, char** argv) {
+    if(!std::getenv("RESULT_ALICE_TIMES_CSV")) {
+        throw std::runtime_error("Environment variable RESULT_ALICE_TIMES_CSV not set");
+    }
+
     std::cout << "ALICE-LRI Timing Benchmark" << std::endl;
     std::cout << "Measuring estimate, project, and unproject times" << std::endl;
     std::cout << "Datasets: KITTI and DurLAR" << std::endl;

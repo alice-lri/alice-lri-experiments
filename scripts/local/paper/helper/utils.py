@@ -106,12 +106,12 @@ def df_from_sql_table(connection, table: str, where: str|None=None, params: tupl
     return df
 
 
-def write_paper_data(latex: str, filename: str):
+def write_paper_data(content: str, filename: str):
     target_path = os.path.join(os.getenv("PAPER_DATA_DIR"), filename)
     with open(target_path, "w") as f:
-        f.write(latex)
+        f.write(content)
 
-    print(latex)
+    print(content)
     print(f"Data written to {target_path}")
 
 
