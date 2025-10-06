@@ -1,1 +1,1 @@
-# accurate-ri-hpc
+# alice-lri-experiments

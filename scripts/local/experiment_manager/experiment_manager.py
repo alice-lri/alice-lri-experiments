@@ -11,7 +11,7 @@ from dataclasses_json import dataclass_json
 
 #TODO maybe split and cleanup
 class Config:
-    BASE_DIR = """${STORE2}/accurate-ri-hpc"""
+    BASE_DIR = """${STORE2}/alice-lri-experiments"""
     STATE_FILE = "state.json"
     SHOW_REMOTE_OUTPUT = False
     DISABLE_RELAUNCH = False
