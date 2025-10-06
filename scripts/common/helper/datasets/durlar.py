@@ -9,7 +9,7 @@ class DurLAR(Dataset):
 
     @property
     def max_range(self) -> float:
-        return 200
+        return 170
 
     @property
     def v_offsets(self) -> list[float]:
