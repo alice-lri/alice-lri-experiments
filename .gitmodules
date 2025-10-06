@@ -1,6 +1,6 @@
-[submodule "accurate-ri"]
-	path = accurate-ri
-	url = git@github.com:samuelss1996/accurate_ri.git
+[submodule "alice-lri"]
+	path = alice-lri
+	url = git@github.com:alice-lri/alice-lri.git
 [submodule "rtst-modified"]
 	path = rtst-modified
-	url = git@github.com:samuelss1996/Real-Time-Spatio-Temporal-LiDAR-Point-Cloud-Compression.git
+	url = git@github.com:alice-lri/rtst-modified.git
