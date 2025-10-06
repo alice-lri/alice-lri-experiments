@@ -1,6 +1,11 @@
 {
   "experiments": [
     {
+      "label": "ground_truth",
+      "description": "Compute per-frame ground truth (laser-scanline assignations)",
+      "type": 4
+    },
+    {
       "label": "intrinsics_final_default",
       "description": "Final intrinsics experiment with all the parts of the algorithm enabled.",
       "type": 1,

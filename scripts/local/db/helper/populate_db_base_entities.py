@@ -38,7 +38,7 @@ class Config:
     }
 
 def main():
-    db_path = os.getenv("LOCAL_SQLITE_DB")
+    db_path = os.getenv("LOCAL_SQLITE_INITIAL_DB")
     print(f"Will populate base entities in the database {db_path}")
 
     with Database(db_path) as db:
