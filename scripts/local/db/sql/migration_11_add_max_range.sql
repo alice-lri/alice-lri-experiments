@@ -1,0 +1,1 @@
+ALTER TABLE dataset ADD COLUMN max_range real;

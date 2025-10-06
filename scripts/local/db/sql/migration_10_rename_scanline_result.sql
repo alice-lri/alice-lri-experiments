@@ -1,0 +1,1 @@
+ALTER TABLE intrinsics_result_scanline_info RENAME TO intrinsics_scanline_result;
