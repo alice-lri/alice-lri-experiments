@@ -20,7 +20,7 @@ From: ubuntu:22.04
 
     # Base packages
     apt update
-    xargs apt install -y < apt_packages.txt
+    xargs apt install -y --allow-downgrades < apt_packages.txt
 
     # Conan
     curl -L https://github.com/conan-io/conan/releases/download/2.17.0/conan-2.17.0-amd64.deb -o conan.deb
