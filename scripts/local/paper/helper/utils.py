@@ -7,10 +7,13 @@ import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
-def df_to_latex(df: pd.DataFrame, **kwargs) -> str:
-    latex = df.to_latex(**kwargs)
-    latex = add_multi_column_rules(df, latex)
-    latex = fix_multi_row(latex)
+def df_to_latex(df: pd.DataFrame, index=True, multirow=True, multicolumn=True, bold_rows=True, multicolumn_format="c", **kwargs) -> str:
+    latex = df.to_latex(index=index, multirow=multirow, multicolumn=multicolumn, bold_rows=bold_rows, multicolumn_format=multicolumn_format, **kwargs)
+    if multicolumn:
+        latex = add_multi_column_rules(df, latex)
+
+    if multirow:
+        latex = fix_multi_row(latex)
 
     return latex
 
@@ -90,6 +93,24 @@ def df_format_ints(df: pd.DataFrame) -> pd.DataFrame:
     return df.applymap(lambda x: f"{x:,}" if isinstance(x, int) else x)
 
 
+def df_format_dataset_names(df: pd.DataFrame, bold=False) -> pd.DataFrame:
+    replace_rules = { "kitti": "KITTI", "durlar": "DurLAR" }
+    if bold:
+        replace_rules = { k: f"\\textbf{{{v}}}" for k, v in replace_rules.items() }
+
+    df = df.replace(replace_rules)
+
+    if isinstance(df.index, pd.MultiIndex):
+        df.index = pd.MultiIndex.from_tuples([
+            tuple(replace_rules.get(str(i), i) for i in idx)
+            for idx in df.index
+        ], names=df.index.names)
+    else:
+        df.index = df.index.map(lambda x: replace_rules.get(str(x), x))
+
+    return df
+
+
 def pd_read_sqlite_query(path: str, query: str, **kwargs) -> pd.DataFrame:
     conn = sqlite3.connect(path)
     df = pd.read_sql_query(query, conn, **kwargs)
@@ -111,7 +132,6 @@ def write_paper_data(content: str, filename: str):
     with open(target_path, "w") as f:
         f.write(content)
 
-    print(content)
     print(f"Data written to {target_path}")
 
 

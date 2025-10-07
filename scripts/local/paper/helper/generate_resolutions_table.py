@@ -1,16 +1,34 @@
 import os
 
+import numpy as np
 import pandas as pd
+from pandas.io.sas.sas_constants import column_format_length_length
 
 from scripts.common.load_env import load_env
 from scripts.local.paper.helper.common import fetch_main_experiment_id
 from scripts.local.paper.helper.metrics import metrics_from_confusion_df
-from scripts.local.paper.helper.utils import pd_read_sqlite_query
+from scripts.local.paper.helper.utils import pd_read_sqlite_query, df_format_dataset_names, df_to_latex, \
+    write_paper_data
 
 load_env()
 
 class Config:
     DB_PATH = os.getenv("LOCAL_SQLITE_MASTER_DB")
+    ROBUST_POINT_COUNT_THRESHOLD = 64
+
+    SUBSET_REPLACE = {
+        "all": "All",
+        "robust_only": f"$n^{{(l)}} \\geq {ROBUST_POINT_COUNT_THRESHOLD}$"
+    }
+    COLUMNS_RENAME = {
+        'dataset': 'Dataset',
+        'subset': 'Subset',
+        'samples': '\\# Samples',
+        'incorrect': '\\# Incorrect',
+        'oa': 'OA (\\%)'
+    }
+
+    OUTPUT_FILE = "resolution_metrics.tex"
 
 
 def main():
@@ -26,8 +44,10 @@ def main():
     all_metrics_df = metrics_from_confusion_df(confusion_matrix_all_df, group_cols=["dataset"]).assign(subset="all")
     robust_only_metrics_df = metrics_from_confusion_df(confusion_matrix_robust_only, group_cols=["dataset"]).assign(subset="robust_only")
     final_metrics_df = pd.concat([all_metrics_df, robust_only_metrics_df])
+    final_metrics_df = format_final_table(final_metrics_df)
 
-    print(format_final_table(final_metrics_df))
+    latex = df_to_latex(final_metrics_df, float_format="%.2f", column_format="llrrr")
+    write_paper_data(latex, Config.OUTPUT_FILE)
 
 
 # TODO update tables to new schema
@@ -55,10 +75,20 @@ def fetch_and_compute_confusion_matrix(experiment_id: int, robust_point_count_th
     return pd_read_sqlite_query(Config.DB_PATH, query, params=(robust_point_count_threshold, experiment_id))
 
 
-# TODO complete formatting
 def format_final_table(df: pd.DataFrame) -> pd.DataFrame:
     df = df.sort_values(by=["dataset", "subset"], ascending=[False, True])
     df = df[["dataset", "subset", "samples", "incorrect", "oa"]]
+    print(df)
+
+    df["samples"] = df["samples"].map(lambda x: f"\\num{{{x}}}")
+    df["incorrect"] = df["incorrect"].astype(str)
+    df["subset"] = df["subset"].replace(Config.SUBSET_REPLACE)
+    # show 99.99 instead of 100.00 unless it's exactly 100
+    df["oa"] = df["oa"].map(lambda x: np.floor(x * 100) / 100)
+    df = df.rename(columns=Config.COLUMNS_RENAME)
+    df = df.set_index(["Dataset", "Subset"])
+    df.columns = pd.MultiIndex.from_product([["\\textbf{Horizontal Resolution}"], list(df.columns)])
+    df = df_format_dataset_names(df)
 
     return df
 

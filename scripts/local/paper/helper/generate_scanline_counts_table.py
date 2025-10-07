@@ -5,12 +5,34 @@ import pandas as pd
 from scripts.common.load_env import load_env
 from scripts.local.paper.helper.common import fetch_main_experiment_id
 from scripts.local.paper.helper.metrics import metrics_from_confusion_df
-from scripts.local.paper.helper.utils import pd_read_sqlite_query
+from scripts.local.paper.helper.utils import pd_read_sqlite_query, df_to_latex, write_paper_data, \
+    df_format_dataset_names
 
 load_env()
 
 class Config:
     DB_PATH = os.getenv("LOCAL_SQLITE_MASTER_DB")
+    ROBUST_POINT_COUNT_THRESHOLD = 64
+
+    SUBSET_REPLACE = {
+        "all": "All",
+        "robust_only": f"$n^{{(l)}} \\geq {ROBUST_POINT_COUNT_THRESHOLD}$"
+    }
+    COLUMNS_RENAME = {
+        'dataset': 'Dataset',
+        'subset': 'Subset',
+        'samples': '\\# Samples',
+        'incorrect': '\\# Incorrect',
+        'mp': 'mP (\\%)',
+        'mr': 'mR (\\%)',
+        'mf1': 'mF1 (\\%)',
+        'wp': 'wP (\\%)',
+        'wr': 'wR (\\%)',
+        'wf1': 'wF1 (\\%)',
+        'oa': 'OA (\\%)'
+    }
+
+    OUTPUT_FILE = "scanline_count_metrics.tex"
 
 
 def main():
@@ -26,8 +48,10 @@ def main():
     all_metrics_df = metrics_from_confusion_df(confusion_matrix_all_df, group_cols=["dataset"]).assign(subset="all")
     robust_only_metrics_df = metrics_from_confusion_df(confusion_matrix_robust_only, group_cols=["dataset"]).assign(subset="robust_only")
     final_metrics_df = pd.concat([all_metrics_df, robust_only_metrics_df])
+    final_metrics_df = format_final_table(final_metrics_df)
 
-    print(format_final_table(final_metrics_df))
+    latex = df_to_latex(final_metrics_df, float_format="%.2f", column_format="ll" + "r" * (len(final_metrics_df.columns)))
+    write_paper_data(latex, Config.OUTPUT_FILE)
 
 
 # TODO update tables to new schema
@@ -51,13 +75,20 @@ def fetch_and_compute_confusion_matrix(experiment_id: int, robust_point_count_th
     return pd_read_sqlite_query(Config.DB_PATH, query, params=(robust_point_count_threshold, experiment_id))
 
 
-# TODO complete formatting
 def format_final_table(df: pd.DataFrame) -> pd.DataFrame:
     df = df.sort_values(by=["dataset", "subset"], ascending=[False, True])
 
-    cols = df.columns.tolist()
-    cols.insert(cols.index("dataset") + 1, cols.pop(cols.index("subset")))
-    df = df[cols]
+    pd.set_option('display.max_columns', None)
+    print(df)
+
+    df["samples"] = df["samples"].map(lambda x: f"\\num{{{x}}}")
+    df["incorrect"] = df["incorrect"].astype(str)
+    df["subset"] = df["subset"].replace(Config.SUBSET_REPLACE)
+
+    df = df.rename(columns=Config.COLUMNS_RENAME)
+    df = df.set_index(["Dataset", "Subset"])
+    df.columns = pd.MultiIndex.from_product([["\\textbf{Scanlines Count}"], list(df.columns)])
+    df = df_format_dataset_names(df)
 
     return df
 
