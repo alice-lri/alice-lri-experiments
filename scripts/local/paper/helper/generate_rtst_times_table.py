@@ -68,7 +68,7 @@ def compute_overhead(df):
 def format_final_table(df):
     df = df.rename(columns=Config.COLUMNS_RENAME)
     df.columns = pd.MultiIndex.from_tuples(df.columns)
-    df.index.name = "Error threshold"
+    df.index.name = "Error Threshold"
 
     df.index = pd.MultiIndex.from_tuples(
         [(f"{i:.3f}", ) for i in df.index],

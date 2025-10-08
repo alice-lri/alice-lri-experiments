@@ -111,7 +111,7 @@ def fetch_cd_for_frames(conn: sqlite3.Connection, experiment_id: int, subset: pd
 
 
 def format_final_table(df: pd.DataFrame) -> pd.DataFrame:
-    df["Method"] = df["method"].replace({"pbea": "PBEA", "accurate": "Ours"})
+    df["Method"] = df["method"].replace({"pbea": "PBEA", "accurate": "ALICE-LRI"})
     df["Method"] = df.apply(format_method, axis=1)
     df = df.rename(columns={"dataset": "Dataset"})
     df = df.set_index(["Dataset", "Method"])
@@ -123,17 +123,17 @@ def format_final_table(df: pd.DataFrame) -> pd.DataFrame:
     df = df_format_dataset_names(df)
     df = df.map(lambda x: f"{x:.6f}" if isinstance(x, (float, int)) else str(x))
 
-    ours_mask = df.index.get_level_values("Method").str.contains("Ours", regex=False)
+    ours_mask = df.index.get_level_values("Method").str.contains("ALICE-LRI", regex=False)
     df.loc[ours_mask] = df.loc[ours_mask].map(lambda x: f"$\\mathbf{{{x}}}$")
 
     return df
 
 
 def format_method(r: pd.Series) -> str:
-    is_ours = "Ours" in r["Method"]
+    is_ours = "ALICE-LRI" in r["Method"]
 
     if is_ours:
-        return f"\\textbf{{Ours}} ($\\mathbf{{{r['ri_width']}}} \\times \\mathbf{{{r['ri_height']}}}$)"
+        return f"\\textbf{{ALICE-LRI}} ($\\mathbf{{{r['ri_width']}}} \\times \\mathbf{{{r['ri_height']}}}$)"
 
     return f"{r["Method"]} ($\\num{{{r['ri_width']}}} \\times \\num{{{r['ri_height']}}}$)"
 
