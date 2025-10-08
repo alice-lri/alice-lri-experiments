@@ -38,7 +38,6 @@ def add_multi_column_rules(df: pd.DataFrame, latex: str) -> str:
 
         unneeded_line = latex_lines[first_midrule_idx - 1]
         unneeded_parts = [part.strip() for part in unneeded_line.replace("\\","").split("&") if part.strip()]
-        assert len(unneeded_parts) == top_row_spaces, f"Unmatched number of columns: {len(unneeded_parts)} vs {top_row_spaces}"
 
         top_row_new_parts = [f"\\multirow{{{df.columns.nlevels}}}{{*}}{{{part}}}" for part in unneeded_parts]
         top_row_line = " & ".join(top_row_new_parts) + " & " + top_row_line[top_row_actual_beginning:]

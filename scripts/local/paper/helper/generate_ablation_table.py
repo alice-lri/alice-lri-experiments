@@ -4,12 +4,28 @@ import pandas as pd
 from typing import Callable
 
 from scripts.common.load_env import load_env
-from scripts.local.paper.helper.utils import pd_read_sqlite_query
+from scripts.local.paper.helper.utils import pd_read_sqlite_query, df_to_latex, write_paper_data
 
 load_env()
 
 class Config:
     DB_PATH = os.getenv("LOCAL_SQLITE_MASTER_DB")
+
+    COLS_RENAME_LEVEL_0 = {
+        "components": "\\textbf{Algorithm Components}",
+        "kitti": "\\textbf{KITTI}",
+        "durlar": "\\textbf{DurLAR}"
+    }
+    COLS_RENAME_LEVEL_1 = {
+        "use_hough_continuity": "Hough Continuity",
+        "use_scanline_conflict_solver": "Conflict Resolution",
+        "use_vertical_heuristics": "Vertical Heuristics",
+        "use_horizontal_heuristics": "Horizontal Heuristics",
+        "incorrect_scanline": "\\# Incorrect Scanlines Count",
+        "incorrect_resolution": "\\# Incorrect Resolutions"
+    }
+    
+    OUTPUT_FILE = "ablation_combined_metrics.tex"
 
 
 def main():
@@ -21,11 +37,14 @@ def main():
     print("Computing resolution ablation results from DB. This will take a long while (go for a coffee)...")
     resolution_ablation_df = generate_ablation_df(fetch_and_compute_resolution_ablation)
 
+    full_ablation_df = generate_full_ablation_df(scanline_ablation_df, resolution_ablation_df)
+
     pd.set_option('display.max_columns', None)
-    print("Scanline ablation results:")
-    print(scanline_ablation_df)
-    print("Resolution ablation results:")
-    print(resolution_ablation_df)
+    print(full_ablation_df)
+
+    full_ablation_df = format_final_table(full_ablation_df)
+    latex = df_to_latex(full_ablation_df, column_format="lccccrrrr")
+    write_paper_data(latex, Config.OUTPUT_FILE)
 
 
 def generate_ablation_df(fetch_func: Callable[[], pd.DataFrame]) -> pd.DataFrame:
@@ -103,18 +122,17 @@ def fetch_and_compute_resolution_ablation(robust_point_count_threshold=64) -> pd
     return pd_read_sqlite_query(Config.DB_PATH, query, params=(robust_point_count_threshold, ))
 
 
-# TODO complete formatting
 def format_to_experiment_configuration(df: pd.DataFrame, robust_only: bool) -> pd.DataFrame:
     configs = experiment_configurations_df().reset_index().rename(columns={"index": "config_order"})
 
-    flags_cols = list(set(configs.columns) - {"exp_name", "config_order"})
+    flags_cols = [col for col in configs.columns if col not in ["exp_name", "config_order"]]
     df = df.merge(configs, on=flags_cols)
     df = df.sort_values(by=["dataset", "config_order"], ascending=[False, True]).reset_index()
 
     incorrect_count_col = "incorrect_count" if not robust_only else "incorrect_count_robust_only"
     df = df.rename(columns={"incorrect_count": incorrect_count_col})
 
-    df = df[["dataset", "exp_name", incorrect_count_col]]
+    df = df[["dataset", "exp_name"] + flags_cols + [incorrect_count_col]]
     return df
 
 
@@ -128,6 +146,49 @@ def experiment_configurations_df() -> pd.DataFrame:
     }
 
     return pd.DataFrame(data)
+
+
+def generate_full_ablation_df(scanline_df: pd.DataFrame, resolution_df: pd.DataFrame) -> pd.DataFrame:
+    df = merge_ablation_parts(scanline_df, resolution_df)
+    df = pivot_full_df(df)
+
+    return df
+
+
+def merge_ablation_parts(scanline_df: pd.DataFrame, resolution_df: pd.DataFrame) -> pd.DataFrame:
+    original_measure_columns = ["incorrect_count", "incorrect_count_robust_only"]
+    merge_cols = [col for col in scanline_df.columns if col not in original_measure_columns]
+    merge_cols_func = lambda row: f"{row['incorrect_count']} ({row['incorrect_count_robust_only']})"
+
+    scanline_df["incorrect"] = scanline_df.apply(merge_cols_func, axis=1)
+    resolution_df["incorrect"] = resolution_df.apply(merge_cols_func, axis=1)
+    scanline_df = scanline_df.drop(columns=original_measure_columns)
+    resolution_df = resolution_df.drop(columns=original_measure_columns)
+
+    return pd.merge(scanline_df, resolution_df, on=merge_cols, suffixes=("_scanline", "_resolution"))
+
+
+def pivot_full_df(df: pd.DataFrame) -> pd.DataFrame:
+    pivoted_df = df.pivot(index="exp_name", columns="dataset", values=["incorrect_scanline", "incorrect_resolution"])
+    pivoted_df.columns = pivoted_df.columns.swaplevel()
+    pivoted_df = pivoted_df.sort_index(axis=1, level=0, ascending=False)
+
+    flags_cols = [c for c in df.columns if c.startswith("use_")]
+    flags_df = df[["exp_name"] + flags_cols].drop_duplicates("exp_name").set_index("exp_name")
+    flags_df.columns = pd.MultiIndex.from_product([["components"], flags_df.columns])
+
+    return pd.merge(flags_df, pivoted_df, left_index=True, right_index=True)
+
+
+def format_final_table(df: pd.DataFrame) -> pd.DataFrame:
+    flags_cols = [c for c in df.columns if c[1].startswith("use_")]
+    df[flags_cols] = df[flags_cols].map(lambda x: "\\checkmark" if x == 1 else "")
+
+    df = df.rename(columns=Config.COLS_RENAME_LEVEL_0, level=0)
+    df = df.rename(columns=Config.COLS_RENAME_LEVEL_1, level=1)
+    df.index.name = " "
+
+    return df
 
 
 if __name__ == "__main__":
