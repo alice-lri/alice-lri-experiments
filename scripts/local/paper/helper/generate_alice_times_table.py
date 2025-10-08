@@ -3,7 +3,6 @@ import subprocess
 
 import pandas as pd
 
-from scripts.local.runtime import measure_rtst_times
 from scripts.local.paper.helper.utils import df_to_latex, write_paper_data, df_format_dataset_names
 
 
