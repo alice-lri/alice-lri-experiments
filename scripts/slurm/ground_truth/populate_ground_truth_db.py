@@ -30,6 +30,9 @@ def main():
         frames = DatasetFrame.where(db, "id % ? = ?", (Args.total_processes, Args.process_id))
         print(f"Process {Args.process_id}/{Args.total_processes} - Assigned {len(frames)} frames")
 
+        laser_gts = DatasetLaserGt.all(db)
+        laser_gts_by_dataset_and_idx = {(lg.dataset_id, lg.laser_idx): lg for lg in laser_gts}
+
         all_frame_gt_entities = []
         all_scanline_gt_entities = []
         for i, frame in enumerate(frames):
@@ -37,7 +40,9 @@ def main():
 
             gt_result = compute_ground_truth_from_frame(frame, dataset_id_to_name)
             gt_frame_entity = build_frame_gt_entity(frame.id, gt_result)
-            gt_scanline_entities = build_scanline_gt_entities(frame.id, gt_result)
+
+            laser_gt = laser_gts_by_dataset_and_idx[(frame.dataset_id, gt_result["laser_idx"])]
+            gt_scanline_entities = build_scanline_gt_entities(frame.id, laser_gt.id, gt_result)
 
             all_frame_gt_entities.append(gt_frame_entity)
             all_scanline_gt_entities.extend(gt_scanline_entities)
@@ -85,12 +90,12 @@ def build_frame_gt_entity(dataset_frame_id: int, gt_result: dict):
     )
 
 
-def build_scanline_gt_entities(dataset_frame_id: int, gt_result: dict):
+def build_scanline_gt_entities(dataset_frame_id: int, laser_gt_id:int, gt_result: dict):
     result = []
     for scanline_idx, s in enumerate(gt_result["scanlines"]):
         scanline_gt = DatasetFrameScanlineGt(
             dataset_frame_id=dataset_frame_id,
-            laser_id=s["laser_idx"],
+            laser_id=laser_gt_id,
             scanline_idx=scanline_idx,
             points_count=s["points_count"]
         )
