@@ -40,9 +40,7 @@ def main():
 
             gt_result = compute_ground_truth_from_frame(frame, dataset_id_to_name)
             gt_frame_entity = build_frame_gt_entity(frame.id, gt_result)
-
-            laser_gt = laser_gts_by_dataset_and_idx[(frame.dataset_id, gt_result["laser_idx"])]
-            gt_scanline_entities = build_scanline_gt_entities(frame.id, laser_gt.id, gt_result)
+            gt_scanline_entities = build_scanline_gt_entities(frame, gt_result, laser_gts_by_dataset_and_idx)
 
             all_frame_gt_entities.append(gt_frame_entity)
             all_scanline_gt_entities.extend(gt_scanline_entities)
@@ -90,12 +88,13 @@ def build_frame_gt_entity(dataset_frame_id: int, gt_result: dict):
     )
 
 
-def build_scanline_gt_entities(dataset_frame_id: int, laser_gt_id:int, gt_result: dict):
+def build_scanline_gt_entities(frame: DatasetFrame, gt_result: dict, laser_gts_by_dataset_and_idx: dict[tuple[int, int], DatasetLaserGt]):
     result = []
     for scanline_idx, s in enumerate(gt_result["scanlines"]):
+        laser_gt = laser_gts_by_dataset_and_idx[(frame.dataset_id, s["laser_idx"])]
         scanline_gt = DatasetFrameScanlineGt(
-            dataset_frame_id=dataset_frame_id,
-            laser_id=laser_gt_id,
+            dataset_frame_id=frame.id,
+            laser_id=laser_gt.id,
             scanline_idx=scanline_idx,
             points_count=s["points_count"]
         )
