@@ -92,6 +92,7 @@ def build_scanline_gt_entities(dataset_frame_id: int, gt_result: dict):
             dataset_frame_id=dataset_frame_id,
             laser_id=s["laser_idx"],
             scanline_idx=scanline_idx,
+            points_count=s["points_count"]
         )
         result.append(scanline_gt)
 

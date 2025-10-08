@@ -45,6 +45,7 @@ CREATE TABLE dataset_frame_scanline_gt
     dataset_frame_id integer NOT NULL REFERENCES dataset_frame (id),
     laser_id integer NOT NULL REFERENCES dataset_laser_gt (id),
     scanline_idx integer NOT NULL,
+    points_count integer NOT NULL,
 
     UNIQUE (dataset_frame_id, laser_id),
     UNIQUE (dataset_frame_id, scanline_idx)

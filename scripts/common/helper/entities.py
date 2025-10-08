@@ -34,6 +34,7 @@ class DatasetFrameScanlineGt(OrmEntity, table_name="dataset_frame_scanline_gt"):
     dataset_frame_id: int
     laser_id: int
     scanline_idx: int
+    points_count: int
 
 class IntrinsicsExperiment(OrmEntity, table_name="intrinsics_experiment"):
     id: int | None
