@@ -1,3 +1,4 @@
+-- TODO delete this file
 SELECT name AS dataset,
        dfe.dataset_frame_id NOT IN (SELECT DISTINCT dataset_frame_id
                                     FROM dataset_frame_scanline_info_empirical
@@ -54,24 +55,40 @@ GROUP BY exp_id, dataset, robust;
 
 
 CREATE TEMP VIEW ri_data AS
-SELECT dataset, relative_path, experiment_id, method, ri_width, ri_height, chamfer, max_range,
-       10 * log(max_range * max_range / original_to_reconstructed_mse) / log(10) as psnr,
+SELECT dataset,
+       relative_path,
+       experiment_id,
+       method,
+       ri_width,
+       ri_height,
+       chamfer,
+       max_range,
+       10 * LOG(max_range * max_range / original_to_reconstructed_mse) / LOG(10) AS psnr,
        sampling_error
-FROM (
-    SELECT d.name AS dataset, relative_path, experiment_id, rfs.method AS method, ri_width, ri_height,
-        original_to_reconstructed_mse,
-        (original_to_reconstructed_rmse + reconstructed_to_original_rmse) / 2 AS chamfer,
-        (original_points_count - reconstructed_points_count) / original_points_count * 100 as sampling_error,
-        d.max_range AS max_range
-    FROM ri_frame_result AS rfs
-        JOIN dataset_frame df ON rfs.dataset_frame_id = df.id
-        JOIN dataset d ON df.dataset_id = d.id
-);
+FROM (SELECT d.name AS dataset,
+             relative_path,
+             experiment_id,
+             rfs.method AS method,
+             ri_width,
+             ri_height,
+             original_to_reconstructed_mse,
+             (original_to_reconstructed_rmse + reconstructed_to_original_rmse) / 2 AS chamfer,
+             (original_points_count - reconstructed_points_count) / original_points_count * 100 AS sampling_error,
+             d.max_range AS max_range
+      FROM ri_frame_result AS rfs
+               JOIN dataset_frame df ON rfs.dataset_frame_id = df.id
+               JOIN dataset d ON df.dataset_id = d.id);
 
-SELECT dataset, method, ri_width, ri_height,
-       AVG(chamfer) AS avg_cd, MAX(chamfer) AS max_cd,
-       AVG(psnr) AS avg_psnr, MIN(psnr) AS min_psnr,
-       AVG(sampling_error) AS avg_se, MAX(sampling_error) AS max_se
+SELECT dataset,
+       method,
+       ri_width,
+       ri_height,
+       AVG(chamfer) AS avg_cd,
+       MAX(chamfer) AS max_cd,
+       AVG(psnr) AS avg_psnr,
+       MIN(psnr) AS min_psnr,
+       AVG(sampling_error) AS avg_se,
+       MAX(sampling_error) AS max_se
 FROM ri_data
 WHERE experiment_id = 2
 GROUP BY dataset, method, ri_width, ri_height
@@ -79,8 +96,12 @@ ORDER BY dataset DESC, method DESC, ri_width, ri_height;
 
 SELECT relative_path, chamfer
 FROM ri_data
-WHERE experiment_id = 2 AND dataset = 'kitti' AND relative_path LIKE '%2011_09_30_drive_0018_sync%'
-  AND method = 'pbea' AND ri_width = 4000 AND ri_height = 64
+WHERE experiment_id = 2
+  AND dataset = 'kitti'
+  AND relative_path LIKE '%2011_09_30_drive_0018_sync%'
+  AND method = 'pbea'
+  AND ri_width = 4000
+  AND ri_height = 64
 ORDER BY relative_path;
 
 
@@ -94,8 +115,8 @@ SELECT error_threshold,
        AVG((original_points_count - naive_points_count) * 1.0 / original_points_count * 100) AS sampling_error_base,
        AVG((original_points_count - accurate_points_count) * 1.0 / original_points_count * 100) AS sampling_error_alice
 FROM compression_frame_result AS cfs
-        JOIN dataset_frame df ON cfs.dataset_frame_id = df.id
-        JOIN dataset d ON df.dataset_id = d.id
+         JOIN dataset_frame df ON cfs.dataset_frame_id = df.id
+         JOIN dataset d ON df.dataset_id = d.id
 WHERE experiment_id = 2
 GROUP BY error_threshold
 ORDER BY error_threshold;
@@ -108,3 +129,22 @@ FROM compression_frame_result AS cfs
          JOIN dataset_frame df ON cfs.dataset_frame_id = df.id
 WHERE experiment_id = 2
 ORDER BY relative_path;
+
+SELECT count(*)
+FROM intrinsics_scanline_result scanline
+inner join main.intrinsics_frame_result ifr ON scanline.intrinsics_result_id = ifr.id
+INNER JOIN main.dataset_frame df ON ifr.dataset_frame_id = df.id
+INNER JOIN main.dataset d ON df.dataset_id = d.id
+inner JOIN intrinsics_experiment exp on exp.id = ifr.experiment_id
+WHERE d.name = 'durlar'
+and exp.id = 1;
+
+select count(*)
+from dataset d
+inner join main.dataset_frame df ON d.id = df.dataset_id
+inner join main.intrinsics_frame_result ifr ON df.id = ifr.dataset_frame_id
+inner join main.intrinsics_experiment exp on exp.id = ifr.experiment_id
+inner join main.dataset_frame_scanline_gt dfsg ON df.id = dfsg.dataset_frame_id
+inner join main.dataset_laser_gt dlg ON dfsg.laser_id = dlg.id
+where d.name = 'durlar'
+and exp.id = 1;

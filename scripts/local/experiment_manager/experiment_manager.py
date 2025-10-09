@@ -9,7 +9,7 @@ import time
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
-#TODO maybe split and cleanup
+#TODO maybe delete this file and put on README
 class Config:
     BASE_DIR = """${STORE2}/alice-lri-experiments"""
     STATE_FILE = "state.json"

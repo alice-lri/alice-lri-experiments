@@ -72,7 +72,6 @@ def fetch_and_compute_range_image_metrics_table(experiment_id: int) -> pd.DataFr
     return pd_read_sqlite_query(Config.DB_PATH, query, params=(experiment_id, ))
 
 
-# TODO update tables to new schema
 def fetch_cr_vs_cd_sample(experiment_id: int, sample_size:int=1000) -> pd.DataFrame:
     query = """
         SELECT original_size_bytes * 1.0 / naive_size_bytes AS cr_base,

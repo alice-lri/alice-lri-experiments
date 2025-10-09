@@ -54,22 +54,21 @@ def main():
     write_paper_data(latex, Config.OUTPUT_FILE)
 
 
-# TODO update tables to new schema
 def fetch_and_compute_confusion_matrix(experiment_id: int, robust_point_count_threshold=64) -> pd.DataFrame:
     query = """
             SELECT name AS dataset,
-                   dfe.dataset_frame_id NOT IN (
+                   dfgt.dataset_frame_id NOT IN (
                        SELECT DISTINCT dataset_frame_id
-                       FROM dataset_frame_scanline_info_empirical
+                       FROM dataset_frame_scanline_gt
                        WHERE points_count < ?
                    ) AS robust,
-                   dfe.scanlines_count AS true, ifr.scanlines_count AS pred, COUNT(*) AS count
+                   dfgt.scanlines_count AS true, ifr.scanlines_count AS pred, COUNT(*) AS count
             FROM dataset d
                      INNER JOIN dataset_frame df ON d.id = df.dataset_id
                      INNER JOIN intrinsics_frame_result ifr ON df.id = ifr.dataset_frame_id
-                     INNER JOIN dataset_frame_empirical dfe ON df.id = dfe.dataset_frame_id
+                     INNER JOIN dataset_frame_gt dfgt ON df.id = dfgt.dataset_frame_id
             WHERE experiment_id == ?
-            GROUP BY name, robust, dfe.scanlines_count, ifr.scanlines_count;
+            GROUP BY name, robust, dfgt.scanlines_count, ifr.scanlines_count;
             """
 
     return pd_read_sqlite_query(Config.DB_PATH, query, params=(robust_point_count_threshold, experiment_id))

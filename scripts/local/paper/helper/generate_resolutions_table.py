@@ -2,7 +2,6 @@ import os
 
 import numpy as np
 import pandas as pd
-from pandas.io.sas.sas_constants import column_format_length_length
 
 from scripts.common.load_env import load_env
 from scripts.local.paper.helper.common import fetch_main_experiment_id
@@ -50,26 +49,26 @@ def main():
     write_paper_data(latex, Config.OUTPUT_FILE)
 
 
-# TODO update tables to new schema
 def fetch_and_compute_confusion_matrix(experiment_id: int, robust_point_count_threshold=64) -> pd.DataFrame:
     query = """
          SELECT name AS dataset,
-                dfsie.dataset_frame_id NOT IN (
+                scanline_gt.dataset_frame_id NOT IN (
                     SELECT DISTINCT dataset_frame_id
-                    FROM dataset_frame_scanline_info_empirical
+                    FROM dataset_frame_scanline_gt
                     WHERE points_count < ?
                 ) AS robust,
-                dfsie.horizontal_resolution AS true,
-                COALESCE(irsi.horizontal_resolution, -1) AS pred,
+                laser_gt.horizontal_resolution AS true,
+                COALESCE(scanline.horizontal_resolution, -1) AS pred,
                 COUNT(*) AS count
          FROM dataset d
                   INNER JOIN dataset_frame df ON df.dataset_id = d.id
                   INNER JOIN intrinsics_frame_result ifr ON ifr.dataset_frame_id = df.id
-                  INNER JOIN dataset_frame_scanline_info_empirical dfsie ON dfsie.dataset_frame_id = df.id
-                  LEFT JOIN intrinsics_result_scanline_info irsi ON irsi.intrinsics_result_id = ifr.id
-                    AND irsi.scanline_idx = dfsie.scanline_idx
+                  INNER JOIN dataset_frame_scanline_gt scanline_gt ON scanline_gt.dataset_frame_id = df.id
+                  INNER JOIN dataset_laser_gt laser_gt ON laser_gt.id = scanline_gt.laser_id
+                  LEFT JOIN intrinsics_scanline_result scanline ON scanline.intrinsics_result_id = ifr.id
+                    AND scanline.scanline_idx = scanline_gt.scanline_idx
          WHERE experiment_id = ?
-         GROUP BY name, robust, dfsie.horizontal_resolution, irsi.horizontal_resolution
+         GROUP BY name, robust, laser_gt.horizontal_resolution, scanline.horizontal_resolution
     """
 
     return pd_read_sqlite_query(Config.DB_PATH, query, params=(robust_point_count_threshold, experiment_id))

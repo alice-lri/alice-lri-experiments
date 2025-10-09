@@ -67,7 +67,7 @@ def get_frame_path(relative_path):
     frame_path = os.path.join(os.getenv("LOCAL_KITTI_PATH"), relative_path)
     return frame_path
 
-#TODO extract to common
+
 def build_naive_encoder_cmd(input_dir, input_file, output_file, error_threshold):
     return [
         os.path.abspath(Config.original_encoder_exec),

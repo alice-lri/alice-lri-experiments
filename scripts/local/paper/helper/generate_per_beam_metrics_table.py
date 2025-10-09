@@ -44,7 +44,6 @@ def main():
     write_paper_data(latex, Config.OUTPUT_FILE)
 
 
-# TODO update tables to new schema
 def fetch_and_compute_max_and_mae(experiment_id: int, robust_only: bool) -> pd.DataFrame:
     query = f"""
         WITH scanline_diffs AS (
@@ -54,16 +53,17 @@ def fetch_and_compute_max_and_mae(experiment_id: int, robust_only: bool) -> pd.D
                 frame.id AS dataset_frame_id,
                 scanline_gt.points_count AS points_count,
 
-                scanline.vertical_angle - scanline_gt.vertical_angle AS v_angle_diff,
-                scanline.vertical_offset - scanline_gt.vertical_offset AS v_offset_diff,
-                scanline.horizontal_offset - scanline_gt.horizontal_offset AS h_offset_diff,
-                scanline.horizontal_angle_offset - scanline_gt.horizontal_angle_offset AS h_angle_offset_diff
+                scanline.vertical_angle - laser_gt.vertical_angle AS v_angle_diff,
+                scanline.vertical_offset - laser_gt.vertical_offset AS v_offset_diff,
+                scanline.horizontal_offset - laser_gt.horizontal_offset AS h_offset_diff,
+                scanline.horizontal_angle_offset - laser_gt.horizontal_angle_offset AS h_angle_offset_diff
             FROM dataset d
                      JOIN dataset_frame frame ON d.id = frame.dataset_id
-                     JOIN dataset_frame_scanline_info_empirical scanline_gt ON frame.id = scanline_gt.dataset_frame_id
+                     JOIN dataset_frame_scanline_gt scanline_gt ON frame.id = scanline_gt.dataset_frame_id
+                     JOIN dataset_laser_gt laser_gt ON scanline_gt.laser_id = laser_gt.id
                      JOIN intrinsics_frame_result ifr ON ifr.dataset_frame_id = frame.id
-                     JOIN experiment exp ON ifr.experiment_id = exp.id
-                     JOIN intrinsics_result_scanline_info scanline ON scanline_gt.scanline_idx = scanline.scanline_idx
+                     JOIN intrinsics_experiment exp ON ifr.experiment_id = exp.id
+                     JOIN intrinsics_scanline_result scanline ON scanline_gt.scanline_idx = scanline.scanline_idx
                           AND scanline.intrinsics_result_id = ifr.id
         )
         SELECT dataset,
@@ -77,7 +77,7 @@ def fetch_and_compute_max_and_mae(experiment_id: int, robust_only: bool) -> pd.D
             AVG(ABS(h_angle_offset_diff * 180 / PI())) AS h_angle_offset_mae,
             { """ dataset_frame_id NOT IN ( 
                     SELECT dataset_frame_id
-                    FROM dataset_frame_scanline_info_empirical 
+                    FROM dataset_frame_scanline_gt 
                     WHERE points_count < ?
                 ) as robust_filter""" if robust_only else "1 as robust_filter"
             }

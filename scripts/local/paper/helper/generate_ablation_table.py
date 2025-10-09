@@ -67,7 +67,6 @@ def generate_ablation_df(fetch_func: Callable[[], pd.DataFrame]) -> pd.DataFrame
     return scanline_ablation_final_df
 
 
-# TODO update tables to new schema
 def fetch_and_compute_scanline_ablation(robust_point_count_threshold=64) -> pd.DataFrame:
     query = """
         SELECT e.id AS exp_id,
@@ -76,17 +75,17 @@ def fetch_and_compute_scanline_ablation(robust_point_count_threshold=64) -> pd.D
                e.use_vertical_heuristics,
                e.use_horizontal_heuristics,
                d.name AS dataset,
-               dfe.dataset_frame_id NOT IN (
+               dfgt.dataset_frame_id NOT IN (
                     SELECT DISTINCT dataset_frame_id
-                    FROM dataset_frame_scanline_info_empirical
+                    FROM dataset_frame_scanline_gt
                     WHERE points_count < ?
                ) AS robust,
-               COUNT(CASE WHEN dfe.scanlines_count != ifr.scanlines_count THEN 1 END) AS incorrect_count
+               COUNT(CASE WHEN dfgt.scanlines_count != ifr.scanlines_count THEN 1 END) AS incorrect_count
         FROM dataset d
              INNER JOIN dataset_frame df ON d.id = df.dataset_id
              INNER JOIN intrinsics_frame_result ifr ON df.id = ifr.dataset_frame_id
-             INNER JOIN experiment e ON e.id = ifr.experiment_id
-             INNER JOIN dataset_frame_empirical dfe ON df.id = dfe.dataset_frame_id
+             INNER JOIN intrinsics_experiment e ON e.id = ifr.experiment_id
+             INNER JOIN dataset_frame_gt dfgt ON df.id = dfgt.dataset_frame_id
         GROUP BY exp_id, dataset, robust;
     """
 
@@ -101,21 +100,22 @@ def fetch_and_compute_resolution_ablation(robust_point_count_threshold=64) -> pd
             e.use_vertical_heuristics,
             e.use_horizontal_heuristics,
             d.name AS dataset,
-            dfsie.dataset_frame_id NOT IN (
+            scanline_gt.dataset_frame_id NOT IN (
                 SELECT DISTINCT dataset_frame_id
-                FROM dataset_frame_scanline_info_empirical
+                FROM dataset_frame_gt
                 WHERE points_count < ?
             ) AS robust,
             COUNT(CASE WHEN 
-                dfsie.horizontal_resolution != COALESCE(irsi.horizontal_resolution, -1)
+                laser_gt.horizontal_resolution != COALESCE(scanline.horizontal_resolution, -1)
             THEN 1 END) AS incorrect_count
         FROM dataset d
                  INNER JOIN dataset_frame df ON df.dataset_id = d.id
                  INNER JOIN intrinsics_frame_result ifr ON ifr.dataset_frame_id = df.id
-                 INNER JOIN experiment e ON e.id = ifr.experiment_id
-                 INNER JOIN dataset_frame_scanline_info_empirical dfsie ON dfsie.dataset_frame_id = df.id
-                 LEFT JOIN intrinsics_result_scanline_info irsi ON irsi.intrinsics_result_id = ifr.id
-                    AND irsi.scanline_idx = dfsie.scanline_idx
+                 INNER JOIN intrinsics_experiment e ON e.id = ifr.experiment_id
+                 INNER JOIN dataset_frame_scanline_gt scanline_gt ON scanline_gt.dataset_frame_id = df.id
+                 INNER JOIN dataset_laser_gt laser_gt ON laser_gt.id = scanline_gt.laser_id
+                 LEFT JOIN intrinsics_scanline_result scanline ON scanline.intrinsics_result_id = ifr.id
+                    AND scanline.scanline_idx = scanline_gt.scanline_idx
         GROUP BY exp_id, dataset, robust
     """
 

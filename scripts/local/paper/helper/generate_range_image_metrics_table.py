@@ -75,7 +75,6 @@ def create_temp_sql_view(conn: sqlite3.Connection):
     conn.cursor().execute(query)
 
 
-# TODO update tables to new schema
 def fetch_and_compute_range_image_metrics(conn: sqlite3.Connection, experiment_id: int) -> pd.DataFrame:
     query = """
         SELECT dataset, method, ri_width, ri_height,
