@@ -1,9 +1,11 @@
 import os
 import subprocess
-
 import pandas as pd
 
+from scripts.common.load_env import load_env
 from scripts.local.paper.helper.utils import df_to_latex, write_paper_data, df_format_dataset_names
+
+load_env()
 
 
 class Config:

@@ -2,8 +2,11 @@ import os
 
 import pandas as pd
 
+from scripts.common.load_env import load_env
 from scripts.local.runtime import measure_rtst_times
 from scripts.local.paper.helper.utils import df_to_latex, write_paper_data
+
+load_env()
 
 
 class Config:
