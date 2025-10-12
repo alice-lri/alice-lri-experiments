@@ -14,7 +14,7 @@ class Config:
 
     COLUMNS_RENAME = {
         'dataset': '\\textbf{Dataset}',
-        'train_time_merged': '\\textbf{Estimation (s)}',
+        'estimate_time_merged': '\\textbf{Estimation (s)}',
         'project_time_merged': '\\textbf{Proj. (ms)}',
         'unproject_time_merged': '\\textbf{Unproj. (ms)}',
     }
@@ -28,11 +28,11 @@ class Config:
 def main():
     ensure_csv()
     times_df = pd.read_csv(Config.CSV_FILE)
-    times_df['train_time_s'] = times_df['train_time_s']
+    times_df['estimate_time_s'] = times_df['estimate_time_s']
     times_df['project_time_ms'] = times_df['project_time_s'] * 1000
     times_df['unproject_time_ms'] = times_df['unproject_time_s'] * 1000
     times_df = times_df.groupby('dataset').agg({
-        'train_time_s': ['mean', 'std'],
+        'estimate_time_s': ['mean', 'std'],
         'project_time_ms': ['mean', 'std'],
         'unproject_time_ms': ['mean', 'std']
     }).round(1)
@@ -58,7 +58,7 @@ def ensure_csv():
 
 
 def format_final_table(df: pd.DataFrame) -> pd.DataFrame:
-    df['train_time_merged'] = "$" + df[('train_time_s', 'mean')].astype(str) + ' \\pm ' + df[('train_time_s', 'std')].astype(str) + "$"
+    df['estimate_time_merged'] = "$" + df[('estimate_time_s', 'mean')].astype(str) + ' \\pm ' + df[('estimate_time_s', 'std')].astype(str) + "$"
     df['project_time_merged'] = "$" + df[('project_time_ms', 'mean')].astype(str) + ' \\pm ' + df[('project_time_ms', 'std')].astype(str) + "$"
     df['unproject_time_merged'] = "$" + df[('unproject_time_ms', 'mean')].astype(str) + ' \\pm ' + df[('unproject_time_ms', 'std')].astype(str) + "$"
     df = df.sort_values(by="dataset", ascending=False)
