@@ -102,7 +102,7 @@ def fetch_and_compute_resolution_ablation(robust_point_count_threshold=64) -> pd
             d.name AS dataset,
             scanline_gt.dataset_frame_id NOT IN (
                 SELECT DISTINCT dataset_frame_id
-                FROM dataset_frame_gt
+                FROM dataset_frame_scanline_gt
                 WHERE points_count < ?
             ) AS robust,
             COUNT(CASE WHEN 

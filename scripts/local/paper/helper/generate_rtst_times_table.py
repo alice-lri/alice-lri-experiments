@@ -23,7 +23,7 @@ def main():
     ensure_csv()
     times_df = pd.read_csv(Config.CSV_FILE)
     times_df = compute_overhead(times_df)
-    times_df = group_by_error_threshold(times_df)
+    times_df = group_by_error_threshold(times_df, include_std=False)
     times_df = format_final_table(times_df)
 
     pd.set_option('display.max_columns', None)
@@ -45,27 +45,31 @@ def ensure_csv():
     measure_rtst_times.main()
 
 
-def group_by_error_threshold(df):
+def group_by_error_threshold(df: pd.DataFrame, include_std: bool) -> pd.DataFrame:
     metrics = list(Config.COLUMNS_RENAME.keys())
     df_grouped = df[metrics + ["error_threshold"]].groupby("error_threshold")
     df_mean = df_grouped.mean()
     df_std = df_grouped.std()
 
     df_merged = df_mean.copy()
-    df_merged[metrics] = "$" + df_mean[metrics].map(lambda x: f"{x:.2f}") + " \\pm "\
-        + df_std[metrics].map(lambda x: f"{x:.2f}") + "$"
+
+    if include_std:
+        df_merged[metrics] = "$" + df_mean[metrics].map(lambda x: f"{x:.2f}") + " \\pm "\
+            + df_std[metrics].map(lambda x: f"{x:.2f}") + "$"
+    else:
+        df_merged[metrics] = "$" + df_mean[metrics].map(lambda x: f"{x:.2f}") + "$"
 
     return df_merged
 
 
-def compute_overhead(df):
+def compute_overhead(df: pd.DataFrame) -> pd.DataFrame:
     df["overhead_encoding"] = df["accurate_encoding_time"] - df["naive_encoding_time"]
     df["overhead_decoding"] = df["accurate_decoding_time"] - df["naive_decoding_time"]
 
     return df
 
 
-def format_final_table(df):
+def format_final_table(df: pd.DataFrame) -> pd.DataFrame:
     df = df.rename(columns=Config.COLUMNS_RENAME)
     df.columns = pd.MultiIndex.from_tuples(df.columns)
     df.index.name = "Error Threshold"
