@@ -18,7 +18,7 @@ Inside the `db/` subfolder, you should have two SQLite database files:
       scp results/db/initial.sqlite <your_hpc_user>@<hpc_address>:${BASE_DB_DIR}/initial.sqlite
       ```
   - **Option 2: Download the pre-built database**
-    - Download from: [https://nextcloud.citius.gal/s/alice_lri_master_db](https://nextcloud.citius.gal/s/alice_lri_master_db)
+    - Download from: [https://nextcloud.citius.gal/s/alice_lri_initial_db](https://nextcloud.citius.gal/s/alice_lri_initial_db)
     - Then copy it to the HPC as described above.
 
 ### 2. `master.sqlite`
