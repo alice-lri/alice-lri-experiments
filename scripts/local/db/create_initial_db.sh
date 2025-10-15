@@ -10,7 +10,7 @@ if [ -f "$LOCAL_SQLITE_INITIAL_DB" ]; then
     echo "Initial database already exists at $LOCAL_SQLITE_INITIAL_DB, skipping creation."
 else
     echo "Creating initial database at $LOCAL_SQLITE_INITIAL_DB..."
-    sqlite3 "$LOCAL_SQLITE_INITIAL_DB" < scripts/local/db/sql/experiments_db_final.sql
+    sqlite3 "$LOCAL_SQLITE_INITIAL_DB" < scripts/local/db/helper/experiments_db.sql
     python -m scripts.local.db.helper.populate_db_base_entities
 fi
 

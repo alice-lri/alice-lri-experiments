@@ -1,1 +1,0 @@
-ALTER TABLE dataset_frame_scanline_gt ADD COLUMN points_count integer NOT NULL;
