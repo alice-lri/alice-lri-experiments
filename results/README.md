@@ -1,0 +1,37 @@
+# Results Folder README
+
+This folder contains the results and databases generated and used during the experiments. Below is an explanation of the contents and how to obtain or generate the required database files.
+
+## db/
+
+Inside the `db/` subfolder, you should have two SQLite database files:
+
+### 1. `initial.sqlite`
+
+- **Purpose:**
+  - This is the initial database containing references to all datasets (KITTI and DURLAR), their frames, paths, and other basic data. It serves as the input for running experiments on the HPC cluster.
+- **How to obtain:**
+  - **Option 1: Generate it locally**
+    - Use the script [`scripts/local/db/create_initial_db.sh`](../scripts/local/db/create_initial_db.sh). **Note:** This requires that you have already downloaded the entire KITTI and DURLAR datasets, as the script will scan these files to populate the database.
+    - After generating `initial.sqlite` locally, you must copy it to the HPC cluster at the path specified by the `BASE_DB_DIR` environment variable (see `../.env`). For example:
+      ```bash
+      scp results/db/initial.sqlite <your_hpc_user>@<hpc_address>:${BASE_DB_DIR}/initial.sqlite
+      ```
+  - **Option 2: Download the pre-built database**
+    - Download from: [https://nextcloud.citius.gal/s/alice_lri_master_db](https://nextcloud.citius.gal/s/alice_lri_master_db)
+    - Then copy it to the HPC as described above.
+
+### 2. `master.sqlite`
+
+- **Purpose:**
+  - This is the final database, created after executing all experiments on the HPC. It contains everything from `initial.sqlite` plus all experiment results. This database is then used by scripts to generate tables and figures for the paper, which are exported to the `paper/` folder.
+- **How to obtain:**
+  - **Option 1: Generate it on the HPC**
+    - Execute all experiments as explained in the root `README.md`. This will populate the `master.sqlite` file with results in the `BASE_DB_DIR` on the HPC.
+    - After experiments are complete, copy the resulting `master.sqlite` from the HPC back to your local `results/db/` folder for further analysis and use with local scripts. For example:
+      ```bash
+      scp <your_hpc_user>@<hpc_address>:${BASE_DB_DIR}/master.sqlite results/db/master.sqlite
+      ```
+  - **Option 2: Download the pre-built database**
+    - Download from: [https://nextcloud.citius.gal/s/alice_lri_master_db](https://nextcloud.citius.gal/s/alice_lri_master_db)
+
