@@ -13,6 +13,7 @@ The complete step-by-step process to reproduce all experiments and results is de
 - **container/**: Container definition and environment files for reproducible builds (Apptainer/Singularity).
 - **results/**: Databases, CSVs, and generated figures/tables from experiments.
 - **scripts/**: Automation scripts for data preparation, experiment execution, and analysis.
+- **.env**: Environment configuration file. This file defines important paths and variables for both local and HPC environments.
 
 ## Related Repositories and Organization
 
