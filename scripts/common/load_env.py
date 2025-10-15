@@ -13,5 +13,3 @@ def load_env():
             return parent
 
     raise FileNotFoundError(".env not found in this directory tree.")
-
-# TODO consider including container.sif and databses as git lfs
