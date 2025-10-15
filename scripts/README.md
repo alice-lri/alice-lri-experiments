@@ -1,7 +1,5 @@
 # Scripts Folder README
 
-# Scripts Folder README
-
 This folder contains scripts and helpers for building, running, and managing experiments in the project. Scripts are organized by their intended execution environment and purpose:
 
 - **slurm/**: Scripts to be executed on the HPC cluster. These are the main experiment scripts and job definitions for large-scale or distributed runs. They automate experiment submission, data processing, and results collection using SLURM.
