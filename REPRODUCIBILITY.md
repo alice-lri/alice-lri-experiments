@@ -2,6 +2,28 @@
 
 This guide explains how to fully reproduce the experiments, results, and figures for this project. It covers dataset setup, environment configuration, experiment execution, and result generation, referencing the relevant scripts and READMEs throughout.
 
+## Prerequisites
+
+### Local Dependencies
+
+To analyze the experiments locally, ensure the following are installed on your workstation:
+
+- **g++** (C++ compiler)
+- **CMake**
+- **Python**
+- **pip**
+- **Conan** (>= 2.0, can be installed via `pip install conan`)
+- **Apptainer** (optional; only needed if you want to build the HPC container image yourself—otherwise, you can download the pre-built image as detailed below)
+
+### HPC Dependencies
+
+On the HPC cluster, you need:
+
+- A Linux environment with **SLURM** for job scheduling
+- **Apptainer** (or Singularity) for container execution
+
+**Note:** You must edit the [`.env`](.env) file to specify the correct module(s) to load on your HPC system using the `ALICE_LRI_HPC_MODULES` variable. This ensures the environment is set up correctly for experiment execution. Refer to the comments in [`.env`](.env) for more details on configuring paths and modules.
+
 ## 1. Download Required Datasets
 
 
@@ -21,7 +43,11 @@ Edit the [`/.env`](.env) file to set the correct paths for both your local and H
 
 Refer to the comments in [`.env`](.env) for more details.
 
-## 3. Obtain the `initial.sqlite` Database
+## 3. Build and Install the Project
+
+After configuring your `.env` file, build and install the project dependencies and binaries by running [`scripts/common/install.sh`](scripts/common/install.sh). This script will set up the required environment for both local and HPC usage.
+
+## 4. Obtain the `initial.sqlite` Database
 
 
 You need the `initial.sqlite` database, which contains references to all dataset frames and metadata. There are two ways to get it (see also [`results/README.md`](results/README.md)):
@@ -32,7 +58,7 @@ You need the `initial.sqlite` database, which contains references to all dataset
 - **Option 2: Download Pre-built**
 	- Download from [https://nextcloud.citius.gal/s/alice_lri_initial_db](https://nextcloud.citius.gal/s/alice_lri_initial_db) and place it in the correct location on both your local and HPC systems.
 
-## 4. Obtain the Container Image
+## 5. Obtain the Container Image
 
 
 The project uses a container for reproducible environments. See [`container/README.md`](container/README.md) for details. In summary:
@@ -43,12 +69,12 @@ The project uses a container for reproducible environments. See [`container/READ
 - **Option 2: Download Pre-built**
 	- Download from [https://nextcloud.citius.gal/s/alice_lri_container](https://nextcloud.citius.gal/s/alice_lri_container) and place it in the [`container/`](container/) folder on the HPC.
 
-## 5. Clone the Repository and Configure
+## 6. Clone the Repository and Configure
 
 - Clone this repository on your HPC system.
 - Update the `.env` file on the HPC to match the correct dataset and storage paths.
 
-## 6. Run Experiments on the HPC
+## 7. Run Experiments on the HPC
 
 
 After preparing the environment and datasets, you can run the main experiments. For each experiment type, navigate to the corresponding [`scripts/slurm/`](scripts/slurm/) subfolder and run the `prepare_and_launch.sh` script:
@@ -59,7 +85,7 @@ After preparing the environment and datasets, you can run the main experiments. 
 
 These scripts will submit jobs to the SLURM scheduler and manage experiment execution.
 
-## 7. Merge Experiment Results
+## 8. Merge Experiment Results
 
 
 After each experiment (or set of experiments), you must merge the results into the master database. Use the merge script on the HPC (can be run on a login or interactive compute node):
@@ -73,7 +99,7 @@ Once all experiments are merged, copy the final [`master.sqlite`](results/db/mas
 
 **Alternative:** You can skip all previous steps and download the pre-built [`master.sqlite`](results/db/master.sqlite) database directly from [https://nextcloud.citius.gal/s/alice_lri_master_db](https://nextcloud.citius.gal/s/alice_lri_master_db) as described in [`results/README.md`](results/README.md).
 
-## 8. Generate Tables and Figures
+## 9. Generate Tables and Figures
 
 
 To generate all tables and figures for the paper, run:
