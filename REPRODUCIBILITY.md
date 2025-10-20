@@ -119,7 +119,9 @@ To fully reproduce all experiments exactly as reported in the paper, follow thes
 
 ### 9.1. Ground Truth Experiment
 
-Compute per-frame ground truth laser-scanline assignments. Since the number of scanlines may vary between frames (some laser beams may not yield returns), this experiment verifies which predefined scanlines are present in each frame and maps them to their corresponding lasers. The intrinsic parameters themselves remain fixed per dataset to ensure fair evaluation:
+Compute per-frame ground truth laser-scanline assignments. Since the number of scanlines may vary between frames (some laser beams may not yield returns), this experiment verifies which predefined scanlines are present in each frame and maps them to their corresponding lasers. The intrinsic parameters themselves remain fixed per dataset to ensure fair evaluation.
+
+For details on the two-level ground truth approach (per-sensor reference parameters vs. per-frame laser-scanline mappings), see [`scripts/local/db/README.md`](scripts/local/db/README.md#ground-truth-philosophy).
 
 ```bash
 cd scripts/slurm/ground_truth
