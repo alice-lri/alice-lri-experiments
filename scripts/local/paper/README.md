@@ -10,7 +10,11 @@ LaTeX tables are typically saved as `.tex` files that can be directly included i
 
 ## Prerequisites
 - `master.sqlite` database must be present at `results/db/master.sqlite` (see [`results/README.md`](../../../results/README.md) for how to obtain it)
-- All dependencies installed via [`scripts/common/install.sh`](../../common/install.sh) TODO: specify which dependencies are needed
+- Python dependencies installed:
+  ```bash
+  pip install -r ../requirements.txt
+  ```
+- ALICE-LRI library built and installed via [`scripts/common/install.sh`](../../common/install.sh)
 
 ## Main Script
 

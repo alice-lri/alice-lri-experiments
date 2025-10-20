@@ -58,7 +58,19 @@ Refer to the comments in [`.env`](.env) for more details.
 
 **Location: Local workstation**
 
-After configuring your `.env` file locally, build and install the project dependencies and binaries by running [`scripts/common/install.sh`](scripts/common/install.sh).
+After configuring your `.env` file locally, build and install the project dependencies and binaries:
+
+1. **Install Python dependencies:**
+   ```bash
+   pip install -r scripts/local/requirements.txt
+   ```
+
+2. **Build and install the project:**
+   ```bash
+   scripts/common/install.sh
+   ```
+
+This will install all required Python packages (numpy, pandas, matplotlib, scikit-learn, python-dotenv) and build the ALICE-LRI C++ library with Python bindings.
 
 ## 5. Obtain the `initial.sqlite` Database
 

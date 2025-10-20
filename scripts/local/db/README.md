@@ -57,6 +57,11 @@ This two-level design allows ALICE-LRI to be evaluated against consistent refere
 
 ### Creating the Initial Database
 
+**Prerequisites**: Ensure Python dependencies are installed:
+```bash
+pip install -r ../requirements.txt
+```
+
 Run [`create_initial_db.sh`](create_initial_db.sh) to generate the `initial.sqlite` database:
 
 ```bash

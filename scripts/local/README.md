@@ -37,9 +37,14 @@ These scripts are invoked automatically by the paper generation scripts when nee
 Before running any local scripts, ensure you have:
 
 1. **Python 3.8+** installed
-2. **Dependencies installed** via [`scripts/common/install.sh`](../common/install.sh) TODO: specify which dependencies are needed
-3. **Datasets downloaded** (KITTI and DurLAR) as described in [`REPRODUCIBILITY.md`](../../REPRODUCIBILITY.md)
-4. **Environment configured** via [`.env`](../../.env) file
+2. **Python dependencies installed**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+   This installs: numpy, pandas, matplotlib, scikit-learn, python-dotenv
+3. **ALICE-LRI library built and installed** via [`scripts/common/install.sh`](../common/install.sh)
+4. **Datasets downloaded** (KITTI and DurLAR) as described in [`REPRODUCIBILITY.md`](../../REPRODUCIBILITY.md)
+5. **Environment configured** via [`.env`](../../.env) file
 
 ## Workflow
 
