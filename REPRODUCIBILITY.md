@@ -12,6 +12,8 @@ To analyze the experiments locally, ensure the following are installed on your w
 - **Python** (>= 3.8)
 - **pip**
 - **Conan** (>= 2.0, can be installed via `pip install conan`)
+	- First time using Conan? Run `conan profile detect` after installing to create a default profile.
+- **SQLite3 CLI** (can be installed via `apt install sqlite3` on Ubuntu/Debian)
 - **Apptainer** (optional; only needed if you want to build the HPC container image yourself—otherwise, you can download the pre-built image as detailed below) 
 
 ### HPC Dependencies
