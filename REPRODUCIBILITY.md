@@ -149,42 +149,74 @@ Each command below represents a different ablation:
 **Default (all components enabled):**
 ```bash
 cd ../slurm/intrinsics
-./prepare_and_launch.sh --build-options -DFLAG_USE_HOUGH_CONTINUITY=ON -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=ON -DFLAG_USE_VERTICAL_HEURISTICS=ON -DFLAG_USE_HORIZONTAL_HEURISTICS=ON
+./prepare_and_launch.sh --build-options \
+  -DFLAG_USE_HOUGH_CONTINUITY=ON \
+  -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=ON \
+  -DFLAG_USE_VERTICAL_HEURISTICS=ON \
+  -DFLAG_USE_HORIZONTAL_HEURISTICS=ON
 ```
 
 **Without Hough continuity:**
 ```bash
-./prepare_and_launch.sh --build-options -DFLAG_USE_HOUGH_CONTINUITY=OFF -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=ON -DFLAG_USE_VERTICAL_HEURISTICS=ON -DFLAG_USE_HORIZONTAL_HEURISTICS=ON
+./prepare_and_launch.sh --build-options \
+  -DFLAG_USE_HOUGH_CONTINUITY=OFF \
+  -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=ON \
+  -DFLAG_USE_VERTICAL_HEURISTICS=ON \
+  -DFLAG_USE_HORIZONTAL_HEURISTICS=ON
 ```
 
 **Without scanline conflict solver:**
 ```bash
-./prepare_and_launch.sh --build-options -DFLAG_USE_HOUGH_CONTINUITY=ON -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=OFF -DFLAG_USE_VERTICAL_HEURISTICS=ON -DFLAG_USE_HORIZONTAL_HEURISTICS=ON
+./prepare_and_launch.sh --build-options \
+  -DFLAG_USE_HOUGH_CONTINUITY=ON \
+  -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=OFF \
+  -DFLAG_USE_VERTICAL_HEURISTICS=ON \
+  -DFLAG_USE_HORIZONTAL_HEURISTICS=ON
 ```
 
 **Without vertical heuristics:**
 ```bash
-./prepare_and_launch.sh --build-options -DFLAG_USE_HOUGH_CONTINUITY=ON -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=ON -DFLAG_USE_VERTICAL_HEURISTICS=OFF -DFLAG_USE_HORIZONTAL_HEURISTICS=ON
+./prepare_and_launch.sh --build-options \
+  -DFLAG_USE_HOUGH_CONTINUITY=ON \
+  -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=ON \
+  -DFLAG_USE_VERTICAL_HEURISTICS=OFF \
+  -DFLAG_USE_HORIZONTAL_HEURISTICS=ON
 ```
 
 **Without horizontal heuristics:**
 ```bash
-./prepare_and_launch.sh --build-options -DFLAG_USE_HOUGH_CONTINUITY=ON -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=ON -DFLAG_USE_VERTICAL_HEURISTICS=ON -DFLAG_USE_HORIZONTAL_HEURISTICS=OFF
+./prepare_and_launch.sh --build-options \
+  -DFLAG_USE_HOUGH_CONTINUITY=ON \
+  -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=ON \
+  -DFLAG_USE_VERTICAL_HEURISTICS=ON \
+  -DFLAG_USE_HORIZONTAL_HEURISTICS=OFF
 ```
 
 **Without conflict solver and continuity:**
 ```bash
-./prepare_and_launch.sh --build-options -DFLAG_USE_HOUGH_CONTINUITY=OFF -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=OFF -DFLAG_USE_VERTICAL_HEURISTICS=ON -DFLAG_USE_HORIZONTAL_HEURISTICS=ON
+./prepare_and_launch.sh --build-options \
+  -DFLAG_USE_HOUGH_CONTINUITY=OFF \
+  -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=OFF \
+  -DFLAG_USE_VERTICAL_HEURISTICS=ON \
+  -DFLAG_USE_HORIZONTAL_HEURISTICS=ON
 ```
 
 **Without any heuristics:**
 ```bash
-./prepare_and_launch.sh --build-options -DFLAG_USE_HOUGH_CONTINUITY=ON -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=ON -DFLAG_USE_VERTICAL_HEURISTICS=OFF -DFLAG_USE_HORIZONTAL_HEURISTICS=OFF
+./prepare_and_launch.sh --build-options \
+  -DFLAG_USE_HOUGH_CONTINUITY=ON \
+  -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=ON \
+  -DFLAG_USE_VERTICAL_HEURISTICS=OFF \
+  -DFLAG_USE_HORIZONTAL_HEURISTICS=OFF
 ```
 
 **Minimal (all enhancements disabled):**
 ```bash
-./prepare_and_launch.sh --build-options -DFLAG_USE_HOUGH_CONTINUITY=OFF -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=OFF -DFLAG_USE_VERTICAL_HEURISTICS=OFF -DFLAG_USE_HORIZONTAL_HEURISTICS=OFF
+./prepare_and_launch.sh --build-options \
+  -DFLAG_USE_HOUGH_CONTINUITY=OFF \
+  -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=OFF \
+  -DFLAG_USE_VERTICAL_HEURISTICS=OFF \
+  -DFLAG_USE_HORIZONTAL_HEURISTICS=OFF
 ```
 
 After each intrinsics experiment completes, merge the results (once per experiment):
@@ -205,7 +237,11 @@ Run the range image experiment with all components enabled:
 
 ```bash
 cd ../slurm/ri_compression
-./prepare_and_launch.sh --build-options -DFLAG_USE_HOUGH_CONTINUITY=ON -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=ON -DFLAG_USE_VERTICAL_HEURISTICS=ON -DFLAG_USE_HORIZONTAL_HEURISTICS=ON
+./prepare_and_launch.sh --build-options \
+  -DFLAG_USE_HOUGH_CONTINUITY=ON \
+  -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=ON \
+  -DFLAG_USE_VERTICAL_HEURISTICS=ON \
+  -DFLAG_USE_HORIZONTAL_HEURISTICS=ON
 # Select: [1] Range Image
 ```
 
@@ -227,7 +263,11 @@ Run the compression experiment with all components enabled:
 
 ```bash
 cd ../slurm/ri_compression
-./prepare_and_launch.sh --build-options -DFLAG_USE_HOUGH_CONTINUITY=ON -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=ON -DFLAG_USE_VERTICAL_HEURISTICS=ON -DFLAG_USE_HORIZONTAL_HEURISTICS=ON
+./prepare_and_launch.sh --build-options \
+  -DFLAG_USE_HOUGH_CONTINUITY=ON \
+  -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=ON \
+  -DFLAG_USE_VERTICAL_HEURISTICS=ON \
+  -DFLAG_USE_HORIZONTAL_HEURISTICS=ON
 # Select: [2] Compression
 ```
 
