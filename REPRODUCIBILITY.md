@@ -36,9 +36,11 @@ You will need the full KITTI (raw) and DurLAR datasets, both on your local works
 Clone this repository on both your local workstation and your HPC system:
 
 ```bash
-git clone https://github.com/alice-lri/alice-lri-experiments.git
+git clone --recurse-submodules https://github.com/alice-lri/alice-lri-experiments.git
 cd alice-lri-experiments
 ```
+
+This will automatically clone the repository along with its submodules (`alice-lri` and `rtst-modified`).
 
 The following steps will specify where each action should be performed (local workstation or HPC).
 

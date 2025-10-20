@@ -1,6 +1,6 @@
 [submodule "alice-lri"]
 	path = alice-lri
-	url = git@github.com:alice-lri/alice-lri.git
+	url = https://github.com/alice-lri/alice-lri.git
 [submodule "rtst-modified"]
 	path = rtst-modified
-	url = git@github.com:alice-lri/rtst-modified.git
+	url = https://github.com/alice-lri/rtst-modified.git
