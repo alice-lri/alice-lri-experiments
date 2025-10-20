@@ -11,154 +11,7 @@ The database schema is designed to support:
 
 ## Entity-Relationship Diagram
 
-```plantuml
-@startuml
-!define table(x) class x << (T,#FFAAAA) >>
-!define primary_key(x) <u>x</u>
-!define foreign_key(x) <i>x</i>
-
-hide methods
-hide stereotypes
-
-' Dataset and Frame entities
-table(dataset) {
-  primary_key(id): INTEGER
-  name: TEXT
-  laser_count: INTEGER
-  max_range: REAL
-}
-
-table(dataset_frame) {
-  primary_key(id): INTEGER
-  foreign_key(dataset_id): INTEGER
-  relative_path: TEXT
-}
-
-table(dataset_laser_gt) {
-  primary_key(id): INTEGER
-  foreign_key(dataset_id): INTEGER
-  laser_idx: INTEGER
-  vertical_offset: REAL
-  vertical_angle: REAL
-  horizontal_offset: REAL
-  horizontal_resolution: INTEGER
-  horizontal_angle_offset: REAL
-}
-
-table(dataset_frame_gt) {
-  primary_key(id): INTEGER
-  foreign_key(dataset_frame_id): INTEGER
-  points_count: INTEGER
-  scanlines_count: INTEGER
-}
-
-table(dataset_frame_scanline_gt) {
-  primary_key(id): INTEGER
-  foreign_key(dataset_frame_id): INTEGER
-  foreign_key(laser_id): INTEGER
-  scanline_idx: INTEGER
-  points_count: INTEGER
-}
-
-' Intrinsics experiment entities
-table(intrinsics_experiment) {
-  primary_key(id): INTEGER
-  timestamp: TEXT
-  label: TEXT
-  description: TEXT
-  commit_hash: TEXT
-  use_hough_continuity: BOOLEAN
-  use_scanline_conflict_solver: BOOLEAN
-  use_vertical_heuristics: BOOLEAN
-  use_horizontal_heuristics: BOOLEAN
-}
-
-table(intrinsics_frame_result) {
-  primary_key(id): INTEGER
-  foreign_key(experiment_id): INTEGER
-  foreign_key(dataset_frame_id): INTEGER
-  points_count: INTEGER
-  scanlines_count: INTEGER
-  vertical_iterations: INTEGER
-  unassigned_points: INTEGER
-  end_reason: TEXT
-}
-
-table(intrinsics_scanline_result) {
-  primary_key(id): INTEGER
-  foreign_key(intrinsics_result_id): INTEGER
-  scanline_idx: INTEGER
-  points_count: INTEGER
-  vertical_offset: REAL
-  vertical_angle: REAL
-  ... (CI and uncertainty fields)
-  horizontal_offset: REAL
-  horizontal_resolution: INTEGER
-  horizontal_angle_offset: REAL
-}
-
-' Range Image experiment entities
-table(ri_experiment) {
-  primary_key(id): INTEGER
-  timestamp: TEXT
-  label: TEXT
-  description: TEXT
-  commit_hash: TEXT
-}
-
-table(ri_frame_result) {
-  primary_key(id): INTEGER
-  foreign_key(experiment_id): INTEGER
-  foreign_key(dataset_frame_id): INTEGER
-  method: TEXT
-  ri_width: INTEGER
-  ri_height: INTEGER
-  original_points_count: REAL
-  reconstructed_points_count: REAL
-  ... (MSE and RMSE metrics)
-}
-
-' Compression experiment entities
-table(compression_experiment) {
-  primary_key(id): INTEGER
-  timestamp: TEXT
-  label: TEXT
-  description: TEXT
-  commit_hash: TEXT
-}
-
-table(compression_frame_result) {
-  primary_key(id): INTEGER
-  foreign_key(experiment_id): INTEGER
-  foreign_key(dataset_frame_id): INTEGER
-  horizontal_step: REAL
-  vertical_step: REAL
-  tile_size: INTEGER
-  error_threshold: REAL
-  ... (compression metrics)
-}
-
-' Relationships
-dataset "1" -- "N" dataset_frame
-dataset "1" -- "N" dataset_laser_gt
-dataset_frame "1" -- "1" dataset_frame_gt
-dataset_frame "1" -- "N" dataset_frame_scanline_gt
-dataset_laser_gt "1" -- "N" dataset_frame_scanline_gt
-
-intrinsics_experiment "1" -- "N" intrinsics_frame_result
-dataset_frame "1" -- "N" intrinsics_frame_result
-intrinsics_frame_result "1" -- "N" intrinsics_scanline_result
-
-ri_experiment "1" -- "N" ri_frame_result
-dataset_frame "1" -- "N" ri_frame_result
-
-compression_experiment "1" -- "N" compression_frame_result
-dataset_frame "1" -- "N" compression_frame_result
-
-@enduml
-```
-
-## Schema Details
+![Database Schema](database_schema.png)
 
 ### Core Dataset Tables
 
@@ -170,11 +23,18 @@ dataset_frame "1" -- "N" compression_frame_result
 
 ### Experiment Tables
 
-Each experiment type (intrinsics, range image, compression) follows a similar pattern:
+Each experiment type follows a hierarchical pattern with different levels of detail:
 
-1. **Experiment Metadata Table** (e.g., `intrinsics_experiment`): Stores experiment configuration, timestamp, label, and description.
-2. **Frame Results Table** (e.g., `intrinsics_frame_result`): Stores per-frame results for the experiment.
-3. **Detailed Results Table** (e.g., `intrinsics_scanline_result`): Stores detailed per-scanline results for intrinsics experiments.
+#### Intrinsics Experiments (Three-Level Hierarchy)
+1. **`intrinsics_experiment`**: Stores experiment configuration, including which algorithm components are enabled (Hough continuity, conflict solver, heuristics), along with timestamp, label, and description.
+2. **`intrinsics_frame_result`**: Stores per-frame aggregated results, including total points/scanlines count, number of iterations, and termination reason.
+3. **`intrinsics_scanline_result`**: Stores detailed per-scanline estimated intrinsic parameters, including vertical angles/offsets with confidence intervals, horizontal parameters, and Hough transform metadata.
+
+#### Range Image and Compression Experiments (Two-Level Hierarchy)
+1. **Experiment Metadata Table** (`ri_experiment`, `compression_experiment`): Stores experiment configuration, timestamp, label, and description.
+2. **Frame Results Table** (`ri_frame_result`, `compression_frame_result`): Stores per-frame results with reconstruction metrics (MSE, RMSE) for range image experiments, or compression metrics (sizes, error thresholds, reconstruction quality) for compression experiments.
+
+The intrinsics experiments require scanline-level detail because the algorithm estimates parameters for each individual scanline. In contrast, range image and compression experiments produce aggregate per-frame metrics without needing scanline-level granularity.
 
 ## Ground Truth Philosophy
 
