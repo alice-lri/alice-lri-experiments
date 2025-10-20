@@ -1,9 +1,0 @@
-{
-  "experiments": [
-    {
-      "label": "ground_truth",
-      "description": "Compute per-frame ground truth (laser-scanline assignations)",
-      "type": 4
-    }
-  ]
-}
