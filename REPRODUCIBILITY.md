@@ -107,6 +107,8 @@ After each experiment (or set of experiments), you must merge the results into t
 
 You can merge after each experiment or after all are complete, but **do not run multiple merges in parallel**. Each merge updates or creates the [`master.sqlite`](results/db/master.sqlite) database in your `BASE_DB_DIR`.
 
+For detailed information on merge options, workflow, and how multiple experiments are handled, see [`scripts/merge/README.md`](scripts/merge/README.md).
+
 Once all experiments are merged, copy the final [`master.sqlite`](results/db/master.sqlite) to your local machine for analysis (e.g., using `scp`).
 
 **Alternative:** You can skip all previous steps and download the pre-built [`master.sqlite`](results/db/master.sqlite) database directly from [https://nextcloud.citius.gal/s/alice_lri_master_db](https://nextcloud.citius.gal/s/alice_lri_master_db) as described in [`results/README.md`](results/README.md).
@@ -138,7 +140,11 @@ cd scripts/merge
 
 ### 9.2. Intrinsics Experiments (Ablation Study)
 
-Run the intrinsics experiments with different algorithm configurations. Each command below represents a different ablation:
+Run the intrinsics experiments with different algorithm configurations.
+
+**Important**: Remember to merge the results after each intrinsics experiment completes.
+
+Each command below represents a different ablation:
 
 **Default (all components enabled):**
 ```bash
@@ -181,7 +187,7 @@ cd ../slurm/intrinsics
 ./prepare_and_launch.sh --build-options -DFLAG_USE_HOUGH_CONTINUITY=OFF -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=OFF -DFLAG_USE_VERTICAL_HEURISTICS=OFF -DFLAG_USE_HORIZONTAL_HEURISTICS=OFF
 ```
 
-After each intrinsics experiment completes, merge the results:
+After each intrinsics experiment completes, merge the results (once per experiment):
 
 ```bash
 cd scripts/merge
