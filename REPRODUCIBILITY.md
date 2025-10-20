@@ -79,8 +79,13 @@ This will install all required Python packages (numpy, pandas, matplotlib, sciki
 You need the `initial.sqlite` database, which contains references to all dataset frames and metadata, including per-sensor reference intrinsic parameters (elevation angles, spatial and azimuthal offsets, and horizontal resolutions) derived from manufacturer specifications and sensor calibration data. There are two ways to get it (see also [`results/README.md`](results/README.md)):
 
 - **Option 1: Generate Locally**
-	- Run [`scripts/local/db/create_initial_db.sh`](scripts/local/db/create_initial_db.sh) after downloading the datasets. This will scan the datasets and create [`results/db/initial.sqlite`](results/db/initial.sqlite).
-	- Copy the resulting file to the HPC cluster (e.g., using `scp`) at `${BASE_DB_DIR}/initial.sqlite` (where `BASE_DB_DIR` is specified in your `.env` file).
+	
+	Run the database creation script after downloading the datasets:
+	```bash
+	scripts/local/db/create_initial_db.sh
+	```
+	Then copy the resulting file to the HPC cluster (e.g., using `scp`) at `${BASE_DB_DIR}/initial.sqlite` (where `BASE_DB_DIR` is specified in your `.env` file).
+
 - **Option 2: Download Pre-built**
 	- Download from [https://nextcloud.citius.gal/s/alice_lri_initial_db](https://nextcloud.citius.gal/s/alice_lri_initial_db).
 	- Place it locally in `results/db/initial.sqlite` and copy to the HPC at `${BASE_DB_DIR}/initial.sqlite`.
@@ -92,46 +97,42 @@ You need the `initial.sqlite` database, which contains references to all dataset
 The project uses a container for reproducible environments on the HPC. See [`container/README.md`](container/README.md) for details. In summary:
 
 - **Option 1: Build Locally and Transfer**
-	- Run `apptainer build container.sif container.def` inside the [`container/`](container/) folder on your local workstation (requires Apptainer/Singularity).
-	- Transfer the resulting `container.sif` to the HPC cluster at `<repo>/container/container.sif`.
+	
+	Build the container inside the `container/` folder on your local workstation (requires Apptainer/Singularity):
+	```bash
+	cd container
+	apptainer build container.sif container.def
+	```
+	
+	Then transfer the resulting `container.sif` to the HPC cluster at `<repo>/container/container.sif`.
+
 - **Option 2: Download Directly on HPC**
 	- Download from [https://nextcloud.citius.gal/s/alice_lri_container](https://nextcloud.citius.gal/s/alice_lri_container) directly on the HPC and place it in the [`container/`](container/) folder.
 
-## 7. Run Experiments on the HPC
+## 7. Reproducing Paper Experiments
 
 **Location: HPC cluster**
 
-After preparing the environment and datasets, you can run the main experiments. For each experiment type, navigate to the corresponding [`scripts/slurm/`](scripts/slurm/) subfolder and run the `prepare_and_launch.sh` script:
+### Overview
 
-- [`scripts/slurm/ground_truth/prepare_and_launch.sh`](scripts/slurm/ground_truth/prepare_and_launch.sh)
-- [`scripts/slurm/intrinsics/prepare_and_launch.sh`](scripts/slurm/intrinsics/prepare_and_launch.sh)
-- [`scripts/slurm/ri_compression/prepare_and_launch.sh`](scripts/slurm/ri_compression/prepare_and_launch.sh)
+After preparing the environment and datasets, you can run the main experiments on the HPC cluster. The workflow consists of:
 
-These scripts will submit jobs to the SLURM scheduler and manage experiment execution. See [`scripts/slurm/README.md`](scripts/slurm/README.md) for details on command-line options.
+1. **Running experiments**: For each experiment type, navigate to the corresponding [`scripts/slurm/`](scripts/slurm/) subfolder and run the `prepare_and_launch.sh` script. These scripts submit jobs to the SLURM scheduler and manage experiment execution. See [`scripts/slurm/README.md`](scripts/slurm/README.md) for details on command-line options.
 
-## 8. Merge Experiment Results
+2. **Merging results**: After each experiment (or set of experiments), merge the results into the master database using [`scripts/merge/merge_db.sh`](scripts/merge/merge_db.sh). This script can be run on a login or interactive compute node. You can merge after each experiment or after all are complete, but **do not run multiple merges in parallel**. Each merge updates or creates the `master.sqlite` database in your `BASE_DB_DIR`. For detailed information on merge options and workflow, see [`scripts/merge/README.md`](scripts/merge/README.md).
 
-**Location: HPC cluster**
+3. **Transferring results**: Once all experiments are merged, copy the final `master.sqlite` to your local machine for analysis:
+   ```bash
+   scp <your_hpc_user>@<hpc_address>:${BASE_DB_DIR}/master.sqlite results/db/master.sqlite
+   ```
 
-After each experiment (or set of experiments), you must merge the results into the master database. Use the merge script on the HPC (can be run on a login or interactive compute node):
+**Alternative:** You can skip all previous steps and download the pre-built `master.sqlite` database directly from [https://nextcloud.citius.gal/s/alice_lri_master_db](https://nextcloud.citius.gal/s/alice_lri_master_db) as described in [`results/README.md`](results/README.md).
 
-- [`scripts/merge/merge_db.sh`](scripts/merge/merge_db.sh)
+### Experiment Execution
 
-You can merge after each experiment or after all are complete, but **do not run multiple merges in parallel**. Each merge updates or creates the [`master.sqlite`](results/db/master.sqlite) database in your `BASE_DB_DIR`.
+To fully reproduce all experiments exactly as reported in the paper, follow these specific steps. Each experiment involves running a `prepare_and_launch.sh` script followed by merging the results with `scripts/merge/merge_db.sh`.
 
-For detailed information on merge options, workflow, and how multiple experiments are handled, see [`scripts/merge/README.md`](scripts/merge/README.md).
-
-Once all experiments are merged, copy the final [`master.sqlite`](results/db/master.sqlite) to your local machine for analysis (e.g., using `scp`).
-
-**Alternative:** You can skip all previous steps and download the pre-built [`master.sqlite`](results/db/master.sqlite) database directly from [https://nextcloud.citius.gal/s/alice_lri_master_db](https://nextcloud.citius.gal/s/alice_lri_master_db) as described in [`results/README.md`](results/README.md).
-
-## 9. Reproducing Paper Experiments
-
-**Location: HPC cluster**
-
-To fully reproduce all experiments exactly as reported in the paper, follow these specific steps in order. Each experiment involves running a `prepare_and_launch.sh` script followed by merging the results with `scripts/merge/merge_db.sh`.
-
-### 9.1. Ground Truth Experiment
+#### 7.1. Ground Truth Experiment
 
 Compute per-frame ground truth laser-scanline assignments. Since the number of scanlines may vary between frames (some laser beams may not yield returns), this experiment verifies which predefined scanlines are present in each frame and maps them to their corresponding lasers. The intrinsic parameters themselves remain fixed per dataset to ensure fair evaluation.
 
@@ -150,7 +151,7 @@ cd scripts/merge
 # Select: [4] Ground Truth
 ```
 
-### 9.2. Intrinsics Experiments (Ablation Study)
+#### 7.2. Intrinsics Experiments (Including Ablation Study)
 
 Run the intrinsics experiments with different algorithm configurations.
 
@@ -243,7 +244,7 @@ cd scripts/merge
 # - description: Intrinsics experiment with all components enabled.
 ```
 
-### 9.3. Range Image Experiment
+#### 7.3. Range Image Experiment
 
 Run the range image experiment with all components enabled:
 
@@ -269,7 +270,7 @@ cd scripts/merge
 # - description: Final RI experiment with all the parts of the algorithm enabled.
 ```
 
-### 9.4. Compression Experiment
+#### 7.4. Compression Experiment
 
 Run the compression experiment with all components enabled:
 
@@ -295,7 +296,7 @@ cd scripts/merge
 # - description: Final compression experiment with all the parts of the algorithm enabled.
 ```
 
-## 10. Generate Tables and Figures
+## 8. Generate Tables and Figures
 
 **Location: Local workstation**
 
