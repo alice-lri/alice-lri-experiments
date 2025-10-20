@@ -1,6 +1,6 @@
 # Reproducibility Guide
 
-This guide explains how to fully reproduce the experiments, results, and figures for this project. It covers dataset setup, environment configuration, experiment execution, and result generation, referencing the relevant scripts and READMEs throughout.
+This guide explains how to fully reproduce the experiments, results, and figures for the ALICE-LRI paper. It covers dataset setup, environment configuration, experiment execution, and result generation, referencing the relevant scripts and READMEs throughout.
 
 ## Prerequisites
 
@@ -8,12 +8,11 @@ This guide explains how to fully reproduce the experiments, results, and figures
 
 To analyze the experiments locally, ensure the following are installed on your workstation:
 
-- **g++** (C++ compiler)
-- **CMake**
-- **Python**
+- **C++20** compatible compiler with CMake >= 3.20
+- **Python** (>= 3.8)
 - **pip**
 - **Conan** (>= 2.0, can be installed via `pip install conan`)
-- **Apptainer** (optional; only needed if you want to build the HPC container image yourself—otherwise, you can download the pre-built image as detailed below)
+- **Apptainer** (optional; only needed if you want to build the HPC container image yourself—otherwise, you can download the pre-built image as detailed below) 
 
 ### HPC Dependencies
 
@@ -45,7 +44,7 @@ Refer to the comments in [`.env`](.env) for more details.
 
 ## 3. Build and Install the Project
 
-After configuring your `.env` file, build and install the project dependencies and binaries by running [`scripts/common/install.sh`](scripts/common/install.sh). This script will set up the required environment for both local and HPC usage.
+After configuring your `.env` file, build and install the project dependencies and binaries by running [`scripts/common/install.sh`](scripts/common/install.sh).
 
 ## 4. Obtain the `initial.sqlite` Database
 
@@ -60,6 +59,7 @@ You need the `initial.sqlite` database, which contains references to all dataset
 
 ## 5. Obtain the Container Image
 
+TODO: this should be more clear, confusing that we clone after
 
 The project uses a container for reproducible environments. See [`container/README.md`](container/README.md) for details. In summary:
 
