@@ -257,7 +257,7 @@ scripts/local/paper/generate_paper_metrics.sh
 
 This will produce all outputs as described in [`results/README.md`](results/README.md).
 
-**Note:** Each set of tables and figures is generated separately by individual Python scripts within `generate_paper_metrics.sh`. You can run these scripts individually if you only need to regenerate specific outputs.
+**Note:** Each set of tables and figures is generated separately by individual Python scripts within `generate_paper_metrics.sh`. You can run these scripts individually if you only need to regenerate specific outputs. For details on each script and what it generates, see [`scripts/local/paper/README.md`](scripts/local/paper/README.md).
 
 ---
 
