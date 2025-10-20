@@ -17,7 +17,6 @@ Each experiment type has a `prepare_and_launch.sh` script in its subfolder. This
 - Submit the appropriate SLURM jobs for the experiment type, using the corresponding `job.sh` and `task.sh` scripts.
 - Manage job dependencies and logging.
 
-TODO: Explain better what each is done for, and the ground truth flow.
 
 ### How to Use
 

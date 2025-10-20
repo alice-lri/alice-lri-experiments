@@ -14,6 +14,10 @@ To analyze the experiments locally, ensure the following are installed on your w
 - **Conan** (>= 2.0, can be installed via `pip install conan`)
 	- First time using Conan? Run `conan profile detect` after installing to create a default profile.
 - **SQLite3 CLI** (can be installed via `apt install sqlite3` on Ubuntu/Debian)
+- **OpenCV and Boost development libraries** (can be installed via `apt install libopencv-dev libboost-all-dev` on Ubuntu/Debian)
+	- Required by the RTST compression algorithm for runtime analysis.
+	- **Note for newer systems**: If compilation fails with OpenCV header errors, you may need to create a symlink: `sudo ln -s /usr/include/opencv4/opencv2 /usr/include/opencv2`
+	- **Optional**: If you don't want to run RTST runtime analysis, you can skip these dependencies by commenting out the RTST compilation lines in [`scripts/common/build.sh`](scripts/common/build.sh) (specifically the `make -C "$RTST_MODIFIED_SRC"` line).
 - **Apptainer** (optional; only needed if you want to build the HPC container image yourself—otherwise, you can download the pre-built image as detailed below) 
 
 ### HPC Dependencies
