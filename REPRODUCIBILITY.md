@@ -21,8 +21,6 @@ On the HPC cluster, you need:
 - A Linux environment with **SLURM** for job scheduling
 - **Apptainer** (or Singularity) for container execution
 
-**Note:** You must edit the [`.env`](.env) file to specify the correct module(s) to load on your HPC system using the `ALICE_LRI_HPC_MODULES` variable. This ensures the environment is set up correctly for experiment execution. Refer to the comments in [`.env`](.env) for more details on configuring paths and modules.
-
 ## 1. Download Required Datasets
 
 
@@ -33,49 +31,63 @@ You will need the full KITTI (raw) and DurLAR datasets, both on your local works
 
 **Tip:** To avoid downloading twice, it is recommended to download the datasets directly on the HPC cluster and then mount the dataset folders on your local workstation using `sshfs` or a similar tool.
 
-## 2. Update the `.env` File
+## 2. Clone the Repository
 
-Edit the [`/.env`](.env) file to set the correct paths for both your local and HPC environments. Make sure the following variables point to the correct locations:
+Clone this repository on both your local workstation and your HPC system:
+
+```bash
+git clone https://github.com/alice-lri/alice-lri-experiments.git
+cd alice-lri-experiments
+```
+
+The following steps will specify where each action should be performed (local workstation or HPC).
+
+## 3. Update the `.env` File
+
+**Location: Both local and HPC**
+
+Edit the [`.env`](.env) file to set the correct paths for both environments. Make sure the following variables point to the correct locations:
 
 - `LOCAL_KITTI_PATH`, `LOCAL_DURLAR_PATH` (for your workstation)
 - `KITTI_PATH`, `DURLAR_PATH` (for the HPC cluster)
+- `ALICE_LRI_HPC_MODULES` (modules to load on HPC)
 
 Refer to the comments in [`.env`](.env) for more details.
 
-## 3. Build and Install the Project
+## 4. Build and Install the Project
 
-After configuring your `.env` file, build and install the project dependencies and binaries by running [`scripts/common/install.sh`](scripts/common/install.sh).
+**Location: Local workstation**
 
-## 4. Obtain the `initial.sqlite` Database
+After configuring your `.env` file locally, build and install the project dependencies and binaries by running [`scripts/common/install.sh`](scripts/common/install.sh).
 
+## 5. Obtain the `initial.sqlite` Database
 
-You need the `initial.sqlite` database, which contains references to all dataset frames and metadata. There are two ways to get it (see also [`results/README.md`](results/README.md)):
+**Location: Local workstation, then transfer to HPC**
+
+You need the `initial.sqlite` database, which contains references to all dataset frames and metadata, including per-sensor reference intrinsic parameters (elevation angles, spatial and azimuthal offsets, and horizontal resolutions) derived from manufacturer specifications and sensor calibration data. There are two ways to get it (see also [`results/README.md`](results/README.md)):
 
 - **Option 1: Generate Locally**
 	- Run [`scripts/local/db/create_initial_db.sh`](scripts/local/db/create_initial_db.sh) after downloading the datasets. This will scan the datasets and create [`results/db/initial.sqlite`](results/db/initial.sqlite).
-	- Copy the resulting file to the HPC cluster at the path specified by `BASE_DB_DIR` in your `.env` (e.g., using `scp`).
+	- Copy the resulting file to the HPC cluster (e.g., using `scp`) at `${BASE_DB_DIR}/initial.sqlite` (where `BASE_DB_DIR` is specified in your `.env` file).
 - **Option 2: Download Pre-built**
-	- Download from [https://nextcloud.citius.gal/s/alice_lri_initial_db](https://nextcloud.citius.gal/s/alice_lri_initial_db) and place it in the correct location on both your local and HPC systems.
+	- Download from [https://nextcloud.citius.gal/s/alice_lri_initial_db](https://nextcloud.citius.gal/s/alice_lri_initial_db).
+	- Place it locally in `results/db/initial.sqlite` and copy to the HPC at `${BASE_DB_DIR}/initial.sqlite`.
 
-## 5. Obtain the Container Image
+## 6. Obtain the Container Image
 
-TODO: this should be more clear, confusing that we clone after
+**Location: Local workstation (build), then transfer to HPC; or download directly on HPC**
 
-The project uses a container for reproducible environments. See [`container/README.md`](container/README.md) for details. In summary:
+The project uses a container for reproducible environments on the HPC. See [`container/README.md`](container/README.md) for details. In summary:
 
-- **Option 1: Build Locally**
-	- Run `apptainer build container.sif container.def` inside the [`container/`](container/) folder (requires Apptainer/Singularity).
-	- Transfer the resulting [`container/container.sif`](container/container.sif) to the HPC cluster.
-- **Option 2: Download Pre-built**
-	- Download from [https://nextcloud.citius.gal/s/alice_lri_container](https://nextcloud.citius.gal/s/alice_lri_container) and place it in the [`container/`](container/) folder on the HPC.
-
-## 6. Clone the Repository and Configure
-
-- Clone this repository on your HPC system.
-- Update the `.env` file on the HPC to match the correct dataset and storage paths.
+- **Option 1: Build Locally and Transfer**
+	- Run `apptainer build container.sif container.def` inside the [`container/`](container/) folder on your local workstation (requires Apptainer/Singularity).
+	- Transfer the resulting `container.sif` to the HPC cluster at `<repo>/container/container.sif`.
+- **Option 2: Download Directly on HPC**
+	- Download from [https://nextcloud.citius.gal/s/alice_lri_container](https://nextcloud.citius.gal/s/alice_lri_container) directly on the HPC and place it in the [`container/`](container/) folder.
 
 ## 7. Run Experiments on the HPC
 
+**Location: HPC cluster**
 
 After preparing the environment and datasets, you can run the main experiments. For each experiment type, navigate to the corresponding [`scripts/slurm/`](scripts/slurm/) subfolder and run the `prepare_and_launch.sh` script:
 
@@ -83,10 +95,11 @@ After preparing the environment and datasets, you can run the main experiments. 
 - [`scripts/slurm/intrinsics/prepare_and_launch.sh`](scripts/slurm/intrinsics/prepare_and_launch.sh)
 - [`scripts/slurm/ri_compression/prepare_and_launch.sh`](scripts/slurm/ri_compression/prepare_and_launch.sh)
 
-These scripts will submit jobs to the SLURM scheduler and manage experiment execution.
+These scripts will submit jobs to the SLURM scheduler and manage experiment execution. See [`scripts/slurm/README.md`](scripts/slurm/README.md) for details on command-line options.
 
 ## 8. Merge Experiment Results
 
+**Location: HPC cluster**
 
 After each experiment (or set of experiments), you must merge the results into the master database. Use the merge script on the HPC (can be run on a login or interactive compute node):
 
@@ -96,21 +109,153 @@ You can merge after each experiment or after all are complete, but **do not run 
 
 Once all experiments are merged, copy the final [`master.sqlite`](results/db/master.sqlite) to your local machine for analysis (e.g., using `scp`).
 
-
 **Alternative:** You can skip all previous steps and download the pre-built [`master.sqlite`](results/db/master.sqlite) database directly from [https://nextcloud.citius.gal/s/alice_lri_master_db](https://nextcloud.citius.gal/s/alice_lri_master_db) as described in [`results/README.md`](results/README.md).
 
-## 9. Generate Tables and Figures
+## 9. Reproducing Paper Experiments
 
+**Location: HPC cluster**
 
-To generate all tables and figures for the paper, run:
+To fully reproduce all experiments exactly as reported in the paper, follow these specific steps in order. Each experiment involves running a `prepare_and_launch.sh` script followed by merging the results with `scripts/merge/merge_db.sh`.
+
+### 9.1. Ground Truth Experiment
+
+Compute per-frame ground truth laser-scanline assignments. Since the number of scanlines may vary between frames (some laser beams may not yield returns), this experiment verifies which predefined scanlines are present in each frame and maps them to their corresponding lasers. The intrinsic parameters themselves remain fixed per dataset to ensure fair evaluation:
+
+```bash
+cd scripts/slurm/ground_truth
+./prepare_and_launch.sh
+```
+
+After completion, merge the results:
+
+```bash
+cd scripts/merge
+./merge_db.sh
+# Select: [4] Ground Truth
+```
+
+### 9.2. Intrinsics Experiments (Ablation Study)
+
+Run the intrinsics experiments with different algorithm configurations. Each command below represents a different ablation:
+
+**Default (all components enabled):**
+```bash
+cd ../slurm/intrinsics
+./prepare_and_launch.sh --build-options -DFLAG_USE_HOUGH_CONTINUITY=ON -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=ON -DFLAG_USE_VERTICAL_HEURISTICS=ON -DFLAG_USE_HORIZONTAL_HEURISTICS=ON
+```
+
+**Without Hough continuity:**
+```bash
+./prepare_and_launch.sh --build-options -DFLAG_USE_HOUGH_CONTINUITY=OFF -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=ON -DFLAG_USE_VERTICAL_HEURISTICS=ON -DFLAG_USE_HORIZONTAL_HEURISTICS=ON
+```
+
+**Without scanline conflict solver:**
+```bash
+./prepare_and_launch.sh --build-options -DFLAG_USE_HOUGH_CONTINUITY=ON -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=OFF -DFLAG_USE_VERTICAL_HEURISTICS=ON -DFLAG_USE_HORIZONTAL_HEURISTICS=ON
+```
+
+**Without vertical heuristics:**
+```bash
+./prepare_and_launch.sh --build-options -DFLAG_USE_HOUGH_CONTINUITY=ON -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=ON -DFLAG_USE_VERTICAL_HEURISTICS=OFF -DFLAG_USE_HORIZONTAL_HEURISTICS=ON
+```
+
+**Without horizontal heuristics:**
+```bash
+./prepare_and_launch.sh --build-options -DFLAG_USE_HOUGH_CONTINUITY=ON -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=ON -DFLAG_USE_VERTICAL_HEURISTICS=ON -DFLAG_USE_HORIZONTAL_HEURISTICS=OFF
+```
+
+**Without conflict solver and continuity:**
+```bash
+./prepare_and_launch.sh --build-options -DFLAG_USE_HOUGH_CONTINUITY=OFF -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=OFF -DFLAG_USE_VERTICAL_HEURISTICS=ON -DFLAG_USE_HORIZONTAL_HEURISTICS=ON
+```
+
+**Without any heuristics:**
+```bash
+./prepare_and_launch.sh --build-options -DFLAG_USE_HOUGH_CONTINUITY=ON -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=ON -DFLAG_USE_VERTICAL_HEURISTICS=OFF -DFLAG_USE_HORIZONTAL_HEURISTICS=OFF
+```
+
+**Minimal (all enhancements disabled):**
+```bash
+./prepare_and_launch.sh --build-options -DFLAG_USE_HOUGH_CONTINUITY=OFF -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=OFF -DFLAG_USE_VERTICAL_HEURISTICS=OFF -DFLAG_USE_HORIZONTAL_HEURISTICS=OFF
+```
+
+After each intrinsics experiment completes, merge the results:
+
+```bash
+cd scripts/merge
+./merge_db.sh
+# Select: [1] Intrinsics
+# Provide your desired label and description for each experiment
+# Example:
+# - label: intrinsics_default
+# - description: Intrinsics experiment with all components enabled.
+```
+
+### 9.3. Range Image Experiment
+
+Run the range image experiment with all components enabled:
+
+```bash
+cd ../slurm/ri_compression
+./prepare_and_launch.sh --build-options -DFLAG_USE_HOUGH_CONTINUITY=ON -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=ON -DFLAG_USE_VERTICAL_HEURISTICS=ON -DFLAG_USE_HORIZONTAL_HEURISTICS=ON
+# Select: [1] Range Image
+```
+
+After completion, merge the results:
+
+```bash
+cd scripts/merge
+./merge_db.sh
+# Select: [2] Range Image
+# Provide your desired label and description for the experiment
+# Example:
+# - label: ri_final_default
+# - description: Final RI experiment with all the parts of the algorithm enabled.
+```
+
+### 9.4. Compression Experiment
+
+Run the compression experiment with all components enabled:
+
+```bash
+cd ../slurm/ri_compression
+./prepare_and_launch.sh --build-options -DFLAG_USE_HOUGH_CONTINUITY=ON -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=ON -DFLAG_USE_VERTICAL_HEURISTICS=ON -DFLAG_USE_HORIZONTAL_HEURISTICS=ON
+# Select: [2] Compression
+```
+
+After completion, merge the results:
+
+```bash
+cd scripts/merge
+./merge_db.sh
+# Select: [3] Compression
+# Provide your desired label and description for the experiment
+# Example:
+# - label: compression_final_default
+# - description: Final compression experiment with all the parts of the algorithm enabled.
+```
+
+## 10. Generate Tables and Figures
+
+**Location: Local workstation**
+
+After all experiments are complete and merged, ensure you have copied the final [`master.sqlite`](results/db/master.sqlite) from the HPC to your local machine as explained in **Step 8**. 
+
+This step will aggregate results from the `master.sqlite` database and perform runtime analysis on your local workstation. The runtime analysis includes:
+- **ALICE-LRI runtime analysis**: Generates the runtime table for the ALICE-LRI algorithm (stored in `results/csv/alice_times.csv`).
+- **RTST compression comparison**: Generates the runtime performance comparison between the original and modified RTST compression algorithm (stored in `results/csv/rtst_times.csv`).
+
+By default, the runtime analysis is **not re-run** if the CSV files already exist. If the CSV files are missing, you will be prompted to confirm whether you want to run the runtime benchmarks.
+
+In summary, to generate all tables and figures for the paper, run:
 
 ```bash
 scripts/local/paper/generate_paper_metrics.sh
 ```
 
-or simply execute [`scripts/local/paper/generate_paper_metrics.sh`](scripts/local/paper/generate_paper_metrics.sh).
-
 This will produce all outputs as described in [`results/README.md`](results/README.md).
+
+**Note:** Each set of tables and figures is generated separately by individual Python scripts within `generate_paper_metrics.sh`. You can run these scripts individually if you only need to regenerate specific outputs.
 
 ---
 
