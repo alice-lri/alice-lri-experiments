@@ -4,3 +4,5 @@ container.sif
 *.pyc
 
 scripts/cpp/build/
+
+results/db/initial.sqlite
