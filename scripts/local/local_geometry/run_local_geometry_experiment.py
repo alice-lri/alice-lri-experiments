@@ -1,36 +1,29 @@
 import argparse
 import os
-import re
 import sqlite3
-import sys
-import time
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import alice_lri
 
 from scripts.common.load_env import load_env
-from scripts.common.helper.local_geometry_metrics import symmetric_point_to_plane_metrics
+from scripts.common.helper.local_geometry_experiment import (
+    DEFAULT_METHODS,
+    DEFAULT_SEQUENCES,
+    estimate_frame_relative_path,
+    estimate_intrinsics,
+    evaluate_frame_methods,
+)
 from scripts.common.helper.point_cloud import load_binary
-from scripts.common.helper.ri.ri_default_mapper import RangeImageDefaultMapper
-from scripts.common.helper.ri.ri_utils import point_cloud_to_range_image, range_image_to_point_cloud
 
 
 class Config:
-    default_sequences = {
-        "kitti": "2011_09_30_drive_0018_sync",
-        "durlar": "DurLAR_20211209",
-    }
-    pbea_native_resolutions = {
-        "kitti": (4000, 64),
-        "durlar": (2048, 128),
-    }
+    default_sequences = DEFAULT_SEQUENCES
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Run local point-to-plane geometry checks for the R2.7 revision experiment."
+        description="Run local point-to-plane geometry checks for the experiment."
     )
     parser.add_argument(
         "--db_path",
@@ -62,8 +55,8 @@ def parse_args():
     parser.add_argument(
         "--methods",
         nargs="+",
-        choices=["alice_lri", "pbea_native"],
-        default=["alice_lri", "pbea_native"],
+        choices=DEFAULT_METHODS,
+        default=DEFAULT_METHODS,
         help="Methods to evaluate.",
     )
     parser.add_argument(
@@ -122,51 +115,27 @@ def main():
 
             print(f"Estimating ALICE-LRI intrinsics from {dataset}:{estimate_relative_path}")
             estimate_points, _ = load_binary(estimate_path)
-            intrinsics_cache[intrinsics_key] = alice_lri.estimate_intrinsics(
-                estimate_points[:, 0], estimate_points[:, 1], estimate_points[:, 2]
-            )
+            intrinsics_cache[intrinsics_key] = estimate_intrinsics(alice_lri, estimate_points)
 
-        if "alice_lri" in args.methods:
-            print("Evaluating ALICE-LRI...")
-            start_time = time.perf_counter()
-            reconstructed_points, ri_width, ri_height = reconstruct_alice_lri(
-                alice_lri, intrinsics_cache[intrinsics_key], original_points
-            )
-            rows.append(
-                build_metrics_row(
-                    dataset=dataset,
-                    dataset_frame_id=dataset_frame_id,
-                    relative_path=relative_path,
-                    estimate_relative_path=estimate_relative_path,
-                    method="alice_lri",
-                    ri_width=ri_width,
-                    ri_height=ri_height,
-                    original_points=original_points,
-                    reconstructed_points=reconstructed_points,
-                    k_neighbors=args.k_neighbors,
-                    runtime_seconds=time.perf_counter() - start_time,
-                )
-            )
+        for method in args.methods:
+            print(f"Evaluating {method}...")
 
-        if "pbea_native" in args.methods:
-            print("Evaluating native-resolution PBEA...")
-            start_time = time.perf_counter()
-            reconstructed_points, ri_width, ri_height = reconstruct_pbea_native(dataset, original_points)
-            rows.append(
-                build_metrics_row(
-                    dataset=dataset,
-                    dataset_frame_id=dataset_frame_id,
-                    relative_path=relative_path,
-                    estimate_relative_path=estimate_relative_path,
-                    method="pbea_native",
-                    ri_width=ri_width,
-                    ri_height=ri_height,
-                    original_points=original_points,
-                    reconstructed_points=reconstructed_points,
-                    k_neighbors=args.k_neighbors,
-                    runtime_seconds=time.perf_counter() - start_time,
-                )
+        rows.extend(
+            evaluate_frame_methods(
+                alice_lri_module=alice_lri,
+                dataset=dataset,
+                original_points=original_points,
+                intrinsics=intrinsics_cache.get(intrinsics_key),
+                methods=args.methods,
+                k_neighbors=args.k_neighbors,
+                base_fields={
+                    "dataset": dataset,
+                    "dataset_frame_id": dataset_frame_id,
+                    "relative_path": relative_path,
+                    "estimate_relative_path": estimate_relative_path,
+                },
             )
+        )
 
     results = pd.DataFrame(rows)
     output_csv.parent.mkdir(parents=True, exist_ok=True)
@@ -220,68 +189,6 @@ def select_frames(args) -> list[tuple[str, str, int | None]]:
             )
 
     return frames
-
-
-def estimate_frame_relative_path(relative_path: str) -> str:
-    estimate_path = re.sub(r"\d{10}\.bin$", "0000000000.bin", relative_path)
-    if estimate_path == relative_path and not relative_path.endswith("0000000000.bin"):
-        raise ValueError(f"Could not infer intrinsics-estimation frame from path: {relative_path}")
-    return estimate_path
-
-
-def reconstruct_alice_lri(alice_lri, intrinsics, original_points):
-    range_image = alice_lri.project_to_range_image(
-        intrinsics,
-        original_points[:, 0],
-        original_points[:, 1],
-        original_points[:, 2],
-    )
-    x, y, z = alice_lri.unproject_to_point_cloud(intrinsics, range_image)
-
-    return np.column_stack((x, y, z)), range_image.width, range_image.height
-
-
-def reconstruct_pbea_native(dataset: str, original_points):
-    ri_width, ri_height = Config.pbea_native_resolutions[dataset]
-    ri_mapper = RangeImageDefaultMapper(ri_width, ri_height)
-    range_image = point_cloud_to_range_image(ri_mapper, original_points)
-    reconstructed_points = range_image_to_point_cloud(ri_mapper, range_image)
-
-    return reconstructed_points, ri_width, ri_height
-
-
-def build_metrics_row(
-    dataset: str,
-    dataset_frame_id: int | None,
-    relative_path: str,
-    estimate_relative_path: str,
-    method: str,
-    ri_width: int,
-    ri_height: int,
-    original_points,
-    reconstructed_points,
-    k_neighbors: int,
-    runtime_seconds: float,
-) -> dict:
-    metrics_start_time = time.perf_counter()
-    metrics = symmetric_point_to_plane_metrics(original_points, reconstructed_points, k_neighbors)
-    metrics_runtime_seconds = time.perf_counter() - metrics_start_time
-
-    return {
-        "dataset": dataset,
-        "dataset_frame_id": dataset_frame_id,
-        "relative_path": relative_path,
-        "estimate_relative_path": estimate_relative_path,
-        "method": method,
-        "ri_width": ri_width,
-        "ri_height": ri_height,
-        "original_points_count": len(original_points),
-        "reconstructed_points_count": len(reconstructed_points),
-        "k_neighbors": k_neighbors,
-        "runtime_seconds": runtime_seconds + metrics_runtime_seconds,
-        "metrics_runtime_seconds": metrics_runtime_seconds,
-        **metrics,
-    }
 
 
 def _prepare_output_path(path: Path, overwrite: bool):

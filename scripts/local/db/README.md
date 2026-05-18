@@ -36,6 +36,25 @@ Each experiment type follows a hierarchical pattern with different levels of det
 
 The intrinsics experiments require scanline-level detail because the algorithm estimates parameters for each individual scanline. In contrast, range image and compression experiments produce aggregate per-frame metrics without needing scanline-level granularity.
 
+#### Local Geometry Experiments (Migration)
+
+The local point-to-plane geometry experiment adds a new two-level hierarchy:
+
+1. **`local_geometry_experiment`**: Stores experiment metadata.
+2. **`local_geometry_frame_result`**: Stores per-frame symmetric point-to-plane summaries for ALICE-LRI and native-resolution PBEA.
+
+This schema is intentionally provided as a separate migration script and is not applied automatically by the HPC launch flow:
+
+```bash
+sqlite3 "$BASE_DB_DIR/initial.sqlite" < scripts/local/db/sql/001_local_geometry_experiment.sql
+```
+
+If `master.sqlite` already exists before merging local-geometry results, apply the same migration to it before running the merge command:
+
+```bash
+sqlite3 "$BASE_DB_DIR/master.sqlite" < scripts/local/db/sql/001_local_geometry_experiment.sql
+```
+
 ## Ground Truth Philosophy
 
 The ground truth system implements a two-level approach to ensure fair and consistent evaluation:

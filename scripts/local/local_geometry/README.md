@@ -1,12 +1,17 @@
 # Local Geometry Experiment
 
-This folder contains the local workstation runner for the R2.7 revision experiment.
+This folder contains the local workstation runner for the experiment.
 It computes symmetric local point-to-plane errors for ALICE-LRI and native-resolution
 PBEA without writing to the main experiment database.
 
 The core metric is implemented in:
 
 - `scripts/common/helper/local_geometry_metrics.py`
+
+Shared reconstruction/evaluation helpers used by both the local and SLURM
+runners are implemented in:
+
+- `scripts/common/helper/local_geometry_experiment.py`
 
 The local runner writes derived outputs to `results/local_geometry/` by default:
 

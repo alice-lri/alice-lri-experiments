@@ -7,8 +7,8 @@ from scripts.common.helper.orm import Database
 def main():
     parser = argparse.ArgumentParser(description='Prepare the DB for a new experiment.')
     parser.add_argument('db_path', type=str, help='Path to the SQLite database')
-    parser.add_argument('type', type=str, choices=['intrinsics', 'compression', 'ri'],
-                        help='Type of experiment (intrinsics, ri, or compression)')
+    parser.add_argument('type', type=str, choices=['intrinsics', 'compression', 'ri', 'local_geometry'],
+                        help='Type of experiment (intrinsics, ri, compression, or local_geometry)')
     parser.add_argument("--build-options", type=str, help="Build options string (e.g., '-Dflag1=ON -Dflag2=OFF')")
     args = parser.parse_args()
 
@@ -53,8 +53,27 @@ def main():
                 timestamp=SQLExpr("datetime('now', 'localtime', 'subsec')")
             )
             experiment.save(db)
+        elif args.type == 'local_geometry':
+            assert_table_exists(db, "local_geometry_experiment")
+            experiment = LocalGeometryExperiment(
+                label="",
+                description="",
+                timestamp=SQLExpr("datetime('now', 'localtime', 'subsec')")
+            )
+            experiment.save(db)
         else:
             raise ValueError('Unknown type')
+
+def assert_table_exists(db: Database, table_name: str):
+    row = db.execute(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+        (table_name,)
+    ).fetchone()
+    if row is None:
+        raise RuntimeError(
+            f"Missing table '{table_name}'. Apply scripts/local/db/sql/001_local_geometry_experiment.sql "
+            "to the initial database before preparing this experiment."
+        )
 
 
 if __name__ == "__main__":

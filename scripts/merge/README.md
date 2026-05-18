@@ -40,14 +40,19 @@ Select experiment type:
 [2] Range Image
 [3] Compression
 [4] Ground Truth
+[5] Local Geometry
 Enter choice:
 ```
 
-For experiment types 1-3, you'll also be asked for:
+For experiment types 1-3 and 5, you'll also be asked for:
 - **Experiment label**: A short identifier (e.g., `intrinsics_default`, `ablation_no_hough`)
 - **Experiment description**: A detailed description of the experiment configuration
 
 For ground truth experiments, no label or description is needed.
+
+Local Geometry results require `scripts/local/db/sql/001_local_geometry_experiment.sql`
+to be applied to `master.sqlite` before merge when that master database already
+exists.
 
 ### Command-Line Options
 
