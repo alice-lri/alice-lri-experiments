@@ -5,6 +5,12 @@ HPC cluster. It follows the same partial-database pattern as the other SLURM
 experiments: each task copies `initial.sqlite`, writes a task-local SQLite file,
 and the merge scripts later consolidate all numbered `*.sqlite` files.
 
+Like `ri_compression`, this experiment uses a separate single-task intrinsics
+estimation job. That job writes one JSON file per sequence into the batch
+`shared/` directory, and all evaluation jobs read those files. Evaluation tasks
+also keep a per-process in-memory cache, so each task only reads each needed
+sequence intrinsics once. No evaluation task writes intrinsics files.
+
 The runner shares reconstruction and per-frame evaluation logic with the local
 debug runner through `scripts/common/helper/local_geometry_experiment.py`. The
 point-to-plane metric itself lives in
@@ -39,6 +45,7 @@ Useful inherited options:
 ```bash
 ./prepare_and_launch.sh --skip-build
 ./prepare_and_launch.sh --relaunch <BATCH_ID> [job_idx ...]
+./prepare_and_launch.sh --skip-estimation
 ```
 
 The runner evaluates both methods:

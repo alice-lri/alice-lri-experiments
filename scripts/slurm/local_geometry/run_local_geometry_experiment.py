@@ -25,11 +25,13 @@ class Config:
 def parse_args():
     parser = argparse.ArgumentParser(description="Run local point-to-plane geometry metrics on SLURM.")
     parser.add_argument("--mode", required=True, choices=["batch", "test"], help="Execution mode.")
+    parser.add_argument("--phase", default=None, choices=["estimate", "evaluate"], help="Execution phase in batch mode.")
     parser.add_argument("--task_id", type=int, default=None, help="Task ID in batch mode.")
     parser.add_argument("--task_count", type=int, default=None, help="Task count in batch mode.")
     parser.add_argument("--db_path", type=str, default=None, help="Task-local SQLite database.")
     parser.add_argument("--kitti_root", type=str, default=None, help="KITTI dataset root.")
     parser.add_argument("--durlar_root", type=str, default=None, help="DurLAR dataset root.")
+    parser.add_argument("--shared_dir", type=str, default=None, help="Shared directory for estimated intrinsics JSONs.")
     parser.add_argument("--k_neighbors", type=int, default=Config.k_neighbors, help="PCA neighborhood size.")
     parser.add_argument(
         "--methods",
@@ -44,8 +46,14 @@ def parse_args():
     if args.mode == "test":
         return args
 
-    if args.task_id is None or args.task_count is None or args.db_path is None:
-        parser.error("--task_id, --task_count, and --db_path are required in batch mode.")
+    if args.phase is None or args.db_path is None or args.shared_dir is None:
+        parser.error("--phase, --db_path, and --shared_dir are required in batch mode.")
+
+    if args.phase == "estimate":
+        args.task_id = 0
+        args.task_count = 1
+    elif args.task_id is None or args.task_count is None:
+        parser.error("--task_id and --task_count are required in batch evaluate phase.")
 
     if not args.kitti_root and not args.durlar_root:
         parser.error("At least one of --kitti_root or --durlar_root must be defined.")
@@ -63,10 +71,42 @@ def main():
         print("If you see no errors, all is good.")
         return
 
-    run_batch(args)
+    os.makedirs(args.shared_dir, exist_ok=True)
+    if args.phase == "estimate":
+        run_estimate(args)
+    elif args.phase == "evaluate":
+        run_evaluate(args)
+    else:
+        raise ValueError(f"Unknown phase: {args.phase}")
 
 
-def run_batch(args):
+def run_estimate(args):
+    dataset_roots = {}
+    if args.kitti_root:
+        dataset_roots["kitti"] = args.kitti_root
+    if args.durlar_root:
+        dataset_roots["durlar"] = args.durlar_root
+
+    with sqlite3.connect(f"file:{args.db_path}?mode=ro", uri=True) as conn:
+        frames = fetch_estimation_frames(conn, dataset_roots.keys())
+        print(f"Number of estimation frames: {len(frames)}")
+
+        for _, dataset, relative_path in frames:
+            intrinsics_filename = intrinsics_filename_from_relative_path(relative_path)
+            intrinsics_path = os.path.join(args.shared_dir, intrinsics_filename)
+
+            if os.path.exists(intrinsics_path):
+                print(f"Skipping existing intrinsics file: {intrinsics_path}")
+                continue
+
+            frame_path = os.path.join(dataset_roots[dataset], relative_path)
+            print(f"Estimating intrinsics from {dataset}:{relative_path}")
+            estimate_points, _ = load_binary(frame_path)
+            intrinsics = estimate_intrinsics(alice_lri, estimate_points)
+            alice_lri.intrinsics_to_json_file(intrinsics, intrinsics_path)
+
+
+def run_evaluate(args):
     dataset_roots = {}
     if args.kitti_root:
         dataset_roots["kitti"] = args.kitti_root
@@ -89,10 +129,9 @@ def run_batch(args):
             intrinsics_key = (dataset, estimate_relative_path)
 
             if "alice_lri" in Config.methods and intrinsics_key not in intrinsics_cache:
-                estimate_path = os.path.join(dataset_roots[dataset], estimate_relative_path)
-                print(f"Estimating intrinsics from {dataset}:{estimate_relative_path}")
-                estimate_points, _ = load_binary(estimate_path)
-                intrinsics_cache[intrinsics_key] = estimate_intrinsics(alice_lri, estimate_points)
+                intrinsics_path = os.path.join(args.shared_dir, intrinsics_filename_from_relative_path(estimate_relative_path))
+                print(f"Loading intrinsics from {intrinsics_path}")
+                intrinsics_cache[intrinsics_key] = alice_lri.intrinsics_from_json_file(intrinsics_path)
 
             rows = evaluate_frame_methods(
                 alice_lri_module=alice_lri,
@@ -147,6 +186,25 @@ def fetch_task_frames(conn: sqlite3.Connection, dataset_names, task_id: int, tas
     """
 
     return conn.execute(query, (task_count, task_id, *dataset_names)).fetchall()
+
+
+def fetch_estimation_frames(conn: sqlite3.Connection, dataset_names):
+    dataset_names = list(dataset_names)
+    placeholders = ",".join(["?"] * len(dataset_names))
+    query = f"""
+        SELECT df.id, d.name, df.relative_path
+        FROM dataset_frame AS df
+        JOIN dataset AS d ON d.id = df.dataset_id
+        WHERE d.name IN ({placeholders})
+          AND df.relative_path LIKE ?
+        ORDER BY df.id
+    """
+
+    return conn.execute(query, (*dataset_names, "%0000000000.bin")).fetchall()
+
+
+def intrinsics_filename_from_relative_path(relative_path: str) -> str:
+    return relative_path.replace("/", "_") + ".json"
 
 
 if __name__ == "__main__":

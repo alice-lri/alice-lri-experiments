@@ -10,8 +10,9 @@
 set -eo pipefail
 
 DB_DIR=$1
-JOB_INDEX=$2
-JOB_COUNT=$3
+SHARED_DIR=$2
+JOB_INDEX=$3
+JOB_COUNT=$4
 
 source ../../common/load_env.sh
 module load $ALICE_LRI_HPC_MODULES
@@ -19,7 +20,7 @@ module load $ALICE_LRI_HPC_MODULES
 echo "Beginning local-geometry job ${JOB_INDEX}..."
 
 export PYTHONPATH="$ALICE_LRI_PIP_DIR:$PYTHONPATH"
-srun apptainer run "$CONTAINER_PATH" ./task.sh "$DB_DIR" "$JOB_INDEX" "$JOB_COUNT"
+srun apptainer run "$CONTAINER_PATH" ./task.sh "$DB_DIR" "$SHARED_DIR" "$JOB_INDEX" "$JOB_COUNT"
 
 echo "Local-geometry job ${JOB_INDEX} finished."
 touch "${DB_DIR}/job_${JOB_INDEX}.success"
