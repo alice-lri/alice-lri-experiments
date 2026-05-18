@@ -70,3 +70,30 @@ Aggregate symmetric point-to-plane metrics:
 This is a smoke test only, not the final paper result. It confirms that the
 metric and reconstruction paths behave sensibly before running larger local or
 CESGA batches.
+
+## n=100 Local Subset
+
+The first 100 frames per dataset also completed successfully:
+
+```bash
+/usr/bin/time -v /home/samuel.soutullo/.miniconda3/envs/alice_lri_env/bin/python \
+  -m scripts.local.local_geometry.run_local_geometry_experiment \
+  --max_frames_per_dataset 100 \
+  --methods alice_lri pbea_native \
+  --k_neighbors 12 \
+  --output_csv results/local_geometry/local_geometry_metrics_n100.csv \
+  --output_sqlite results/local_geometry/local_geometry_metrics_n100.sqlite
+```
+
+The run produced 400 rows and took 11:16.25 wall-clock seconds with maximum RSS
+729876 KB. Mean per-frame symmetric point-to-plane metrics:
+
+| Dataset | Method | Mean | RMSE | Median | P95 | Max |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| DurLAR | ALICE-LRI | 7.876325e-07 | 0.000002 | 1.546443e-07 | 0.000003 | 0.000069 |
+| DurLAR | PBEA native | 1.297986e-02 | 0.021774 | 8.606889e-03 | 0.037986 | 3.063795 |
+| KITTI | ALICE-LRI | 2.017872e-04 | 0.000247 | 1.775679e-04 | 0.000465 | 0.000839 |
+| KITTI | PBEA native | 1.578356e-02 | 0.035308 | 9.564307e-03 | 0.048665 | 3.986054 |
+
+For full-dataset/HPC execution, prefer writing results per frame or per batch
+instead of only at the end of the process.
