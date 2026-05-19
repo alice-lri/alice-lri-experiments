@@ -7,7 +7,7 @@ This folder contains scripts for creating and populating the experiment database
 The database schema is designed to support:
 1. **Dataset and Frame Management**: References to KITTI and DurLAR datasets and their individual frames.
 2. **Ground Truth Data**: Per-sensor reference intrinsic parameters and per-frame laser-scanline mappings.
-3. **Experiment Results**: Results from intrinsics estimation, range image, and compression experiments.
+3. **Experiment Results**: Results from intrinsics estimation, range image, compression, and local geometry experiments.
 
 ## Entity-Relationship Diagram
 
@@ -49,7 +49,9 @@ This schema is intentionally provided as a separate migration script and is not 
 sqlite3 "$BASE_DB_DIR/initial.sqlite" < scripts/local/db/sql/001_local_geometry_experiment.sql
 ```
 
-If `master.sqlite` already exists before merging local-geometry results, apply the same migration to it before running the merge command:
+Run the command above from the repository root. If `master.sqlite` already
+exists before merging local-geometry results, apply the same migration to it
+before running the merge command:
 
 ```bash
 sqlite3 "$BASE_DB_DIR/master.sqlite" < scripts/local/db/sql/001_local_geometry_experiment.sql

@@ -92,7 +92,7 @@ Each script in the `helper/` subfolder generates specific tables or figures. You
 - **`generate_local_geometry_metrics_table.py`**
   - Computes the local point-to-plane reconstruction metrics from the latest `local_geometry_base` experiment.
   - Compares ALICE-LRI and the PBEA resolution sweep on KITTI and DurLAR.
-  - Includes all method/resolution rows stored in the selected experiment.
+  - Includes all method/resolution rows stored in that experiment.
   - Opens `master.sqlite` in SQLite read-only mode.
   - Output: `local_geometry_metrics.tex`.
 
