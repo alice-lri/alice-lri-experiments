@@ -12,6 +12,7 @@ python -m scripts.local.paper.helper.generate_scanline_counts_table
 python -m scripts.local.paper.helper.generate_resolutions_table
 python -m scripts.local.paper.helper.generate_per_beam_metrics_table
 python -m scripts.local.paper.helper.generate_ablation_table
+python -m scripts.local.paper.helper.generate_fallback_frequency_table
 python -m scripts.local.paper.helper.generate_range_image_metrics_table
 python -m scripts.local.paper.helper.generate_range_image_qualitative
 python -m scripts.local.paper.helper.generate_alice_times_table

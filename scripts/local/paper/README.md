@@ -74,6 +74,13 @@ Each script in the `helper/` subfolder generates specific tables or figures. You
   - Queries database for both KITTI and DurLAR datasets.
   - Output: `ablation_combined_metrics.tex`.
 
+- **`generate_fallback_frequency_table.py`**
+  - Computes how often the vertical, horizontal, or either fallback is triggered by the full ALICE-LRI configuration.
+  - Reports frequencies at both frame and scanline level.
+  - Separates all frames and robust frames (`n^(l) >= 64` for all scanlines).
+  - Opens `master.sqlite` in SQLite read-only mode.
+  - Output: `fallback_frequency.tex` and `fallback_frequency.csv`.
+
 ### Range Image Results
 
 - **`generate_range_image_metrics_table.py`**
