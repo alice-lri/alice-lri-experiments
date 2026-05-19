@@ -33,13 +33,6 @@ def parse_args():
     parser.add_argument("--durlar_root", type=str, default=None, help="DurLAR dataset root.")
     parser.add_argument("--shared_dir", type=str, default=None, help="Shared directory for estimated intrinsics JSONs.")
     parser.add_argument("--k_neighbors", type=int, default=Config.k_neighbors, help="PCA neighborhood size.")
-    parser.add_argument(
-        "--methods",
-        nargs="+",
-        choices=Config.methods,
-        default=Config.methods,
-        help="Methods to evaluate.",
-    )
 
     args = parser.parse_args()
 
@@ -59,7 +52,6 @@ def parse_args():
         parser.error("At least one of --kitti_root or --durlar_root must be defined.")
 
     Config.k_neighbors = args.k_neighbors
-    Config.methods = args.methods
 
     return args
 

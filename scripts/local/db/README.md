@@ -41,7 +41,7 @@ The intrinsics experiments require scanline-level detail because the algorithm e
 The local point-to-plane geometry experiment adds a new two-level hierarchy:
 
 1. **`local_geometry_experiment`**: Stores experiment metadata.
-2. **`local_geometry_frame_result`**: Stores per-frame symmetric point-to-plane summaries for ALICE-LRI and native-resolution PBEA.
+2. **`local_geometry_frame_result`**: Stores per-frame symmetric point-to-plane summaries for ALICE-LRI and the PBEA resolution sweep. PBEA rows use method labels such as `pbea_native`, `pbea_x2`, and `pbea_x32`.
 
 This schema is intentionally provided as a separate migration script and is not applied automatically by the HPC launch flow:
 

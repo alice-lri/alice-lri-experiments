@@ -100,7 +100,7 @@ You will always be prompted to confirm before jobs are launched.
 - **local_geometry/**
   - `prepare_and_launch.sh`: Prepares and launches the symmetric point-to-plane geometry experiment.
   - `job.sh`, `task.sh`, `task_item.sh`: SLURM job scripts for processing batches.
-  - `run_local_geometry_experiment.py`: Python script for evaluating ALICE-LRI and native-resolution PBEA on each assigned frame.
+  - `run_local_geometry_experiment.py`: Python script for evaluating ALICE-LRI and the PBEA resolution sweep on each assigned frame.
   - Requires applying `scripts/local/db/sql/001_local_geometry_experiment.sql` to the HPC `initial.sqlite` before launch, and to `master.sqlite` before merge if that master already exists.
 
 - **helper/**

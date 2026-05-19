@@ -89,6 +89,13 @@ Each script in the `helper/` subfolder generates specific tables or figures. You
   - Compares PBEA vs ALICE methods at different resolutions.
   - Output: `range_image_comparison.tex` and per-frame CSV files in `cd_by_frame_csvs/` sub-folder.
 
+- **`generate_local_geometry_metrics_table.py`**
+  - Computes the local point-to-plane reconstruction metrics from the latest `local_geometry_base` experiment.
+  - Compares ALICE-LRI and the PBEA resolution sweep on KITTI and DurLAR.
+  - Includes all method/resolution rows stored in the selected experiment.
+  - Opens `master.sqlite` in SQLite read-only mode.
+  - Output: `local_geometry_metrics.tex`.
+
 - **`generate_range_image_qualitative.py`**
   - Generates qualitative visualizations of range image reconstructions.
   - Creates 3D point cloud reconstructions (original vs PBEA vs ALICE).

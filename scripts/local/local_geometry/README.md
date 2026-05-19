@@ -1,8 +1,8 @@
 # Local Geometry Experiment
 
 This folder contains the local workstation runner for the experiment.
-It computes symmetric local point-to-plane errors for ALICE-LRI and native-resolution
-PBEA without writing to the main experiment database.
+It computes symmetric local point-to-plane errors for ALICE-LRI and the PBEA
+resolution sweep without writing to the main experiment database.
 
 The core metric is implemented in:
 
@@ -42,27 +42,29 @@ To bypass DB frame selection:
 /home/samuel.soutullo/.miniconda3/envs/alice_lri_env/bin/python \
   scripts/local/local_geometry/run_local_geometry_experiment.py \
   --frame kitti:2011_09_30/2011_09_30_drive_0018_sync/velodyne_points/data/0000000000.bin \
-  --methods pbea_native \
   --overwrite
 ```
 
-Use both methods for the final local check:
+Use a larger local subset for the final local check:
 
 ```bash
 /home/samuel.soutullo/.miniconda3/envs/alice_lri_env/bin/python \
   scripts/local/local_geometry/run_local_geometry_experiment.py \
   --max_frames_per_dataset 10 \
-  --methods alice_lri pbea_native \
   --k_neighbors 12 \
   --overwrite
 ```
 
-The native PBEA resolutions are fixed to `4000 x 64` for KITTI and `2048 x 128`
-for DurLAR.
+The runner always evaluates ALICE-LRI plus the same PBEA resolution sweep used
+by the range-image reconstruction experiment. The native PBEA resolutions are
+`4000 x 64` for KITTI and `2048 x 128` for DurLAR, followed by multipliers
+`2, 4, 8, 16, 32` in each dimension. PBEA rows are stored as `pbea_native`,
+`pbea_x2`, ..., `pbea_x32`.
 
-## First Local Validation
+## Earlier Native-Only Validation
 
-A one-frame-per-dataset run completed successfully with `alice_lri_env`.
+A one-frame-per-dataset run completed successfully with `alice_lri_env` before
+the runner was switched to always execute the full PBEA sweep.
 Aggregate symmetric point-to-plane metrics:
 
 | Dataset | Method | Mean | P95 |
@@ -76,22 +78,22 @@ This is a smoke test only, not the final paper result. It confirms that the
 metric and reconstruction paths behave sensibly before running larger local or
 CESGA batches.
 
-## n=100 Local Subset
+## Earlier n=100 Native-Only Subset
 
-The first 100 frames per dataset also completed successfully:
+The first 100 frames per dataset also completed successfully before the runner
+was switched to always execute the full PBEA sweep:
 
 ```bash
 /usr/bin/time -v /home/samuel.soutullo/.miniconda3/envs/alice_lri_env/bin/python \
   -m scripts.local.local_geometry.run_local_geometry_experiment \
   --max_frames_per_dataset 100 \
-  --methods alice_lri pbea_native \
   --k_neighbors 12 \
   --output_csv results/local_geometry/local_geometry_metrics_n100.csv \
   --output_sqlite results/local_geometry/local_geometry_metrics_n100.sqlite
 ```
 
-The run produced 400 rows and took 11:16.25 wall-clock seconds with maximum RSS
-729876 KB. Mean per-frame symmetric point-to-plane metrics:
+The native-only run produced 400 rows and took 11:16.25 wall-clock seconds with
+maximum RSS 729876 KB. Mean per-frame symmetric point-to-plane metrics:
 
 | Dataset | Method | Mean | RMSE | Median | P95 | Max |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |

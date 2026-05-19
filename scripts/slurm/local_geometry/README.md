@@ -48,13 +48,21 @@ Useful inherited options:
 ./prepare_and_launch.sh --skip-estimation
 ```
 
-The runner evaluates both methods:
+The runner always evaluates ALICE-LRI plus the same PBEA resolution sweep used
+by the range-image reconstruction experiment:
 
 - `alice_lri`
 - `pbea_native`
+- `pbea_x2`
+- `pbea_x4`
+- `pbea_x8`
+- `pbea_x16`
+- `pbea_x32`
 
-with `k_neighbors = 12`, KITTI PBEA at `4000 x 64`, and DurLAR PBEA at
-`2048 x 128`.
+The native PBEA resolutions are `4000 x 64` for KITTI and `2048 x 128` for
+DurLAR, and the `pbea_x*` rows multiply both dimensions by the indicated factor.
+The method labels keep the existing `local_geometry_frame_result` uniqueness
+constraint valid, so no schema migration is required for the sweep.
 
 ## Merge
 
@@ -67,3 +75,6 @@ cd ../../merge
 
 Select option `[5] Local Geometry`, then provide an experiment label and
 description.
+
+When generating the manuscript table, the paper helper includes all
+method/resolution rows stored in the latest `local_geometry_base` experiment.

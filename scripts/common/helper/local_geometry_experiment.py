@@ -14,7 +14,9 @@ DEFAULT_SEQUENCES = {
     "durlar": "DurLAR_20211209",
 }
 
-DEFAULT_METHODS = ["alice_lri", "pbea_native"]
+PBEA_SIZE_MULTIPLIERS = [1, 2, 4, 8, 16, 32]
+PBEA_METHODS = ["pbea_native", *(f"pbea_x{multiplier}" for multiplier in PBEA_SIZE_MULTIPLIERS[1:])]
+DEFAULT_METHODS = ["alice_lri", *PBEA_METHODS]
 
 PBEA_NATIVE_RESOLUTIONS = {
     "kitti": (4000, 64),
@@ -70,13 +72,13 @@ def evaluate_frame_methods(
             )
         )
 
-    if "pbea_native" in methods:
+    for method, ri_size_multiplier in iter_pbea_methods(methods):
         start_time = time.perf_counter()
-        reconstructed_points, ri_width, ri_height = reconstruct_pbea_native(dataset, original_points)
+        reconstructed_points, ri_width, ri_height = reconstruct_pbea(dataset, original_points, ri_size_multiplier)
         rows.append(
             build_metrics_row(
                 base_fields=base_fields,
-                method="pbea_native",
+                method=method,
                 ri_width=ri_width,
                 ri_height=ri_height,
                 original_points=original_points,
@@ -87,6 +89,20 @@ def evaluate_frame_methods(
         )
 
     return rows
+
+
+def iter_pbea_methods(methods: list[str]) -> list[tuple[str, int]]:
+    methods_to_evaluate = []
+
+    if "pbea_native" in methods:
+        methods_to_evaluate.append(("pbea_native", 1))
+
+    for method in methods:
+        match = re.fullmatch(r"pbea_x(\d+)", method)
+        if match:
+            methods_to_evaluate.append((method, int(match.group(1))))
+
+    return list(dict.fromkeys(methods_to_evaluate))
 
 
 def reconstruct_alice_lri(alice_lri_module: Any, intrinsics, original_points):
@@ -101,8 +117,10 @@ def reconstruct_alice_lri(alice_lri_module: Any, intrinsics, original_points):
     return np.column_stack((x, y, z)), range_image.width, range_image.height
 
 
-def reconstruct_pbea_native(dataset: str, original_points):
+def reconstruct_pbea(dataset: str, original_points, ri_size_multiplier: int = 1):
     ri_width, ri_height = PBEA_NATIVE_RESOLUTIONS[dataset]
+    ri_width *= ri_size_multiplier
+    ri_height *= ri_size_multiplier
     ri_mapper = RangeImageDefaultMapper(ri_width, ri_height)
     range_image = point_cloud_to_range_image(ri_mapper, original_points)
     reconstructed_points = range_image_to_point_cloud(ri_mapper, range_image)

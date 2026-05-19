@@ -53,13 +53,6 @@ def parse_args():
     parser.add_argument("--durlar_root", default=None, help="DurLAR root. Defaults to LOCAL_DURLAR_PATH.")
     parser.add_argument("--k_neighbors", type=int, default=12, help="PCA neighborhood size.")
     parser.add_argument(
-        "--methods",
-        nargs="+",
-        choices=DEFAULT_METHODS,
-        default=DEFAULT_METHODS,
-        help="Methods to evaluate.",
-    )
-    parser.add_argument(
         "--output_csv",
         default=None,
         help="Output CSV path. Defaults to results/local_geometry/local_geometry_metrics.csv.",
@@ -108,7 +101,7 @@ def main():
         estimate_relative_path = estimate_frame_relative_path(relative_path)
         intrinsics_key = (dataset, estimate_relative_path)
 
-        if "alice_lri" in args.methods and intrinsics_key not in intrinsics_cache:
+        if "alice_lri" in DEFAULT_METHODS and intrinsics_key not in intrinsics_cache:
             estimate_path = dataset_roots[dataset] / estimate_relative_path
             if not estimate_path.exists():
                 raise FileNotFoundError(f"Intrinsics-estimation frame not found: {estimate_path}")
@@ -117,7 +110,7 @@ def main():
             estimate_points, _ = load_binary(estimate_path)
             intrinsics_cache[intrinsics_key] = estimate_intrinsics(alice_lri, estimate_points)
 
-        for method in args.methods:
+        for method in DEFAULT_METHODS:
             print(f"Evaluating {method}...")
 
         rows.extend(
@@ -126,7 +119,7 @@ def main():
                 dataset=dataset,
                 original_points=original_points,
                 intrinsics=intrinsics_cache.get(intrinsics_key),
-                methods=args.methods,
+                methods=DEFAULT_METHODS,
                 k_neighbors=args.k_neighbors,
                 base_fields={
                     "dataset": dataset,

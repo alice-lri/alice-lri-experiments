@@ -18,8 +18,7 @@ python -u -m scripts.slurm.local_geometry.run_local_geometry_experiment --mode b
   --kitti_root="${KITTI_PATH}" \
   --durlar_root="${DURLAR_PATH}" \
   --shared_dir="${SHARED_DIR}" \
-  --k_neighbors=12 \
-  --methods alice_lri pbea_native 2>&1 | tee "${TRACE_FILE_PATH}"
+  --k_neighbors=12 2>&1 | tee "${TRACE_FILE_PATH}"
 popd > /dev/null
 
 touch "${SUCCESS_FILE_PATH}"
