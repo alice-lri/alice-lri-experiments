@@ -25,7 +25,7 @@ fi
 for i in "${JOBS_TO_RUN[@]}"; do
   echo "Launching job ${i}..."
   sbatch "${SBATCH_ARGS[@]}" --job-name="alice_lri_local_geometry_${i}" \
-    --mem-per-cpu="3G" -o "${ACTUAL_LOGS_DIR}/${i}.log" -e "${ACTUAL_LOGS_DIR}/${i}.log" \
+    --mem-per-cpu="12G" -o "${ACTUAL_LOGS_DIR}/${i}.log" -e "${ACTUAL_LOGS_DIR}/${i}.log" \
     job.sh "${ACTUAL_DB_DIR}" "${SHARED_DIR}" "${i}" "${JOB_COUNT}"
 done
 

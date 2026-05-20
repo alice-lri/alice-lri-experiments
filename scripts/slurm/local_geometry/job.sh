@@ -6,7 +6,7 @@
 #SBATCH --ntasks-per-node=16
 #SBATCH -c 1
 #SBATCH -t 06:00:00
-#SBATCH --mem-per-cpu=3G
+#SBATCH --mem-per-cpu=12G
 set -eo pipefail
 
 DB_DIR=$1
