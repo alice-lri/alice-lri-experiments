@@ -16,6 +16,7 @@ python -m scripts.local.paper.helper.generate_fallback_frequency_table
 python -m scripts.local.paper.helper.generate_range_image_metrics_table
 python -m scripts.local.paper.helper.generate_local_geometry_metrics_table
 python -m scripts.local.paper.helper.generate_range_image_qualitative
+python -m scripts.local.paper.helper.generate_vertical_wls_fit_space_data
 python -m scripts.local.paper.helper.generate_alice_times_table
 python -m scripts.local.paper.helper.generate_rtst_metrics_table_and_figure
 python -m scripts.local.paper.helper.generate_rtst_times_table

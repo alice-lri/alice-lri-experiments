@@ -5,14 +5,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib import colormaps
-from matplotlib.collections import LineCollection
-from matplotlib.legend_handler import HandlerBase
-from matplotlib.lines import Line2D
-from matplotlib.patches import Circle, ConnectionPatch, Rectangle
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 
@@ -37,66 +31,23 @@ class FrameCase:
 class Config:
     DB_PATH = os.getenv("LOCAL_SQLITE_MASTER_DB")
     DURLAR_PATH = os.getenv("LOCAL_DURLAR_PATH")
+    PAPER_DATA_DIR = os.getenv("PAPER_MANUSCRIPT_DATA_DIR") or os.getenv("PAPER_DATA_DIR")
     DEFAULT_FRAME_ID = 150476
     ROBUST_POINT_COUNT_THRESHOLD = 64
     BAD_WLS_OFFSET_THRESHOLD_M = 0.05
     MAIN_XLIM = (0.0, 0.34)
     ZOOM_YLIM = (18.55, 21.7)
     ZOOM_X_PADDING = 0.0018
-    OUTPUT_PATH = os.path.join(
-        os.getenv("PAPER_FIGURES_DIR"),
-        f"durlar_vertical_wls_fit_space_frame_{DEFAULT_FRAME_ID}_prototype.pdf",
-    )
-
-
-ESTIMATED_LINESTYLE = (0, (1.0, 1.6))
-GT_LINESTYLE = "dashed"
-
-
-class RainbowDot:
-    pass
-
-
-class HandlerRainbowDot(HandlerBase):
-    def create_artists(self, legend, orig_handle, xdescent, ydescent, width, height, fontsize, trans):
-        radius = min(width, height) * 0.40
-        center_x = xdescent + width * 0.5
-        center_y = ydescent + height * 0.5
-        clip_circle = Circle((center_x, center_y), radius, transform=trans)
-        artists = []
-        cmap = colormaps["turbo"]
-        stripe_count = 18
-        stripe_width = (2 * radius) / stripe_count
-
-        for i in range(stripe_count):
-            stripe = Rectangle(
-                (center_x - radius + i * stripe_width, center_y - radius),
-                stripe_width,
-                2 * radius,
-                transform=trans,
-                facecolor=cmap(i / (stripe_count - 1)),
-                edgecolor="none",
-            )
-            stripe.set_clip_path(clip_circle)
-            artists.append(stripe)
-
-        artists.append(
-            Circle(
-                (center_x, center_y),
-                radius,
-                transform=trans,
-                facecolor="none",
-                edgecolor="0.35",
-                linewidth=0.35,
-            )
-        )
-        return artists
+    MAX_MAIN_POINTS_PER_SCANLINE = 35
+    OUTPUT_PREFIX = "vertical_wls_fit_space"
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate the DurLAR sparse vertical-WLS failure figure.")
+    parser = argparse.ArgumentParser(
+        description="Export data for the DurLAR vertical WLS fitting-space PGFPlots figure."
+    )
     parser.add_argument("--frame-id", type=int, default=Config.DEFAULT_FRAME_ID)
-    parser.add_argument("--output", default=Config.OUTPUT_PATH)
+    parser.add_argument("--output-dir", default=Config.PAPER_DATA_DIR)
     parser.add_argument(
         "--bad-offset-threshold-mm",
         type=float,
@@ -105,12 +56,17 @@ def main():
     )
     args = parser.parse_args()
 
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     frame = fetch_frame_case(args.frame_id)
     data = build_frame_data(frame)
     status = fetch_vertical_status(frame, args.bad_offset_threshold_mm / 1000.0)
-    plot_vertical_wls_failure(frame, data, status, args.output)
+    export_pgfplots_data(frame, data, status, output_dir)
 
-    print(f"Figure written to {args.output}")
+    print(f"Exported vertical WLS figure data to {output_dir}")
+    print(f"Frame: {frame.frame_id} ({frame.relative_path})")
+    print(f"Highlighted scanlines: {sorted(status['highlighted'])}")
 
 
 def connect_read_only() -> sqlite3.Connection:
@@ -183,7 +139,7 @@ def build_frame_data(frame: FrameCase) -> dict[str, np.ndarray]:
 
     return {
         "inv_range": 1.0 / ranges,
-        "phi": phis,
+        "phi_deg": np.rad2deg(phis),
         "scanline_ids": scanline_ids,
         "bounds": bounds,
         "gt_vertical_angles": gt["vertical_angles"],
@@ -292,68 +248,54 @@ def fetch_vertical_status(frame: FrameCase, bad_offset_threshold_m: float) -> di
     }
 
 
-def plot_vertical_wls_failure(frame: FrameCase, data: dict[str, np.ndarray], status: dict, output_path: str):
+def export_pgfplots_data(frame: FrameCase, data: dict[str, np.ndarray], status: dict, output_dir: Path):
+    prefix = Config.OUTPUT_PREFIX
     zoom_xlim = compute_zoom_xlim(data, status)
     zoom_ylim = Config.ZOOM_YLIM
 
-    fig = plt.figure(figsize=(7.0, 9.0), constrained_layout=True)
-    gs = fig.add_gridspec(1, 2, width_ratios=[1.15, 1.0])
-    right_gs = gs[0, 1].subgridspec(
-        5,
-        1,
-        height_ratios=[0.58, 1.20, 0.22, 0.72, 0.58],
+    points_df = pd.DataFrame(
+        {
+            "x": data["inv_range"],
+            "y": data["phi_deg"],
+            "scanline": data["scanline_ids"],
+            "scanline_norm": data["scanline_ids"] / data["scanline_ids"].max(),
+        }
     )
+    points_df["scanline_color"] = points_df["scanline"] % 10
+    main_points_df = sample_main_points(points_df, status)
+    zoom_points_df = points_df[
+        (points_df["x"] >= zoom_xlim[0])
+        & (points_df["x"] <= zoom_xlim[1])
+        & (points_df["y"] >= zoom_ylim[0])
+        & (points_df["y"] <= zoom_ylim[1])
+    ]
+    main_points_df.to_csv(output_dir / f"{prefix}_main_points.csv", index=False, float_format="%.9g")
+    zoom_points_df.to_csv(output_dir / f"{prefix}_zoom_points.csv", index=False, float_format="%.9g")
 
-    main_ax = fig.add_subplot(gs[0, 0])
-    zoom_ax = fig.add_subplot(right_gs[1, 0])
-    legend_ax = fig.add_subplot(right_gs[3, 0])
+    line_tables = build_line_tables(data, status, Config.MAIN_XLIM)
+    for name, rows in line_tables.items():
+        write_line_table(output_dir / f"{prefix}_{name}_lines.csv", rows)
 
-    plot_frame(
-        main_ax,
-        frame,
-        data,
-        status,
-        point_size=4.2,
-        point_alpha=0.58,
-        fit_linewidth=0.52,
-        fit_alpha=0.60,
-        line_x_range=Config.MAIN_XLIM,
-        show_missing_gt=False,
-        show_legend=False,
-    )
-    main_ax.set_xlim(*Config.MAIN_XLIM)
-    main_ax.set_ylabel("$\\varphi$ (deg)")
-    main_ax.set_title("Full Fitting Space", fontsize=10)
-    add_zoom_box(main_ax, zoom_xlim, zoom_ylim)
+    write_metadata(output_dir / f"{prefix}_metadata.tex", frame, status, zoom_xlim, zoom_ylim)
 
-    plot_frame(
-        zoom_ax,
-        frame,
-        data,
-        status,
-        point_size=15.0,
-        point_alpha=0.72,
-        fit_linewidth=0.95,
-        fit_alpha=0.72,
-        line_x_range=zoom_xlim,
-        show_gt_reference=True,
-        show_missing_gt=False,
-        points_zorder=4,
-        line_zorder=2,
-        show_legend=False,
-    )
-    zoom_ax.set_xlim(*zoom_xlim)
-    zoom_ax.set_ylim(*zoom_ylim)
-    zoom_ax.set_title("Problematic Scanlines", fontsize=10)
-    zoom_ax.set_ylabel("")
-    zoom_ax.tick_params(axis="both", labelsize=8)
 
-    add_custom_legend(legend_ax)
-    add_zoom_connectors(fig, main_ax, zoom_ax, zoom_xlim, zoom_ylim)
+def sample_main_points(points_df: pd.DataFrame, status: dict) -> pd.DataFrame:
+    sampled_groups = []
+    highlighted = set(status["highlighted"])
 
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output_path, bbox_inches="tight", dpi=600)
-    plt.close(fig)
+    for scanline, group in points_df.groupby("scanline", sort=True):
+        if int(scanline) in highlighted:
+            sampled_groups.append(group)
+            continue
+
+        if len(group) <= Config.MAX_MAIN_POINTS_PER_SCANLINE:
+            sampled_groups.append(group)
+            continue
+
+        sample_idx = np.linspace(0, len(group) - 1, Config.MAX_MAIN_POINTS_PER_SCANLINE, dtype=int)
+        sampled_groups.append(group.iloc[sample_idx])
+
+    return pd.concat(sampled_groups, ignore_index=True)
 
 
 def compute_zoom_xlim(data: dict[str, np.ndarray], status: dict) -> tuple[float, float]:
@@ -377,209 +319,100 @@ def padded_limits(lower: float, upper: float, min_width: float) -> tuple[float, 
     return center - 0.5 * width - padding, center + 0.5 * width + padding
 
 
-def plot_frame(
-    ax,
-    frame: FrameCase,
-    data: dict[str, np.ndarray],
-    status: dict,
-    point_size: float,
-    point_alpha: float,
-    fit_linewidth: float,
-    fit_alpha: float,
-    line_x_range: tuple[float, float],
-    show_gt_reference: bool = False,
-    show_missing_gt: bool = False,
-    points_zorder: float | None = None,
-    line_zorder: float | None = None,
-    show_legend: bool = False,
-):
+def build_line_tables(data: dict[str, np.ndarray], status: dict, line_x_range: tuple[float, float]) -> dict:
     scanline_ids = data["scanline_ids"]
     unique_scanlines = np.unique(scanline_ids)
-    colors = colormaps["turbo"](np.linspace(0.0, 1.0, max(unique_scanlines) + 1))
-
-    ax.scatter(
-        data["inv_range"],
-        np.rad2deg(data["phi"]),
-        c=colors[scanline_ids],
-        s=point_size,
-        alpha=point_alpha,
-        edgecolors="0.20",
-        linewidths=0.12,
-        rasterized=True,
-        zorder=points_zorder,
-    )
-
-    line_groups = {
-        "gt_reference": [],
+    counts = np.bincount(scanline_ids, minlength=int(unique_scanlines.max()) + 1)
+    tables = {
         "estimated": [],
         "fallback": [],
         "bad_wls": [],
-        "missing": [],
+        "gt_reference": [],
     }
-    counts = np.bincount(scanline_ids, minlength=int(unique_scanlines.max()) + 1)
 
     for scanline_idx in unique_scanlines:
-        mask = scanline_ids == scanline_idx
-        if mask.sum() < 1:
-            continue
-
+        scanline_idx = int(scanline_idx)
         xx = np.array(line_x_range)
-        if show_gt_reference:
-            yy = np.rad2deg(
-                data["gt_vertical_offsets"][scanline_idx] * xx + data["gt_vertical_angles"][scanline_idx]
-            )
-            line_groups["gt_reference"].append(np.column_stack([xx, yy]))
+        gt_yy = np.rad2deg(
+            data["gt_vertical_offsets"][scanline_idx] * xx + data["gt_vertical_angles"][scanline_idx]
+        )
+        tables["gt_reference"].append(segment_rows(xx, gt_yy))
 
+        mask = scanline_ids == scanline_idx
         if scanline_idx in status["missing"]:
-            if not show_missing_gt:
-                continue
-            slope = data["gt_vertical_offsets"][scanline_idx]
-            intercept = data["gt_vertical_angles"][scanline_idx]
-        elif int(scanline_idx) in status["estimated_lines"]:
-            line = status["estimated_lines"][int(scanline_idx)]
+            continue
+        if scanline_idx in status["estimated_lines"]:
+            line = status["estimated_lines"][scanline_idx]
             slope = line["vertical_offset"]
             intercept = line["vertical_angle"]
         elif mask.sum() >= 2:
-            slope, intercept = weighted_linear_fit(data["inv_range"][mask], data["phi"][mask], data["bounds"][mask])
+            slope, intercept = weighted_linear_fit(data["inv_range"][mask], np.deg2rad(data["phi_deg"][mask]), data["bounds"][mask])
         else:
             continue
 
         yy = np.rad2deg(slope * xx + intercept)
-        segment = np.column_stack([xx, yy])
+        rows = segment_rows(xx, yy)
         if scanline_idx in status["fallback"]:
-            line_groups["fallback"].append(segment)
+            tables["fallback"].append(rows)
         elif scanline_idx in status["bad_wls"]:
-            line_groups["bad_wls"].append(segment)
-        elif scanline_idx in status["missing"]:
-            line_groups["missing"].append(segment)
+            tables["bad_wls"].append(rows)
         elif counts[scanline_idx] >= Config.ROBUST_POINT_COUNT_THRESHOLD or mask.sum() >= 2:
-            line_groups["estimated"].append(segment)
+            tables["estimated"].append(rows)
 
-    add_line_collection(
-        ax,
-        line_groups["gt_reference"],
-        color="#2f9e44",
-        linewidth=fit_linewidth * 1.40,
-        linestyle=GT_LINESTYLE,
-        alpha=0.82,
-        zorder=line_zorder,
+    return tables
+
+
+def segment_rows(x: np.ndarray, y: np.ndarray) -> list[tuple[float, float]]:
+    return [(float(x[0]), float(y[0])), (float(x[1]), float(y[1])), (np.nan, np.nan)]
+
+
+def write_line_table(path: Path, segments: list[list[tuple[float, float]]]):
+    with path.open("w", encoding="utf-8") as f:
+        f.write("x,y\n")
+        for segment in segments:
+            for x, y in segment:
+                if np.isnan(x) or np.isnan(y):
+                    f.write("nan,nan\n")
+                else:
+                    f.write(f"{x:.9g},{y:.9g}\n")
+
+
+def write_metadata(
+    path: Path,
+    frame: FrameCase,
+    status: dict,
+    zoom_xlim: tuple[float, float],
+    zoom_ylim: tuple[float, float],
+):
+    highlighted = ",".join(str(scanline) for scanline in sorted(status["highlighted"]))
+    fallback = ",".join(str(scanline) for scanline in sorted(status["fallback"]))
+    bad_wls = ",".join(str(scanline) for scanline in sorted(status["bad_wls"]))
+    missing = ",".join(str(scanline) for scanline in sorted(status["missing"]))
+
+    path.write_text(
+        "\n".join(
+            [
+                f"\\newcommand{{\\VerticalWLSFrameId}}{{{frame.frame_id}}}",
+                f"\\newcommand{{\\VerticalWLSFramePath}}{{{frame.relative_path}}}",
+                f"\\newcommand{{\\VerticalWLSTrueScanlines}}{{{frame.true_scanlines}}}",
+                f"\\newcommand{{\\VerticalWLSPredictedScanlines}}{{{frame.predicted_scanlines}}}",
+                f"\\newcommand{{\\VerticalWLSSparseScanlines}}{{{frame.sparse_scanlines}}}",
+                f"\\newcommand{{\\VerticalWLSMinPoints}}{{{frame.min_points}}}",
+                f"\\newcommand{{\\VerticalWLSHighlightedScanlines}}{{{highlighted}}}",
+                f"\\newcommand{{\\VerticalWLSFallbackScanlines}}{{{fallback}}}",
+                f"\\newcommand{{\\VerticalWLSBadWLSScanlines}}{{{bad_wls}}}",
+                f"\\newcommand{{\\VerticalWLSMissingScanlines}}{{{missing}}}",
+                f"\\newcommand{{\\VerticalWLSMainXMin}}{{{Config.MAIN_XLIM[0]:.9g}}}",
+                f"\\newcommand{{\\VerticalWLSMainXMax}}{{{Config.MAIN_XLIM[1]:.9g}}}",
+                f"\\newcommand{{\\VerticalWLSZoomXMin}}{{{zoom_xlim[0]:.9g}}}",
+                f"\\newcommand{{\\VerticalWLSZoomXMax}}{{{zoom_xlim[1]:.9g}}}",
+                f"\\newcommand{{\\VerticalWLSZoomYMin}}{{{zoom_ylim[0]:.9g}}}",
+                f"\\newcommand{{\\VerticalWLSZoomYMax}}{{{zoom_ylim[1]:.9g}}}",
+                "",
+            ]
+        ),
+        encoding="utf-8",
     )
-    add_line_collection(
-        ax,
-        line_groups["estimated"],
-        color="black",
-        linewidth=fit_linewidth,
-        linestyle=ESTIMATED_LINESTYLE,
-        alpha=fit_alpha,
-        zorder=line_zorder,
-    )
-    add_line_collection(
-        ax,
-        line_groups["fallback"],
-        color="#e68613",
-        linewidth=fit_linewidth * 1.55,
-        linestyle=ESTIMATED_LINESTYLE,
-        alpha=0.95,
-        zorder=line_zorder,
-    )
-    add_line_collection(
-        ax,
-        line_groups["bad_wls"],
-        color="#7b2cbf",
-        linewidth=fit_linewidth * 1.65,
-        linestyle=ESTIMATED_LINESTYLE,
-        alpha=0.96,
-        zorder=line_zorder,
-    )
-    add_line_collection(
-        ax,
-        line_groups["missing"],
-        color="#c1121f",
-        linewidth=fit_linewidth,
-        linestyle=ESTIMATED_LINESTYLE,
-        alpha=0.45,
-        zorder=line_zorder,
-    )
-
-    ax.set_xlabel("$1/r$ (m$^{-1}$)")
-    ax.grid(True, alpha=0.25)
-
-    if show_legend:
-        add_custom_legend(ax)
-
-
-def add_line_collection(ax, lines, color, linewidth, linestyle, alpha, zorder=None):
-    ax.add_collection(
-        LineCollection(
-            lines,
-            colors=color,
-            linewidths=linewidth,
-            linestyles=linestyle,
-            alpha=alpha,
-            zorder=zorder,
-        )
-    )
-
-
-def add_custom_legend(ax):
-    ax.axis("off")
-    handles = [
-        RainbowDot(),
-        Line2D([0], [0], color="black", linestyle=ESTIMATED_LINESTYLE, linewidth=1.2),
-        Line2D([0], [0], color="#2f9e44", linestyle=GT_LINESTYLE, linewidth=1.3),
-        Line2D([0], [0], color="#e68613", linestyle=ESTIMATED_LINESTYLE, linewidth=1.6),
-        Line2D([0], [0], color="#7b2cbf", linestyle=ESTIMATED_LINESTYLE, linewidth=1.7),
-    ]
-    labels = [
-        "Observed Points",
-        "Estimated Fit",
-        "Ground-Truth Reference",
-        "Heuristic Fallback",
-        "Incorrectly Estimated Fit",
-    ]
-    ax.legend(
-        handles,
-        labels,
-        loc="center left",
-        frameon=False,
-        fontsize=9,
-        handlelength=2.6,
-        handler_map={RainbowDot: HandlerRainbowDot()},
-    )
-
-
-def add_zoom_box(ax, xlim: tuple[float, float], ylim: tuple[float, float]):
-    ax.add_patch(
-        Rectangle(
-            (xlim[0], ylim[0]),
-            xlim[1] - xlim[0],
-            ylim[1] - ylim[0],
-            fill=False,
-            edgecolor="0.2",
-            linewidth=0.9,
-            linestyle=(0, (3, 2)),
-            alpha=0.9,
-            zorder=10,
-        )
-    )
-
-
-def add_zoom_connectors(fig, source_ax, target_ax, xlim: tuple[float, float], ylim: tuple[float, float]):
-    for y in ylim:
-        fig.add_artist(
-            ConnectionPatch(
-                xyA=(xlim[1], y),
-                coordsA=source_ax.transData,
-                xyB=(xlim[0], y),
-                coordsB=target_ax.transData,
-                color="0.22",
-                linewidth=0.9,
-                linestyle=(0, (2.2, 2.8)),
-                alpha=0.62,
-                zorder=1,
-                clip_on=False,
-            )
-        )
 
 
 def weighted_linear_fit(x: np.ndarray, y: np.ndarray, bounds: np.ndarray) -> tuple[float, float]:
