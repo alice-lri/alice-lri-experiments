@@ -12,17 +12,19 @@ load_env()
 
 class Config:
     DB_PATH = os.getenv("LOCAL_SQLITE_MASTER_DB")
-    EXPERIMENT_LABEL = "local_geometry_base"
+    EXPERIMENT_LABEL = "local_geometry_full_sweep"
     OUTPUT_TABLE_TEX = "local_geometry_metrics.tex"
 
     RENAME_COLUMNS_LEVEL_0 = {
-        "point_to_plane": "\\textbf{Symmetric Point-to-Plane Error (m)}",
+        "point_to_plane": "\\textbf{SP2P (m)}",
     }
     RENAME_COLUMNS_LEVEL_1 = {
         "avg": "AVG",
-        "rmse": "RMSE",
-        "p95": "P95",
         "max": "MAX",
+    }
+    COLUMN_NAMES = {
+        "point_to_plane_avg": ("point_to_plane", "avg"),
+        "point_to_plane_max": ("point_to_plane", "max"),
     }
 
 
@@ -80,9 +82,7 @@ def fetch_and_compute_local_geometry_metrics(conn: sqlite3.Connection, experimen
             lgfr.ri_height,
             COUNT(*) AS frames,
             AVG(lgfr.point_to_plane_mean) AS point_to_plane_avg,
-            AVG(lgfr.point_to_plane_rmse) AS point_to_plane_rmse,
-            AVG(lgfr.point_to_plane_p95) AS point_to_plane_p95,
-            MAX(lgfr.point_to_plane_max) AS point_to_plane_max
+            MAX(lgfr.point_to_plane_mean) AS point_to_plane_max
         FROM local_geometry_frame_result AS lgfr
             JOIN dataset_frame AS df ON lgfr.dataset_frame_id = df.id
             JOIN dataset AS d ON df.dataset_id = d.id
@@ -90,7 +90,16 @@ def fetch_and_compute_local_geometry_metrics(conn: sqlite3.Connection, experimen
         GROUP BY d.name, lgfr.method, lgfr.ri_width, lgfr.ri_height
         ORDER BY
             CASE d.name WHEN 'kitti' THEN 0 WHEN 'durlar' THEN 1 ELSE 2 END,
-            CASE lgfr.method WHEN 'alice_lri' THEN 1 ELSE 0 END,
+            CASE lgfr.method
+                WHEN 'pbea_native' THEN 0
+                WHEN 'pbea_x2' THEN 1
+                WHEN 'pbea_x4' THEN 2
+                WHEN 'pbea_x8' THEN 3
+                WHEN 'pbea_x16' THEN 4
+                WHEN 'pbea_x32' THEN 5
+                WHEN 'alice_lri' THEN 6
+                ELSE 7
+            END,
             lgfr.ri_width,
             lgfr.ri_height
     """
@@ -104,7 +113,7 @@ def format_final_table(df: pd.DataFrame) -> pd.DataFrame:
     df = df.set_index(["Dataset", "Method"])
     df = df.drop(columns=["method", "ri_width", "ri_height", "frames"])
 
-    df.columns = pd.MultiIndex.from_tuples([tuple(col.rsplit("_", 1)) for col in df.columns])
+    df.columns = pd.MultiIndex.from_tuples([Config.COLUMN_NAMES[col] for col in df.columns])
     df = df.rename(columns=Config.RENAME_COLUMNS_LEVEL_0, level=0)
     df = df.rename(columns=Config.RENAME_COLUMNS_LEVEL_1, level=1)
     df = df[list(Config.RENAME_COLUMNS_LEVEL_0.values())]

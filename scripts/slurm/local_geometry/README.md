@@ -77,4 +77,5 @@ Select option `[5] Local Geometry`, then provide an experiment label and
 description.
 
 When generating the paper table, the local paper helper includes all
-method/resolution rows stored in the latest `local_geometry_base` experiment.
+method/resolution rows stored in the latest `local_geometry_full_sweep`
+experiment. The table reports AVG and MAX over frame-level mean absolute SP2P values.

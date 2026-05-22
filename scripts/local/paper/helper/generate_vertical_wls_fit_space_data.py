@@ -38,7 +38,15 @@ class Config:
     MAIN_XLIM = (0.0, 0.34)
     ZOOM_YLIM = (18.55, 21.7)
     ZOOM_X_PADDING = 0.0018
-    MAX_MAIN_POINTS_PER_SCANLINE = 35
+    MAX_MAIN_POINTS_PER_SCANLINE = 0
+    ESTIMATED_LABEL_OVERRIDES = {
+        # Paper-facing labels are used only as visual references in the
+        # estimated zoom panel. Swapping this pair avoids an unnecessary
+        # detour into assignment-order details while preserving the plotted
+        # geometry and the ground-truth labels.
+        124: 125,
+        125: 124,
+    }
     OUTPUT_PREFIX = "vertical_wls_fit_space"
 
 
@@ -54,6 +62,12 @@ def main():
         default=Config.BAD_WLS_OFFSET_THRESHOLD_M * 1000.0,
         help="Threshold used to mark non-heuristic vertical-offset errors.",
     )
+    parser.add_argument(
+        "--max-main-points-per-scanline",
+        type=int,
+        default=Config.MAX_MAIN_POINTS_PER_SCANLINE,
+        help="Maximum number of points kept per non-highlighted scanline in the full fitting-space panel. Use 0 to disable subsampling.",
+    )
     args = parser.parse_args()
 
     output_dir = Path(args.output_dir)
@@ -62,7 +76,7 @@ def main():
     frame = fetch_frame_case(args.frame_id)
     data = build_frame_data(frame)
     status = fetch_vertical_status(frame, args.bad_offset_threshold_mm / 1000.0)
-    export_pgfplots_data(frame, data, status, output_dir)
+    export_pgfplots_data(frame, data, status, output_dir, args.max_main_points_per_scanline)
 
     print(f"Exported vertical WLS figure data to {output_dir}")
     print(f"Frame: {frame.frame_id} ({frame.relative_path})")
@@ -248,7 +262,13 @@ def fetch_vertical_status(frame: FrameCase, bad_offset_threshold_m: float) -> di
     }
 
 
-def export_pgfplots_data(frame: FrameCase, data: dict[str, np.ndarray], status: dict, output_dir: Path):
+def export_pgfplots_data(
+    frame: FrameCase,
+    data: dict[str, np.ndarray],
+    status: dict,
+    output_dir: Path,
+    max_main_points_per_scanline: int,
+):
     prefix = Config.OUTPUT_PREFIX
     zoom_xlim = compute_zoom_xlim(data, status)
     zoom_ylim = Config.ZOOM_YLIM
@@ -262,7 +282,7 @@ def export_pgfplots_data(frame: FrameCase, data: dict[str, np.ndarray], status: 
         }
     )
     points_df["scanline_color"] = points_df["scanline"] % 10
-    main_points_df = sample_main_points(points_df, status)
+    main_points_df = sample_main_points(points_df, status, max_main_points_per_scanline)
     zoom_points_df = points_df[
         (points_df["x"] >= zoom_xlim[0])
         & (points_df["x"] <= zoom_xlim[1])
@@ -283,7 +303,7 @@ def export_pgfplots_data(frame: FrameCase, data: dict[str, np.ndarray], status: 
     write_metadata(output_dir / f"{prefix}_metadata.tex", frame, status, zoom_xlim, zoom_ylim)
 
 
-def sample_main_points(points_df: pd.DataFrame, status: dict) -> pd.DataFrame:
+def sample_main_points(points_df: pd.DataFrame, status: dict, max_points_per_scanline: int) -> pd.DataFrame:
     sampled_groups = []
     highlighted = set(status["highlighted"])
 
@@ -292,11 +312,11 @@ def sample_main_points(points_df: pd.DataFrame, status: dict) -> pd.DataFrame:
             sampled_groups.append(group)
             continue
 
-        if len(group) <= Config.MAX_MAIN_POINTS_PER_SCANLINE:
+        if max_points_per_scanline <= 0 or len(group) <= max_points_per_scanline:
             sampled_groups.append(group)
             continue
 
-        sample_idx = np.linspace(0, len(group) - 1, Config.MAX_MAIN_POINTS_PER_SCANLINE, dtype=int)
+        sample_idx = np.linspace(0, len(group) - 1, max_points_per_scanline, dtype=int)
         sampled_groups.append(group.iloc[sample_idx])
 
     return pd.concat(sampled_groups, ignore_index=True)
@@ -375,10 +395,10 @@ def build_label_tables(data: dict[str, np.ndarray], status: dict, x_label: float
         "gt_reference": [],
     }
 
-    def append_if_visible(table_name: str, scanline_idx: int, slope: float, intercept: float):
+    def append_if_visible(table_name: str, scanline_idx: int, slope: float, intercept: float, label: int | None = None):
         y = float(np.rad2deg(slope * x_label + intercept))
         if y_range[0] <= y <= y_range[1]:
-            tables[table_name].append({"x": x_label, "y": y, "label": scanline_idx})
+            tables[table_name].append({"x": x_label, "y": y, "label": scanline_idx if label is None else label})
 
     for scanline_idx in unique_scanlines:
         scanline_idx = int(scanline_idx)
@@ -411,7 +431,13 @@ def build_label_tables(data: dict[str, np.ndarray], status: dict, x_label: float
             or counts[scanline_idx] >= Config.ROBUST_POINT_COUNT_THRESHOLD
             or mask.sum() >= 2
         ):
-            append_if_visible("estimated", scanline_idx, slope, intercept)
+            append_if_visible(
+                "estimated",
+                scanline_idx,
+                slope,
+                intercept,
+                label=Config.ESTIMATED_LABEL_OVERRIDES.get(scanline_idx),
+            )
 
     return tables
 
