@@ -276,6 +276,10 @@ def export_pgfplots_data(frame: FrameCase, data: dict[str, np.ndarray], status: 
     for name, rows in line_tables.items():
         write_line_table(output_dir / f"{prefix}_{name}_lines.csv", rows)
 
+    label_tables = build_label_tables(data, status, x_label=0.04, y_range=zoom_ylim)
+    for name, rows in label_tables.items():
+        pd.DataFrame(rows).to_csv(output_dir / f"{prefix}_{name}_labels.csv", index=False, float_format="%.9g")
+
     write_metadata(output_dir / f"{prefix}_metadata.tex", frame, status, zoom_xlim, zoom_ylim)
 
 
@@ -358,6 +362,56 @@ def build_line_tables(data: dict[str, np.ndarray], status: dict, line_x_range: t
             tables["bad_wls"].append(rows)
         elif counts[scanline_idx] >= Config.ROBUST_POINT_COUNT_THRESHOLD or mask.sum() >= 2:
             tables["estimated"].append(rows)
+
+    return tables
+
+
+def build_label_tables(data: dict[str, np.ndarray], status: dict, x_label: float, y_range: tuple[float, float]) -> dict:
+    scanline_ids = data["scanline_ids"]
+    unique_scanlines = np.unique(scanline_ids)
+    counts = np.bincount(scanline_ids, minlength=int(unique_scanlines.max()) + 1)
+    tables = {
+        "estimated": [],
+        "gt_reference": [],
+    }
+
+    def append_if_visible(table_name: str, scanline_idx: int, slope: float, intercept: float):
+        y = float(np.rad2deg(slope * x_label + intercept))
+        if y_range[0] <= y <= y_range[1]:
+            tables[table_name].append({"x": x_label, "y": y, "label": scanline_idx})
+
+    for scanline_idx in unique_scanlines:
+        scanline_idx = int(scanline_idx)
+        append_if_visible(
+            "gt_reference",
+            scanline_idx,
+            data["gt_vertical_offsets"][scanline_idx],
+            data["gt_vertical_angles"][scanline_idx],
+        )
+
+        mask = scanline_ids == scanline_idx
+        if scanline_idx in status["missing"]:
+            continue
+        if scanline_idx in status["estimated_lines"]:
+            line = status["estimated_lines"][scanline_idx]
+            slope = line["vertical_offset"]
+            intercept = line["vertical_angle"]
+        elif mask.sum() >= 2:
+            slope, intercept = weighted_linear_fit(
+                data["inv_range"][mask],
+                np.deg2rad(data["phi_deg"][mask]),
+                data["bounds"][mask],
+            )
+        else:
+            continue
+
+        if (
+            scanline_idx in status["fallback"]
+            or scanline_idx in status["bad_wls"]
+            or counts[scanline_idx] >= Config.ROBUST_POINT_COUNT_THRESHOLD
+            or mask.sum() >= 2
+        ):
+            append_if_visible("estimated", scanline_idx, slope, intercept)
 
     return tables
 
