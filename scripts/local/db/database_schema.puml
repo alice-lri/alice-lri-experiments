@@ -124,6 +124,30 @@ table(compression_frame_result) {
   ... (compression metrics)
 }
 
+' Local Geometry experiment entities
+table(local_geometry_experiment) {
+  primary_key(id): INTEGER
+  timestamp: TEXT
+  label: TEXT
+  description: TEXT
+  commit_hash: TEXT
+}
+
+table(local_geometry_frame_result) {
+  primary_key(id): INTEGER
+  foreign_key(experiment_id): INTEGER
+  foreign_key(dataset_frame_id): INTEGER
+  method: TEXT
+  ri_width: INTEGER
+  ri_height: INTEGER
+  original_points_count: INTEGER
+  reconstructed_points_count: INTEGER
+  k_neighbors: INTEGER
+  runtime_seconds: REAL
+  metrics_runtime_seconds: REAL
+  ... (symmetric point-to-plane metrics)
+}
+
 ' Relationships
 dataset "1" -- "N" dataset_frame
 dataset "1" -- "N" dataset_laser_gt
@@ -140,5 +164,8 @@ dataset_frame "1" -- "N" ri_frame_result
 
 compression_experiment "1" -- "N" compression_frame_result
 dataset_frame "1" -- "N" compression_frame_result
+
+local_geometry_experiment "1" -- "N" local_geometry_frame_result
+dataset_frame "1" -- "N" local_geometry_frame_result
 
 @enduml

@@ -7,7 +7,7 @@ This folder contains scripts for creating and populating the experiment database
 The database schema is designed to support:
 1. **Dataset and Frame Management**: References to KITTI and DurLAR datasets and their individual frames.
 2. **Ground Truth Data**: Per-sensor reference intrinsic parameters and per-frame laser-scanline mappings.
-3. **Experiment Results**: Results from intrinsics estimation, range image, and compression experiments.
+3. **Experiment Results**: Results from intrinsics estimation, range image, compression, and local geometry experiments.
 
 ## Entity-Relationship Diagram
 
@@ -35,6 +35,27 @@ Each experiment type follows a hierarchical pattern with different levels of det
 2. **Frame Results Table** (`ri_frame_result`, `compression_frame_result`): Stores per-frame results with reconstruction metrics (MSE, RMSE) for range image experiments, or compression metrics (sizes, error thresholds, reconstruction quality) for compression experiments.
 
 The intrinsics experiments require scanline-level detail because the algorithm estimates parameters for each individual scanline. In contrast, range image and compression experiments produce aggregate per-frame metrics without needing scanline-level granularity.
+
+#### Local Geometry Experiments (Migration)
+
+The local point-to-plane geometry experiment adds a new two-level hierarchy:
+
+1. **`local_geometry_experiment`**: Stores experiment metadata.
+2. **`local_geometry_frame_result`**: Stores per-frame symmetric point-to-plane summaries for ALICE-LRI and the PBEA resolution sweep. PBEA rows use method labels such as `pbea_native`, `pbea_x2`, and `pbea_x32`.
+
+This schema is intentionally provided as a separate migration script and is not applied automatically by the HPC launch flow:
+
+```bash
+sqlite3 "$BASE_DB_DIR/initial.sqlite" < scripts/local/db/sql/001_local_geometry_experiment.sql
+```
+
+Run the command above from the repository root. If `master.sqlite` already
+exists before merging local-geometry results, apply the same migration to it
+before running the merge command:
+
+```bash
+sqlite3 "$BASE_DB_DIR/master.sqlite" < scripts/local/db/sql/001_local_geometry_experiment.sql
+```
 
 ## Ground Truth Philosophy
 

@@ -9,6 +9,7 @@ echo "[1] Intrinsics"
 echo "[2] Range Image"
 echo "[3] Compression"
 echo "[4] Ground Truth"
+echo "[5] Local Geometry"
 read -r -p "Enter choice: " EXPERIMENT_TYPE
 
 if [[ "$EXPERIMENT_TYPE" == "1" ]]; then
@@ -19,6 +20,8 @@ elif [[ "$EXPERIMENT_TYPE" == "3" ]]; then
   ARG_TYPE="compression_experiments"
 elif [[ "$EXPERIMENT_TYPE" == "4" ]]; then
   ARG_TYPE="ground_truth"
+elif [[ "$EXPERIMENT_TYPE" == "5" ]]; then
+  ARG_TYPE="local_geometry_experiments"
 else
   echo "Invalid choice."
   exit 1

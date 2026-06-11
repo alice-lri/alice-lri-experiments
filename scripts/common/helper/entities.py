@@ -110,6 +110,41 @@ class RangeImageFrameResult(OrmEntity, table_name="ri_frame_result"):
     reconstructed_to_original_rmse: float
     original_to_reconstructed_rmse: float
 
+class LocalGeometryExperiment(OrmEntity, table_name="local_geometry_experiment"):
+    id: int | None
+    timestamp: Union[int, SQLExpr]
+    label: str
+    description: str
+    commit_hash: str
+
+class LocalGeometryFrameResult(OrmEntity, table_name="local_geometry_frame_result"):
+    id: int | None
+    experiment_id: int
+    dataset_frame_id: int
+    method: str
+    ri_width: int
+    ri_height: int
+    original_points_count: int
+    reconstructed_points_count: int
+    k_neighbors: int
+    runtime_seconds: float
+    metrics_runtime_seconds: float
+    reconstructed_to_original_point_to_plane_mean: float
+    reconstructed_to_original_point_to_plane_rmse: float
+    reconstructed_to_original_point_to_plane_median: float
+    reconstructed_to_original_point_to_plane_p95: float
+    reconstructed_to_original_point_to_plane_max: float
+    original_to_reconstructed_point_to_plane_mean: float
+    original_to_reconstructed_point_to_plane_rmse: float
+    original_to_reconstructed_point_to_plane_median: float
+    original_to_reconstructed_point_to_plane_p95: float
+    original_to_reconstructed_point_to_plane_max: float
+    point_to_plane_mean: float
+    point_to_plane_rmse: float
+    point_to_plane_median: float
+    point_to_plane_p95: float
+    point_to_plane_max: float
+
 class CompressionExperiment(OrmEntity, table_name="compression_experiment"):
     id: int | None
     timestamp: Union[int, SQLExpr]
