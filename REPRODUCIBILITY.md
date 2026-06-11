@@ -95,7 +95,7 @@ You need the `initial.sqlite` database, which contains references to all dataset
 	Then copy the resulting file to the HPC cluster (e.g., using `scp`) at `${BASE_DB_DIR}/initial.sqlite` (where `BASE_DB_DIR` is specified in your `.env` file).
 
 - **Option 2: Download Pre-built**
-	- Download from [https://nextcloud.citius.gal/s/alice_lri_initial_db](https://nextcloud.citius.gal/s/alice_lri_initial_db).
+	- Download from [https://nextcloud.citius.gal/s/eG6idWnCaM3ZW5d](https://nextcloud.citius.gal/s/eG6idWnCaM3ZW5d).
 	- Place it locally in `results/db/initial.sqlite` and copy to the HPC at `${BASE_DB_DIR}/initial.sqlite`.
 
 ## 6. Obtain the Container Image
@@ -115,7 +115,7 @@ The project uses a container for reproducible environments on the HPC. See [`con
 	Then transfer the resulting `container.sif` to the HPC cluster at `<repo>/container/container.sif`.
 
 - **Option 2: Download Directly on HPC**
-	- Download from [https://nextcloud.citius.gal/s/alice_lri_container](https://nextcloud.citius.gal/s/alice_lri_container) directly on the HPC and place it in the [`container/`](container/) folder.
+	- Download from [https://nextcloud.citius.gal/s/pTnG7G9qEzDmsdL](https://nextcloud.citius.gal/s/pTnG7G9qEzDmsdL) directly on the HPC and place it in the [`container/`](container/) folder.
 
 ## 7. Reproducing Paper Experiments
 
@@ -134,7 +134,7 @@ After preparing the environment and datasets, you can run the main experiments o
    scp <your_hpc_user>@<hpc_address>:${BASE_DB_DIR}/master.sqlite results/db/master.sqlite
    ```
 
-**Alternative:** You can skip all previous steps and download the pre-built `master.sqlite` database directly from [https://nextcloud.citius.gal/s/alice_lri_master_db](https://nextcloud.citius.gal/s/alice_lri_master_db) as described in [`results/README.md`](results/README.md).
+**Alternative:** You can skip all previous steps and download the pre-built `master.sqlite` database directly from [https://nextcloud.citius.gal/s/oAAsfseTaC3seoi](https://nextcloud.citius.gal/s/oAAsfseTaC3seoi) as described in [`results/README.md`](results/README.md).
 
 ### Experiment Execution
 

@@ -7,6 +7,7 @@ This folder contains all scripts and helpers for running experiments on the HPC 
 - **ground_truth/**: Scripts for ground truth database generation and related experiments.
 - **intrinsics/**: Scripts for running intrinsics estimation experiments.
 - **ri_compression/**: Scripts for range image and compression experiments.
+- **local_geometry/**: Scripts for the local point-to-plane geometry experiment.
 - **helper/**: Shared helper scripts and utilities used by the main experiment scripts.
 
 ## Main Usage: `prepare_and_launch.sh`
@@ -95,6 +96,12 @@ You will always be prompted to confirm before jobs are launched.
   - `estimate_job.sh`: For running estimation jobs as a dependency.
   - `job.sh`, `task.sh`, `task_item.sh`: SLURM job scripts for processing batches.
   - `run_ri_experiment.py`: Python script for running RI experiments.
+
+- **local_geometry/**
+  - `prepare_and_launch.sh`: Prepares and launches the symmetric point-to-plane geometry experiment.
+  - `job.sh`, `task.sh`, `task_item.sh`: SLURM job scripts for processing batches.
+  - `run_local_geometry_experiment.py`: Python script for evaluating ALICE-LRI and the PBEA resolution sweep on each assigned frame.
+  - Requires applying `scripts/local/db/sql/001_local_geometry_experiment.sql` to the HPC `initial.sqlite` before launch, and to `master.sqlite` before merge if that master already exists.
 
 - **helper/**
   - `multi_batch_job_header.sh`, `prepare_job.sh`, `prepare_task_item.sh`: Shared shell helpers for job setup and management.

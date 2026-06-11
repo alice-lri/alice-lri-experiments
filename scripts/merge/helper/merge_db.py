@@ -11,9 +11,16 @@ class Constant:
     ARG_EXPERIMENTS = "experiments"
     ARG_COMPRESSION_EXPERIMENTS = "compression_experiments"
     ARG_RI_EXPERIMENTS = "ri_experiments"
+    ARG_LOCAL_GEOMETRY_EXPERIMENTS = "local_geometry_experiments"
     ARG_GROUND_TRUTH = "ground_truth"
 
-    MERGE_TYPES = [ARG_EXPERIMENTS, ARG_RI_EXPERIMENTS, ARG_COMPRESSION_EXPERIMENTS, ARG_GROUND_TRUTH]
+    MERGE_TYPES = [
+        ARG_EXPERIMENTS,
+        ARG_RI_EXPERIMENTS,
+        ARG_COMPRESSION_EXPERIMENTS,
+        ARG_LOCAL_GEOMETRY_EXPERIMENTS,
+        ARG_GROUND_TRUTH,
+    ]
 
 
 def main():
@@ -29,6 +36,8 @@ def main():
         merge_compression_experiment_databases(db_files, args.master_db_path, args.label, args.description)
     elif args.type == Constant.ARG_RI_EXPERIMENTS:
         merge_ri_experiment_databases(db_files, args.master_db_path, args.label, args.description)
+    elif args.type == Constant.ARG_LOCAL_GEOMETRY_EXPERIMENTS:
+        merge_local_geometry_experiment_databases(db_files, args.master_db_path, args.label, args.description)
     elif args.type == Constant.ARG_GROUND_TRUTH:
         merge_ground_truth_databases(db_files, args.master_db_path)
 
@@ -109,6 +118,11 @@ def merge_compression_experiment_databases(db_files, master_db_path, label, desc
 def merge_ri_experiment_databases(db_files, master_db_path, label, description):
     merge_generic_experiment_databases(
         db_files, master_db_path, label, description, RangeImageExperiment, RangeImageFrameResult
+    )
+
+def merge_local_geometry_experiment_databases(db_files, master_db_path, label, description):
+    merge_generic_experiment_databases(
+        db_files, master_db_path, label, description, LocalGeometryExperiment, LocalGeometryFrameResult
     )
 
 

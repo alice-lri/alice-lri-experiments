@@ -16,7 +16,11 @@ if [[ "$REBUILD" == true ]]; then
   pip install "${ALICE_LRI_PYTHON_SRC}" --target "${ALICE_LRI_PIP_DIR}" --upgrade
 fi
 
-if [[ "$ARG_TYPE" != "intrinsics" ]]; then
+if [[ "$ARG_TYPE" == "local_geometry" ]]; then
+  echo "Quick local-geometry test..."
+  export PYTHONPATH="$ALICE_LRI_PIP_DIR:$PYTHONPATH"
+  python -u -m scripts.slurm.local_geometry.run_local_geometry_experiment --mode test
+elif [[ "$ARG_TYPE" != "intrinsics" ]]; then
   echo "Quick test..."
   export PYTHONPATH="$ALICE_LRI_PIP_DIR:$PYTHONPATH"
   python -u -m scripts.slurm.ri_compression.run_ri_experiment --mode test

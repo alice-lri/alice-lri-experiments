@@ -74,6 +74,13 @@ Each script in the `helper/` subfolder generates specific tables or figures. You
   - Queries database for both KITTI and DurLAR datasets.
   - Output: `ablation_combined_metrics.tex`.
 
+- **`generate_fallback_frequency_table.py`**
+  - Computes how often the vertical, horizontal, or either fallback is triggered by the full ALICE-LRI configuration.
+  - Reports frequencies at both frame and scanline level.
+  - Separates all frames and robust frames (`n^(l) >= 64` for all scanlines).
+  - Opens `master.sqlite` in SQLite read-only mode.
+  - Output: `fallback_frequency.tex` and `fallback_frequency.csv`.
+
 ### Range Image Results
 
 - **`generate_range_image_metrics_table.py`**
@@ -81,6 +88,14 @@ Each script in the `helper/` subfolder generates specific tables or figures. You
   - Calculates Chamfer Distance (CD in meters), PSNR (dB), and Sampling Error (SE in %).
   - Compares PBEA vs ALICE methods at different resolutions.
   - Output: `range_image_comparison.tex` and per-frame CSV files in `cd_by_frame_csvs/` sub-folder.
+
+- **`generate_local_geometry_metrics_table.py`**
+  - Computes the local point-to-plane reconstruction metrics from the latest `local_geometry_full_sweep` experiment.
+  - Compares ALICE-LRI and the PBEA resolution sweep on KITTI and DurLAR.
+  - Includes all method/resolution rows stored in that experiment.
+  - Reports AVG and MAX over frame-level mean absolute SP2P values.
+  - Opens `master.sqlite` in SQLite read-only mode.
+  - Output: `local_geometry_metrics.tex`.
 
 - **`generate_range_image_qualitative.py`**
   - Generates qualitative visualizations of range image reconstructions.
