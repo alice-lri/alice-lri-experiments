@@ -5,6 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from scripts.common.load_env import load_env
+from scripts.local.paper.helper.common import fetch_local_geometry_experiment_id
 from scripts.local.paper.helper.utils import df_format_dataset_names, df_to_latex, write_paper_data
 
 load_env()
@@ -12,7 +13,6 @@ load_env()
 
 class Config:
     DB_PATH = os.getenv("LOCAL_SQLITE_MASTER_DB")
-    EXPERIMENT_LABEL = "local_geometry_full_sweep"
     OUTPUT_TABLE_TEX = "local_geometry_metrics.tex"
 
     RENAME_COLUMNS_LEVEL_0 = {
@@ -30,11 +30,10 @@ class Config:
 
 def main():
     print(f"Using database at {Config.DB_PATH}")
+    experiment_id = fetch_local_geometry_experiment_id(Config.DB_PATH)
+    print(f"Experiment ID: {experiment_id}")
 
     with connect_read_only(Config.DB_PATH) as conn:
-        experiment_id = fetch_local_geometry_experiment_id(conn)
-        print(f"Experiment ID: {experiment_id}")
-
         print("Computing local geometry metrics from DB...")
         local_geometry_df = fetch_and_compute_local_geometry_metrics(conn, experiment_id)
 
@@ -54,23 +53,6 @@ def main():
 def connect_read_only(db_path: str) -> sqlite3.Connection:
     uri = Path(db_path).absolute().as_uri() + "?mode=ro"
     return sqlite3.connect(uri, uri=True)
-
-
-def fetch_local_geometry_experiment_id(conn: sqlite3.Connection) -> int:
-    query = """
-        SELECT id
-        FROM local_geometry_experiment
-        WHERE label = ?
-        ORDER BY id DESC
-        LIMIT 1
-    """
-    rows = conn.execute(query, (Config.EXPERIMENT_LABEL,)).fetchall()
-    assert len(rows) == 1, (
-        f"Expected at least one local geometry experiment with label "
-        f"{Config.EXPERIMENT_LABEL!r}, got none"
-    )
-
-    return rows[0][0]
 
 
 def fetch_and_compute_local_geometry_metrics(conn: sqlite3.Connection, experiment_id: int) -> pd.DataFrame:

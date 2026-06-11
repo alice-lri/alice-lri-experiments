@@ -106,7 +106,6 @@ def run_evaluate(args):
         dataset_roots["durlar"] = args.durlar_root
 
     with sqlite3.connect(args.db_path) as conn:
-        assert_schema(conn)
         experiment_id = fetch_experiment_id(conn)
         frames = fetch_task_frames(conn, dataset_roots.keys(), args.task_id, args.task_count)
         print(f"Number of frames: {len(frames)}")
@@ -140,21 +139,6 @@ def run_evaluate(args):
 
             pd.DataFrame(rows).to_sql("local_geometry_frame_result", conn, if_exists="append", index=False)
             conn.commit()
-
-
-def assert_schema(conn: sqlite3.Connection):
-    required_tables = {"local_geometry_experiment", "local_geometry_frame_result"}
-    existing_tables = {
-        row[0]
-        for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'").fetchall()
-    }
-    missing_tables = required_tables - existing_tables
-    if missing_tables:
-        raise RuntimeError(
-            "Missing local-geometry tables in the task database: "
-            f"{sorted(missing_tables)}. Apply scripts/local/db/sql/001_local_geometry_experiment.sql "
-            "to the initial/master databases before launching or merging this experiment."
-        )
 
 
 def fetch_experiment_id(conn: sqlite3.Connection) -> int:

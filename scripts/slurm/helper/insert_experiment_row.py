@@ -54,7 +54,6 @@ def main():
             )
             experiment.save(db)
         elif args.type == 'local_geometry':
-            assert_table_exists(db, "local_geometry_experiment")
             experiment = LocalGeometryExperiment(
                 label="",
                 description="",
@@ -63,17 +62,6 @@ def main():
             experiment.save(db)
         else:
             raise ValueError('Unknown type')
-
-def assert_table_exists(db: Database, table_name: str):
-    row = db.execute(
-        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
-        (table_name,)
-    ).fetchone()
-    if row is None:
-        raise RuntimeError(
-            f"Missing table '{table_name}'. Apply scripts/local/db/sql/001_local_geometry_experiment.sql "
-            "to the initial database before preparing this experiment."
-        )
 
 
 if __name__ == "__main__":

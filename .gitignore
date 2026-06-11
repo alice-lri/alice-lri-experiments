@@ -7,3 +7,4 @@ scripts/cpp/build/
 
 results/db/initial.sqlite
 results/db/master.sqlite
+results/local_geometry/
