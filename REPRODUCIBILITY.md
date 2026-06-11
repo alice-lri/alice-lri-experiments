@@ -154,7 +154,7 @@ cd scripts/slurm/ground_truth
 After completion, merge the results:
 
 ```bash
-cd scripts/merge
+cd ../../merge
 ./merge_db.sh
 # Select: [4] Ground Truth
 ```
@@ -243,7 +243,7 @@ cd ../slurm/intrinsics
 After each intrinsics experiment completes, merge the results (once per experiment):
 
 ```bash
-cd scripts/merge
+cd ../../merge
 ./merge_db.sh
 # Select: [1] Intrinsics
 # Provide your desired label and description for each experiment
@@ -269,7 +269,7 @@ cd ../slurm/ri_compression
 After completion, merge the results:
 
 ```bash
-cd scripts/merge
+cd ../../merge
 ./merge_db.sh
 # Select: [2] Range Image
 # Provide your desired label and description for the experiment
@@ -295,7 +295,7 @@ cd ../slurm/ri_compression
 After completion, merge the results:
 
 ```bash
-cd scripts/merge
+cd ../../merge
 ./merge_db.sh
 # Select: [3] Compression
 # Provide your desired label and description for the experiment
@@ -304,11 +304,38 @@ cd scripts/merge
 # - description: Final compression experiment with all the parts of the algorithm enabled.
 ```
 
+#### 7.5. Local Geometry Experiment
+
+Run the symmetric local point-to-plane geometry experiment. This evaluates
+ALICE-LRI and the PBEA resolution sweep using the same partial-database SLURM
+workflow as the other reconstruction experiments.
+
+```bash
+cd ../slurm/local_geometry
+./prepare_and_launch.sh --build-options \
+  -DFLAG_USE_HOUGH_CONTINUITY=ON \
+  -DFLAG_USE_SCANLINE_CONFLICT_SOLVER=ON \
+  -DFLAG_USE_VERTICAL_HEURISTICS=ON \
+  -DFLAG_USE_HORIZONTAL_HEURISTICS=ON
+```
+
+After completion, merge the results:
+
+```bash
+cd ../../merge
+./merge_db.sh
+# Select: [5] Local Geometry
+# Provide your desired label and description for the experiment
+# Example:
+# - label: local_geometry_final_default
+# - description: Final local geometry experiment with all the parts of the algorithm enabled.
+```
+
 ## 8. Generate Tables and Figures
 
 **Location: Local workstation**
 
-After all experiments are complete and merged, ensure you have copied the final [`master.sqlite`](results/db/master.sqlite) from the HPC to your local machine as explained in **Step 8**. 
+After all experiments are complete and merged, ensure you have copied the final [`master.sqlite`](results/db/master.sqlite) from the HPC to your local machine as explained in **Step 7**.
 
 This step will aggregate results from the `master.sqlite` database and perform runtime analysis on your local workstation. The runtime analysis includes:
 - **ALICE-LRI runtime analysis**: Generates the runtime table for the ALICE-LRI algorithm (stored in `results/csv/alice_times.csv`).

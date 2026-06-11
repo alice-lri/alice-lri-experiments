@@ -22,7 +22,7 @@ Each experiment type has a `prepare_and_launch.sh` script in its subfolder. This
 ### How to Use
 
 1. **Navigate to the desired experiment subfolder:**
-  - `ground_truth/`, `intrinsics/`, or `ri_compression/`
+  - `ground_truth/`, `intrinsics/`, `ri_compression/`, or `local_geometry/`
 2. **Run the entry point script:**
   ```bash
   ./prepare_and_launch.sh [OPTIONS]
