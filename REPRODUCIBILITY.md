@@ -95,7 +95,7 @@ You need the `initial.sqlite` database, which contains references to all dataset
 	Then copy the resulting file to the HPC cluster (e.g., using `scp`) at `${BASE_DB_DIR}/initial.sqlite` (where `BASE_DB_DIR` is specified in your `.env` file).
 
 - **Option 2: Download Pre-built**
-	- Download from [https://nextcloud.citius.gal/s/eG6idWnCaM3ZW5d](https://nextcloud.citius.gal/s/eG6idWnCaM3ZW5d).
+	- Download from [https://nextcloud.citius.gal/s/YMdoNWqS69nH4jM](https://nextcloud.citius.gal/s/YMdoNWqS69nH4jM).
 	- Place it locally in `results/db/initial.sqlite` and copy to the HPC at `${BASE_DB_DIR}/initial.sqlite`.
 
 ## 6. Obtain the Container Image
@@ -134,7 +134,7 @@ After preparing the environment and datasets, you can run the main experiments o
    scp <your_hpc_user>@<hpc_address>:${BASE_DB_DIR}/master.sqlite results/db/master.sqlite
    ```
 
-**Alternative:** You can skip all previous steps and download the pre-built `master.sqlite` database directly from [https://nextcloud.citius.gal/s/oAAsfseTaC3seoi](https://nextcloud.citius.gal/s/oAAsfseTaC3seoi) as described in [`results/README.md`](results/README.md).
+**Alternative:** You can skip all previous steps and download the pre-built `master.sqlite` database directly from [https://nextcloud.citius.gal/s/mgQXp9Mkxk7NDeL](https://nextcloud.citius.gal/s/mgQXp9Mkxk7NDeL) as described in [`results/README.md`](results/README.md).
 
 ### Experiment Execution
 
