@@ -54,7 +54,7 @@ def parse_args() -> argparse.Namespace:
 
     if args.type != Constant.ARG_GROUND_TRUTH:
         if not args.label or not args.description:
-            parser.error(f"--label and --description required when --type is '{Constant.ARG_EXPERIMENTS}'")
+            parser.error("--label and --description are required for experiment result merges")
 
     return args
 

@@ -9,11 +9,6 @@ from scripts.common.helper.ri.ri_default_mapper import RangeImageDefaultMapper
 from scripts.common.helper.ri.ri_utils import point_cloud_to_range_image, range_image_to_point_cloud
 
 
-DEFAULT_SEQUENCES = {
-    "kitti": "2011_09_30_drive_0018_sync",
-    "durlar": "DurLAR_20211209",
-}
-
 PBEA_SIZE_MULTIPLIERS = [1, 2, 4, 8, 16, 32]
 PBEA_METHODS = ["pbea_native", *(f"pbea_x{multiplier}" for multiplier in PBEA_SIZE_MULTIPLIERS[1:])]
 DEFAULT_METHODS = ["alice_lri", *PBEA_METHODS]

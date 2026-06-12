@@ -1,5 +1,0 @@
-dataset,subset,total_frames,vertical_fallback_frames,vertical_fallback_frames_percent,horizontal_fallback_frames,horizontal_fallback_frames_percent,any_fallback_frames,any_fallback_frames_percent,total_scanlines,vertical_fallback_scanlines,vertical_fallback_scanlines_percent,horizontal_fallback_scanlines,horizontal_fallback_scanlines_percent,any_fallback_scanlines,any_fallback_scanlines_percent
-kitti,all,47885,136,0.284014,104,0.217187,153,0.319516,3064085,355,0.011586,332,0.010835,469,0.015306
-kitti,robust_only,47543,3,0.00631,0,0.0,3,0.00631,3042253,3,9.9e-05,0,0.0,3,9.9e-05
-durlar,all,145916,4199,2.877683,10507,7.200718,10507,7.200718,18637433,13997,0.075102,143374,0.76928,143378,0.769301
-durlar,robust_only,130757,0,0.0,0,0.0,0,0.0,16736809,0,0.0,0,0.0,0,0.0
