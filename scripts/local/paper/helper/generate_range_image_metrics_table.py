@@ -35,6 +35,7 @@ def main():
     print(f"Using database at {Config.DB_PATH}")
     experiment_id = fetch_ri_experiment_id(Config.DB_PATH)
     print(f"Experiment ID: {experiment_id}")
+    os.makedirs(Config.CD_BY_FRAME_CSVS_FOLDER, exist_ok=True)
 
     print("Computing RI metrics from DB...")
     with sqlite3.connect(Config.DB_PATH) as conn:
@@ -44,7 +45,7 @@ def main():
         subsets = ri_metrics_df[["dataset", "method", "ri_width", "ri_height"]].drop_duplicates()
         for _, subset in subsets.iterrows():
             str_method = "PBEA" if subset["method"] == "pbea" else "Ours"
-            output_filename = f"{subset["dataset"]}_{str_method}_{subset["ri_width"]}_x_{subset["ri_height"]}.csv"
+            output_filename = f"{subset['dataset']}_{str_method}_{subset['ri_width']}_x_{subset['ri_height']}.csv"
             cd_by_frame_df = fetch_cd_for_frames(conn, experiment_id, subset)
 
             print(f"Writing {output_filename}...")
@@ -134,7 +135,7 @@ def format_method(r: pd.Series) -> str:
     if is_ours:
         return f"\\textbf{{ALICE-LRI}} ($\\mathbf{{{r['ri_width']}}} \\times \\mathbf{{{r['ri_height']}}}$)"
 
-    return f"{r["Method"]} ($\\num{{{r['ri_width']}}} \\times \\num{{{r['ri_height']}}}$)"
+    return f"{r['Method']} ($\\num{{{r['ri_width']}}} \\times \\num{{{r['ri_height']}}}$)"
 
 
 if __name__ == "__main__":
