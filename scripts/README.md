@@ -11,6 +11,7 @@ Scripts for running experiments on the HPC cluster using SLURM job scheduling. T
 - Intrinsics estimation experiments (including ablation studies)
 - Range image reconstruction experiments
 - Compression experiments
+- Local point-to-plane geometry experiments
 
 Each experiment type has a `prepare_and_launch.sh` script that submits jobs to SLURM and manages parallelization across 32 jobs (64 cores each by default).
 
@@ -20,7 +21,7 @@ Each experiment type has a `prepare_and_launch.sh` script that submits jobs to S
 
 Scripts for merging partial experiment databases from HPC jobs into the master database. After experiments complete, these scripts:
 - Consolidate individual job results into `master.sqlite`
-- Handle multiple experiment types (intrinsics, range image, compression, ground truth)
+- Handle multiple experiment types (intrinsics, range image, compression, local geometry, ground truth)
 - Support sequential merging of multiple experiments for comparative analysis
 - Create automatic backups before each merge
 

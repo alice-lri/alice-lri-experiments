@@ -1,18 +1,16 @@
 import argparse
 import os
 import sqlite3
-import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
-
 from scripts.common.helper.ground_truth import compute_ground_truth
 from scripts.common.helper.point_cloud import calculate_phi, calculate_range, calculate_range_xy, load_binary
 from scripts.common.load_env import load_env
+from scripts.local.paper.helper.common import fetch_main_experiment_id
 
 load_env()
 
@@ -31,7 +29,7 @@ class FrameCase:
 class Config:
     DB_PATH = os.getenv("LOCAL_SQLITE_MASTER_DB")
     DURLAR_PATH = os.getenv("LOCAL_DURLAR_PATH")
-    PAPER_DATA_DIR = os.getenv("PAPER_MANUSCRIPT_DATA_DIR") or os.getenv("PAPER_DATA_DIR")
+    PAPER_DATA_DIR = os.getenv("PAPER_DATA_DIR")
     DEFAULT_FRAME_ID = 150476
     ROBUST_POINT_COUNT_THRESHOLD = 64
     BAD_WLS_OFFSET_THRESHOLD_M = 0.05
@@ -73,9 +71,10 @@ def main():
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    frame = fetch_frame_case(args.frame_id)
+    experiment_id = fetch_main_experiment_id(Config.DB_PATH)
+    frame = fetch_frame_case(args.frame_id, experiment_id)
     data = build_frame_data(frame)
-    status = fetch_vertical_status(frame, args.bad_offset_threshold_mm / 1000.0)
+    status = fetch_vertical_status(frame, experiment_id, args.bad_offset_threshold_mm / 1000.0)
     export_pgfplots_data(frame, data, status, output_dir, args.max_main_points_per_scanline)
 
     print(f"Exported vertical WLS figure data to {output_dir}")
@@ -87,7 +86,7 @@ def connect_read_only() -> sqlite3.Connection:
     return sqlite3.connect(f"file:{Path(Config.DB_PATH).resolve()}?mode=ro", uri=True)
 
 
-def fetch_frame_case(frame_id: int) -> FrameCase:
+def fetch_frame_case(frame_id: int, experiment_id: int) -> FrameCase:
     with connect_read_only() as conn:
         df = pd.read_sql_query(
             """
@@ -109,7 +108,7 @@ def fetch_frame_case(frame_id: int) -> FrameCase:
                 SELECT dataset_frame_id AS frame_id,
                        scanlines_count AS predicted_scanlines
                 FROM intrinsics_frame_result
-                WHERE experiment_id = 1
+                WHERE experiment_id = ?
                   AND dataset_frame_id = ?
             )
             SELECT gt_stats.*,
@@ -118,7 +117,7 @@ def fetch_frame_case(frame_id: int) -> FrameCase:
                      JOIN result_stats ON result_stats.frame_id = gt_stats.frame_id;
             """,
             conn,
-            params=(Config.ROBUST_POINT_COUNT_THRESHOLD, frame_id, frame_id),
+            params=(Config.ROBUST_POINT_COUNT_THRESHOLD, frame_id, experiment_id, frame_id),
         )
 
     if df.empty:
@@ -192,7 +191,7 @@ def fetch_dataset_gt(dataset_name: str) -> dict[str, np.ndarray]:
     }
 
 
-def fetch_vertical_status(frame: FrameCase, bad_offset_threshold_m: float) -> dict:
+def fetch_vertical_status(frame: FrameCase, experiment_id: int, bad_offset_threshold_m: float) -> dict:
     with connect_read_only() as conn:
         gt = pd.read_sql_query(
             """
@@ -216,11 +215,11 @@ def fetch_vertical_status(frame: FrameCase, bad_offset_threshold_m: float) -> di
             FROM intrinsics_frame_result ifr
                      JOIN intrinsics_scanline_result scanline ON scanline.intrinsics_result_id = ifr.id
             WHERE ifr.dataset_frame_id = ?
-              AND ifr.experiment_id = 1
+              AND ifr.experiment_id = ?
             ORDER BY scanline.vertical_angle ASC;
             """,
             conn,
-            params=(frame.frame_id,),
+            params=(frame.frame_id, experiment_id),
         )
 
     gt_angles = gt["vertical_angle"].to_numpy()

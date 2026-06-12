@@ -50,10 +50,6 @@ For experiment types 1-3 and 5, you'll also be asked for:
 
 For ground truth experiments, no label or description is needed.
 
-Local Geometry results require `scripts/local/db/sql/001_local_geometry_experiment.sql`
-to be applied to `master.sqlite` before merge when that master database already
-exists.
-
 ### Command-Line Options
 
 The script accepts the following options (defined in [`helper/merge_header.sh`](helper/merge_header.sh)):

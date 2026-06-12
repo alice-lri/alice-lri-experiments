@@ -11,26 +11,9 @@ estimation job. That job writes one JSON file per sequence into the batch
 also keep a per-process in-memory cache, so each task only reads each needed
 sequence intrinsics once. No evaluation task writes intrinsics files.
 
-The runner shares reconstruction and per-frame evaluation logic with the local
-debug runner through `scripts/common/helper/local_geometry_experiment.py`. The
-point-to-plane metric itself lives in
+The runner shares reconstruction and per-frame evaluation logic through
+`scripts/common/helper/local_geometry_experiment.py`. The point-to-plane metric itself lives in
 `scripts/common/helper/local_geometry_metrics.py`.
-
-## Schema Migration
-
-The local-geometry tables are not created automatically by the launch flow.
-Before launching, apply the migration to the HPC initial database:
-
-```bash
-sqlite3 "$BASE_DB_DIR/initial.sqlite" < scripts/local/db/sql/001_local_geometry_experiment.sql
-```
-
-If `"$BASE_DB_DIR/master.sqlite"` already exists before merging, apply the same
-migration to it too:
-
-```bash
-sqlite3 "$BASE_DB_DIR/master.sqlite" < scripts/local/db/sql/001_local_geometry_experiment.sql
-```
 
 ## Launch
 
@@ -61,8 +44,6 @@ by the range-image reconstruction experiment:
 
 The native PBEA resolutions are `4000 x 64` for KITTI and `2048 x 128` for
 DurLAR, and the `pbea_x*` rows multiply both dimensions by the indicated factor.
-The method labels keep the existing `local_geometry_frame_result` uniqueness
-constraint valid, so no schema migration is required for the sweep.
 
 ## Merge
 
@@ -77,5 +58,5 @@ Select option `[5] Local Geometry`, then provide an experiment label and
 description.
 
 When generating the paper table, the local paper helper includes all
-method/resolution rows stored in the latest `local_geometry_full_sweep`
-experiment. The table reports AVG and MAX over frame-level mean absolute SP2P values.
+method/resolution rows stored in the local geometry experiment. The table
+reports AVG and MAX over frame-level mean absolute SP2P values.

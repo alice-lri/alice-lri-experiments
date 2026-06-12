@@ -22,7 +22,7 @@ Each experiment type has a `prepare_and_launch.sh` script in its subfolder. This
 ### How to Use
 
 1. **Navigate to the desired experiment subfolder:**
-  - `ground_truth/`, `intrinsics/`, or `ri_compression/`
+  - `ground_truth/`, `intrinsics/`, `ri_compression/`, or `local_geometry/`
 2. **Run the entry point script:**
   ```bash
   ./prepare_and_launch.sh [OPTIONS]
@@ -101,7 +101,6 @@ You will always be prompted to confirm before jobs are launched.
   - `prepare_and_launch.sh`: Prepares and launches the symmetric point-to-plane geometry experiment.
   - `job.sh`, `task.sh`, `task_item.sh`: SLURM job scripts for processing batches.
   - `run_local_geometry_experiment.py`: Python script for evaluating ALICE-LRI and the PBEA resolution sweep on each assigned frame.
-  - Requires applying `scripts/local/db/sql/001_local_geometry_experiment.sql` to the HPC `initial.sqlite` before launch, and to `master.sqlite` before merge if that master already exists.
 
 - **helper/**
   - `multi_batch_job_header.sh`, `prepare_job.sh`, `prepare_task_item.sh`: Shared shell helpers for job setup and management.

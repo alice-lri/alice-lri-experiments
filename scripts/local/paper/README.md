@@ -90,7 +90,7 @@ Each script in the `helper/` subfolder generates specific tables or figures. You
   - Output: `range_image_comparison.tex` and per-frame CSV files in `cd_by_frame_csvs/` sub-folder.
 
 - **`generate_local_geometry_metrics_table.py`**
-  - Computes the local point-to-plane reconstruction metrics from the latest `local_geometry_full_sweep` experiment.
+  - Computes the local point-to-plane reconstruction metrics from the local geometry experiment.
   - Compares ALICE-LRI and the PBEA resolution sweep on KITTI and DurLAR.
   - Includes all method/resolution rows stored in that experiment.
   - Reports AVG and MAX over frame-level mean absolute SP2P values.
